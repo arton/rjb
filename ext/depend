@@ -1,0 +1,23 @@
+riconv.o : riconv.c $(hdrdir)/ruby.h $(hdrdir)/config.h $(hdrdir)/defines.h jp_co_infoseek_hp_arton_rjb_RBridge.h
+rjb.o : rjb.c $(hdrdir)/ruby.h $(hdrdir)/config.h $(hdrdir)/defines.h jp_co_infoseek_hp_arton_rjb_RBridge.h riconv.h rjb.h
+rjbexception.o : rjbexception.c $(hdrdir)/ruby.h $(hdrdir)/config.h $(hdrdir)/defines.h jp_co_infoseek_hp_arton_rjb_RBridge.h riconv.h rjb.h
+load.o : load.c $(hdrdir)/ruby.h $(hdrdir)/config.h $(hdrdir)/defines.h jp_co_infoseek_hp_arton_rjb_RBridge.h
+jp_co_infoseek_hp_arton_rjb_RBridge.h : jniwrap.h ../data/rjb/jp/co/infoseek/hp/arton/rjb/RBridge.class
+	javah -classpath ../data/rjb jp.co.infoseek.hp.arton.rjb.RBridge
+../data/rjb/jp/co/infoseek/hp/arton/rjb/RBridge.class : RBridge.java
+	mkdir -p ../data/rjb/jp/co/infoseek/hp/arton/rjb
+	javac -d ../data/rjb RBridge.java
+test : rjbcore.so ../test/jp/co/infoseek/hp/arton/rjb/Test.class ../test/jp/co/infoseek/hp/arton/rjb/IBase.class ../test/jp/co/infoseek/hp/arton/rjb/Base.class ../test/jp/co/infoseek/hp/arton/rjb/ExtBase.class 
+	ruby ../test/test.rb
+../test/jp/co/infoseek/hp/arton/rjb/Test.class : ../test/Test.java 
+	javac ../test/Test.java
+	$(RUBY) -r fileutils -e 'FileUtils.mkdir_p "../test/jp/co/infoseek/hp/arton/rjb";FileUtils.mv("../test/Test.class", "../test/jp/co/infoseek/hp/arton/rjb")'
+../test/jp/co/infoseek/hp/arton/rjb/IBase.class : ../test/IBase.java 
+	javac ../test/IBase.java
+	$(RUBY) -r fileutils -e 'FileUtils.mkdir_p "../test/jp/co/infoseek/hp/arton/rjb";FileUtils.mv("../test/IBase.class", "../test/jp/co/infoseek/hp/arton/rjb")'
+../test/jp/co/infoseek/hp/arton/rjb/Base.class : ../test/Base.java ../test/jp/co/infoseek/hp/arton/rjb/IBase.class
+	javac -classpath ../test ../test/Base.java
+	$(RUBY) -r fileutils -e 'FileUtils.mkdir_p "../test/jp/co/infoseek/hp/arton/rjb";FileUtils.mv("../test/Base.class", "../test/jp/co/infoseek/hp/arton/rjb")'
+../test/jp/co/infoseek/hp/arton/rjb/ExtBase.class : ../test/ExtBase.java 
+	javac -classpath ../test ../test/ExtBase.java
+	$(RUBY) -r fileutils -e 'FileUtils.mkdir_p "../test/jp/co/infoseek/hp/arton/rjb";FileUtils.mv("../test/ExtBase.class", "../test/jp/co/infoseek/hp/arton/rjb")'

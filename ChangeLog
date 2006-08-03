@@ -1,0 +1,183 @@
+Tue Aug 1 arton
+ *load.c
+ *rjb.c
+	change load pathname of the bridge class.
+ *post-install.rb
+	add for remove previous installed rjb.so.
+ *rjb.rake
+	add for build Gem.
+ *rjb.rb	
+	for preparing the pathname constant of the bridge class.
+ *depend
+	chage binary name from rjb.so to rjbcore.so
+ *extconf.rb
+	chage binary name from rjb.so to rjbcore.so
+	
+Mon Jul 31 arton
+ *load.c
+	fix buffer allocation
+
+Sun Jul 16 (Jun 22) Kuwashima and arton
+ *rjb.c
+	version 0.2.8
+ *MANIFEST
+ *depend	
+ *load.c
+ *rjbexception.c
+	change jni.h to jniwrap.h.
+	change the bridge class's header according to JDK 5.0's javah.
+ *jniwrap.h
+	wrap jni.h for Cygin
+	
+Sat Jun 10 14:10:05 2006 arton
+ *rjb.c
+   	version 0.2.7
+	support an array of arrays from ruby to java.
+
+Mon May 8 08:52:12 2006 arton
+ *load.c
+	revision 5
+	support both Intel and PPC Mac.
+	Patched version was contributed by Demetrius Nunes.
+
+Wed Apr 12 03:57:12 2006 arton
+ *rjb.c
+	version 0.2.6
+	support an array of arrays.
+ *test.rb	
+	add an array of arrays test, some tests are contributed by Darren Day.
+ *Test.java
+	add a test method that returns an array of arrays, some tests are
+         contributed by Darren Day.
+	
+Sat Dec 24 18:56:38 2005 arton
+ *rjb.c
+	version 0.2.5
+	release String, Float, Array object after method call.
+ *gctest.rb
+	add for String object gc test
+	
+Mon Sep 19 01:09:30 2005 arton
+ *rjb.c
+	version 0.2.4
+	use null instead of empty string when String argument is nil
+	omit unused local variable from jstring2val
+ *test.rb
+	add null string test (bug since utf-8 support)
+	
+Tue Jun 28 01:57:07 2005 arton
+ *rjb.c
+	version 0.2.3
+	convert result object to imported class if object is an instance of Class
+	call Class#forName if argument count is 1
+ *test.rb
+	add test_importobj contributed by Mr. Kuwashima, thanks.
+	
+Mon Jun 27 20:30:50 2005 arton
+	treat Class.forName as Rjb::import
+ *rjb.c
+	version 0.2.2
+	add method 'forName' into imported Class object
+	if pass imported object to JVM, extract Class object from ruby object
+ *test.rb
+	add above tests
+	
+Sat Jun 25 05:58:36 2005 arton
+	most bugs were reported by Mr. Micael Weller, thanks.
+ *rjb.c
+	version 0.2.1
+	correct derived static method search
+	search class methods then class's instance methods when called by class
+	avoid register non capitalized named constants into constants table
+	correct capitalized named method search 
+ *riconv.c
+	never call iconv if $KCODE is nil
+ *load.c
+	using path separator ; for cygwin (by Ryugate)
+	
+Sun Apr 24 05:26:16 2005 arton
+ *rb.c
+	version 0.2.0
+	delete localref if globalref was created.
+	load can take the second argument for jvm
+ *load.c
+	load can take the second argument for jvm
+	
+Mon Jan 17 02:40:21 2005 arton
+ *rjb.c
+	add 'throw' module function.
+	move java exception handling functions into newly created rjbexception.c
+ *rjb.h
+	declations for rjb.c and rjbexception.c
+ *rjbexception.c
+	java exception handling functions, and 'throw' module function.
+ *test.rb
+	adding throw test.
+	
+Wed Jan 12 00:01:08 2005 Kaspar Schiess and arton
+ *rjb.c
+	correct Rjb::load parameter evaluation (classpath).
+   - many thanks to Mr.Schiess.
+
+Sun Nov 21 02:51:43 2004 Kuwashima and arton
+ *rjb.c
+        move dbcs-utf-8 auto conversion feature into riconv.?
+        remove JNI version argument from Rjb::load. (bug reported by Mr.Tateishi)
+ *load.c
+        correct CLASSPATH setting (bad environment name).(bug reported by Mr.Tateishi)
+ *riconv.c riconv.h (contributed by Mr.Kuwashima)
+        DBCS - utf-8 auto conversion functions.
+ *depend MANIFEST
+        add riconv.?
+   - many tanks to Mr.Kuwashima and Mr.Tateishi.
+
+Tue Oct 5 23:08:59 2004 Kuwashima and arton
+ *test.rb
+	add kanji conversion test
+ *rjb.c	
+	add dbcs(sjis and euc-jp) - utf-8 auto conversion feature.
+	the patch was contributed by Mr.Kuwashima, many thanks.
+	
+Sun Oct 3 18:24:42 2004 arton
+ *load.c	
+	JNIEnv* now using local variable instead of global one.
+	Because AWT event use a worker thread, and JNI need thread's owned JNIEnv.
+ *rjb.c
+	JNIEnv* now using local variable instead of global one.
+	Because AWT event use a worker thread, and JNI need thread's owned JNIEnv.
+	This change was suggested by Mr.Kuwashima, he also tested the behavior,
+	 and gave me some test codes.
+	and attach_current_thread is from Mr.Kuwashima's patch.
+	Many thanks to Mr.Kuwashima.
+	
+Sat Sep 25 03:25:45 2004 arton
+ *rjb.c		
+	implements interface's method argument conversion.
+ *test.rb
+	add Comparable test (interface with method arguments)
+ *Test.java	
+	add Comparable test method.
+
+Wed Sep 22 02:30:15 2004 arton	
+ *rjb.c	
+	correct constants load, using mid-class.
+	convert null string to nil
+	
+Wed Sep 22 00:05:32 2004 arton	
+ *rjb.c	
+	correct ruby type checking. If the parameter type is java.lang.String, rjb instance is always accepted.
+	
+Mon Sep 20 22:02:53 2004 arton
+ *rjb.c
+	checking method/constructor signature with class when the argument is rjb's instance.
+Sun Sep 19 00:54:35 2004 arton
+ *rjb.c
+	convert Java exception to Ruby's StandardError derived class.
+	checking method/constructor signature when invoking if no signatur argument is supplied.
+	adding field accessor.
+	
+Sun Sep 12 21:42:00 2004 arton
+ *rjb.c	
+	call exception description when verbose = true.
+	correct recursive import call (for Boolean).
+	corrent method not found message creation.
