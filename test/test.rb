@@ -405,5 +405,11 @@ class TestRjb < Test::Unit::TestCase
     assert_equal(2, a[1][0].intValue)
     assert_equal('Hello World !!', a[1][1].toString)
   end
+
+  def test_CallByNullForArraies()
+    test = import('jp.co.infoseek.hp.arton.rjb.Test').new
+    assert_equal(nil, test.callWithArraies(nil, nil, nil, nil, nil, nil,
+                                           nil, nil))
+  end
 end
 

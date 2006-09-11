@@ -77,4 +77,9 @@ public class Test {
 	    { new Integer(2), "Hello World !!", },
 	};
     }
+    public void callWithArraies(byte[] ab, short[] as, int[] ai,
+				long[] al, double[] ad, float[] af,
+				String[] ax, Object[] ao)
+    {
+    }
 }

@@ -12,10 +12,10 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * $Id: rjb.c 15 2006-08-01 13:52:36Z arton $
+ * $Id$
  */
 
-#define RJB_VERSION "1.0.1"
+#define RJB_VERSION "1.0.2"
 
 #include "ruby.h"
 #include "st.h"
@@ -1033,7 +1033,11 @@ static void rv2jarray(JNIEnv* jenv, VALUE val, jvalue* jv, const char* psig, int
     {
         int i;
         jarray ja = NULL;
-        if (*(psig + 1) == '[')
+	if (NIL_P(val))
+	{
+	    // no-op, null for an array
+	}
+        else if (*(psig + 1) == '[')
         {
             if (TYPE(val) != T_ARRAY) {
                 rb_raise(rb_eRuntimeError, "array's rank unmatch");
@@ -1864,7 +1868,7 @@ static int check_rtype(JNIEnv* jenv, VALUE v, char* p)
     case T_OBJECT:
 	// fall down to the next case
     default:
-        if (pcls)
+        if (pcls || *p == '[')
         {
             return 1;
         }

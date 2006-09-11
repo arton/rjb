@@ -1,3 +1,10 @@
+Mon Sep 11 arton
+ *test.rb
+	add a test of arguments types are various array.
+ *Test.java
+	add a test of arguments types are various array.
+ *rjb.c
+	accept nil for array parameter.
 Sun Sep 10 arton
  *test.rb
 	add a test of return type is an object wrapped an array

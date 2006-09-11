@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * $Id: rjbexception.c 10 2006-07-16 04:15:47Z arton $
+ * $Id$
  */
 
 #include "ruby.h"

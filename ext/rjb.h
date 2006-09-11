@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * $Id: rjb.h 2 2006-04-11 19:04:40Z arton $
+ * $Id$
  * $Log: rjb.h,v $
  * Revision 1.1  2005/01/16 17:36:10  arton
  * Initial revision
