@@ -35,6 +35,7 @@ spec = Gem::Specification.new do |s|
                    'data/rjb/**/*.class', 'lib/*.rb', 'samples/**/*.rb', 
                    'test/*.rb', 'test/**/*.class', 'COPYING', 'ChangeLog', 'readme.*']
   if /mswin32/ =~ RUBY_PLATFORM
+    File.cp 'ext/rjbcore.so', 'lib/rjbcore.so'
     files << "lib/rjbcore.so"
     s.requirements << ' VC6 version of Ruby' 
   end

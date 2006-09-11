@@ -15,7 +15,7 @@
  * $Id: rjb.c 15 2006-08-01 13:52:36Z arton $
  */
 
-#define RJB_VERSION "1.0.0"
+#define RJB_VERSION "1.0.1"
 
 #include "ruby.h"
 #include "st.h"
@@ -43,6 +43,7 @@ static VALUE register_instance(JNIEnv* jenv, struct jvi_data*, jobject);
 static VALUE rjb_s_free(struct jv_data*);
 static VALUE rjb_class_forname(int argc, VALUE* argv, VALUE self);
 static void setup_metadata(JNIEnv* jenv, VALUE self, struct jv_data*, VALUE classname);
+static VALUE jarray2rv(JNIEnv* jenv, jvalue val);
 static jarray r2objarray(JNIEnv* jenv, VALUE v, const char* cls);
 
 static VALUE rjb;
@@ -243,6 +244,11 @@ static VALUE jv2rv(JNIEnv* jenv, jvalue val)
     nm = (*jenv)->CallObjectMethod(jenv, klass, class_getName);
     check_exception(jenv, 0);
     cname = (*jenv)->GetStringUTFChars(jenv, nm, NULL);
+    if (*cname == '[')
+    {
+        release_string(jenv, nm, cname);
+        return jarray2rv(jenv, val);
+    }
     clsname = rb_str_new2(cname);
     release_string(jenv, nm, cname);
     v = rb_hash_aref(loaded_classes, clsname);

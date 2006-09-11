@@ -1,3 +1,6 @@
+//
+// $Id:$
+//
 package jp.co.infoseek.hp.arton.rjb;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -62,5 +65,16 @@ public class Test {
     }
     public int[][][] throughIntArray(int[][][] a) {
         return a;
+    }
+    public Object getObjectArray() {
+	return new Object[] {
+	    new Integer(1), "Hello World !",
+	};
+    }
+    public Object getObjectArrayOfArray() {
+	return new Object[][] {
+	    { new Integer(1), "Hello World !", },
+	    { new Integer(2), "Hello World !!", },
+	};
     }
 }

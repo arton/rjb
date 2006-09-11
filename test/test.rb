@@ -1,3 +1,6 @@
+#!/usr/local/env ruby
+# $Id:$
+
 require 'test/unit'
 require 'rjb'
 
@@ -389,6 +392,18 @@ class TestRjb < Test::Unit::TestCase
     assert_equal(12,mixed[0][0][0].intValue)
     assert_equal("another string",mixed[1][0][1].toString)
     assert_equal([],mixed[2])
+  end
+
+  def test_CastObjectArray()
+    test = import('jp.co.infoseek.hp.arton.rjb.Test').new
+    a = test.getObjectArray()
+    assert_equal(1, a[0].intValue)
+    assert_equal('Hello World !', a[1].toString)
+    a = test.getObjectArrayOfArray()
+    assert_equal(1, a[0][0].intValue)
+    assert_equal('Hello World !', a[0][1].toString)
+    assert_equal(2, a[1][0].intValue)
+    assert_equal('Hello World !!', a[1][1].toString)
   end
 end
 

@@ -1,3 +1,10 @@
+Sun Sep 10 arton
+ *test.rb
+	add a test of return type is an object wrapped an array
+ *Test.java
+	add a method that returns an object wrapped an array
+ *rjb.c
+	check array-mark in jv2rv for returned object was an array
 Tue Aug 1 arton
  *load.c
  *rjb.c
