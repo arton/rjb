@@ -45,6 +45,10 @@
    #define ARCH "sparcv9"
  #elif defined(__sparc__)
    #define ARCH "sparc"
+ #elif defined(__amd64__)
+   #define ARCH "amd64"
+   #undef JVM_TYPE
+   #define JVM_TYPE "server"
  #elif defined(i586) || defined(__i386__)
   #define ARCH "i386"
  #endif

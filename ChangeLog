@@ -1,3 +1,7 @@
+Sun Oct 08 arton (on behalf of richard apodaca)
+ *load.c
+	support AMD64
+	
 Mon Sep 11 arton
  *test.rb
 	add a test of arguments types are various array.
