@@ -34,18 +34,24 @@
 #define _I64_MAX      9223372036854775807i64
 #endif
 
+/* in load.c */
+extern int rjb_create_jvm(JNIEnv** pjenv, JavaVMInitArgs*, char*, VALUE);
+
 /* in rjb.c */
-extern VALUE loaded_classes;
-extern jmethodID class_getName;
-extern jclass j_throwable;
-extern jmethodID throwable_getMessage;
-extern JNIEnv* attach_current_thread(void);
-extern jclass find_class(JNIEnv* jenv, VALUE name);
-extern void release_string(JNIEnv *jenv, jstring str, const char* chrs);
+extern JavaVM* rjb_jvm;
+extern jclass rjb_rbridge;
+extern jmethodID rjb_register_bridge;
+extern VALUE rjb_loaded_classes;
+extern jmethodID rjb_class_getName;
+extern jclass rjb_j_throwable;
+extern jmethodID rjb_throwable_getMessage;
+extern JNIEnv* rjb_attach_current_thread(void);
+extern jclass rjb_find_class(JNIEnv* jenv, VALUE name);
+extern void rjb_release_string(JNIEnv *jenv, jstring str, const char* chrs);
 
 /* in rjbexception.c */
-extern VALUE get_exception_class(JNIEnv* jenv, jstring str);
-extern void check_exception(JNIEnv* jenv, int t);
+extern VALUE rjb_get_exception_class(JNIEnv* jenv, jstring str);
+extern void rjb_check_exception(JNIEnv* jenv, int t);
 extern VALUE rjb_s_throw(int, VALUE*, VALUE);
 
 /* conversion functions */

@@ -1,3 +1,10 @@
+Tue Nov 21 arton
+ *load.c
+ *rjb.c
+ *rjbexception.c
+ *rjb.h	 
+	add prefix 'rjb' for externed symbol names to avoid confliction.
+	
 Sun Oct 08 arton (on behalf of richard apodaca)
  *load.c
 	support AMD64

@@ -15,7 +15,7 @@
  * $Id$
  */
 
-#define RJB_VERSION "1.0.2"
+#define RJB_VERSION "1.0.3"
 
 #include "ruby.h"
 #include "st.h"
@@ -36,7 +36,6 @@
 #define ACC_VOLATILE  0x0040
 #define ACC_TRANSIENT  0x0080
 
-extern int create_jvm(JNIEnv** pjenv, JavaVMInitArgs*, char*, VALUE);
 static void register_class(VALUE, VALUE);
 static VALUE import_class(JNIEnv* jenv, jclass, VALUE);
 static VALUE register_instance(JNIEnv* jenv, struct jvi_data*, jobject);
@@ -48,16 +47,16 @@ static jarray r2objarray(JNIEnv* jenv, VALUE v, const char* cls);
 
 static VALUE rjb;
 static VALUE jklass;
-VALUE rjbc;
-VALUE rjbi;
-VALUE rjbb;
+static VALUE rjbc;
+static VALUE rjbi;
+static VALUE rjbb;
 
-VALUE loaded_classes;
+VALUE rjb_loaded_classes;
 static VALUE proxies;
-JavaVM* jvm;
-JNIEnv* main_jenv;
-jclass rbridge;
-jmethodID register_bridge;
+JavaVM* rjb_jvm;
+jclass rjb_rbridge;
+jmethodID rjb_register_bridge;
+static JNIEnv* main_jenv;
 
 /*
  * Object cache, never destroyed
@@ -74,11 +73,11 @@ static jmethodID field_getType;
 /* constructor */
 static jmethodID ctrGetParameterTypes;
 /* class */
-jclass j_class;
-jmethodID class_getName;
+static jclass j_class;
+jmethodID rjb_class_getName;
 /* throwable */
-jclass j_throwable;
-jmethodID throwable_getMessage;
+jclass rjb_j_throwable;
+jmethodID rjb_throwable_getMessage;
 /* String global reference */
 static jclass j_string;
 static jmethodID str_tostring;
@@ -112,15 +111,15 @@ typedef struct jobject_ruby_table {
     J2R func;
 } jprimitive_table;
 
-JNIEnv* attach_current_thread(void)
+JNIEnv* rjb_attach_current_thread(void)
 {
   JNIEnv* env;
-  (*jvm)->AttachCurrentThread(jvm, (void**)&env, '\0');
+  (*rjb_jvm)->AttachCurrentThread(rjb_jvm, (void**)&env, '\0');
   return env;
 }
 
 
-void release_string(JNIEnv *jenv, jstring str, const char* chrs)
+void rjb_release_string(JNIEnv *jenv, jstring str, const char* chrs)
 {
     (*jenv)->ReleaseStringUTFChars(jenv, str, chrs);
     (*jenv)->DeleteLocalRef(jenv, str);
@@ -184,7 +183,7 @@ static VALUE jstring2val(JNIEnv* jenv, jstring s)
     p = (*jenv)->GetStringUTFChars(jenv, s, NULL);
     v = rb_str_new2(p);
     v = exticonv_utf8_to_local(v);
-    release_string(jenv, s, p);
+    rjb_release_string(jenv, s, p);
     return v;
 }
 
@@ -211,12 +210,12 @@ static VALUE jv2rclass(JNIEnv* jenv, jclass jc)
     const char* cname;
     VALUE clsname;
     VALUE v;
-    jstring nm = (*jenv)->CallObjectMethod(jenv, jc, class_getName);
-    check_exception(jenv, 0);
+    jstring nm = (*jenv)->CallObjectMethod(jenv, jc, rjb_class_getName);
+    rjb_check_exception(jenv, 0);
     cname = (*jenv)->GetStringUTFChars(jenv, nm, NULL);
     clsname = rb_str_new2(cname);
-    release_string(jenv, nm, cname);
-    v = rb_hash_aref(loaded_classes, clsname);
+    rjb_release_string(jenv, nm, cname);
+    v = rb_hash_aref(rjb_loaded_classes, clsname);
     if (v == Qnil)
     {
         v = import_class(jenv, jc, clsname);
@@ -241,17 +240,17 @@ static VALUE jv2rv(JNIEnv* jenv, jvalue val)
         (*jenv)->DeleteLocalRef(jenv, klass);
         return jv2rclass(jenv, val.l);
     }
-    nm = (*jenv)->CallObjectMethod(jenv, klass, class_getName);
-    check_exception(jenv, 0);
+    nm = (*jenv)->CallObjectMethod(jenv, klass, rjb_class_getName);
+    rjb_check_exception(jenv, 0);
     cname = (*jenv)->GetStringUTFChars(jenv, nm, NULL);
     if (*cname == '[')
     {
-        release_string(jenv, nm, cname);
+        rjb_release_string(jenv, nm, cname);
         return jarray2rv(jenv, val);
     }
     clsname = rb_str_new2(cname);
-    release_string(jenv, nm, cname);
-    v = rb_hash_aref(loaded_classes, clsname);
+    rjb_release_string(jenv, nm, cname);
+    v = rb_hash_aref(rjb_loaded_classes, clsname);
     if (v == Qnil)
     {
         v = import_class(jenv, klass, clsname);
@@ -639,9 +638,9 @@ static void rv2jstring(JNIEnv* jenv, VALUE val, jvalue* jv, const char* psig, in
 		jmethodID tostr;
 		jstring js;
 		tostr = (*jenv)->GetMethodID(jenv, ptr->klass, "toString", "()Ljava/lang/String;");
-		check_exception(jenv, 0);
+		rjb_check_exception(jenv, 0);
 		js = (*jenv)->CallObjectMethod(jenv, ptr->obj, tostr);
-		check_exception(jenv, 0);
+		rjb_check_exception(jenv, 0);
 		jv->l = js;
 	    }
 	}
@@ -961,7 +960,7 @@ static jarray r2objarray(JNIEnv* jenv, VALUE v, const char* cls)
     {
 	int i;
 	ary = (*jenv)->NewObjectArray(jenv, RARRAY(v)->len, j_object, NULL);
-	check_exception(jenv, 0);
+	rjb_check_exception(jenv, 0);
 	for (i = 0; i < RARRAY(v)->len; i++)
 	{
 	    jvalue jv;
@@ -1043,7 +1042,7 @@ static void rv2jarray(JNIEnv* jenv, VALUE val, jvalue* jv, const char* psig, int
                 rb_raise(rb_eRuntimeError, "array's rank unmatch");
             }
             ja = (*jenv)->NewObjectArray(jenv, RARRAY(val)->len, j_object, NULL);
-            check_exception(jenv, 0);
+            rjb_check_exception(jenv, 0);
             for (i = 0; i < RARRAY(val)->len; i++)
             {
                 jvalue jv;
@@ -1075,8 +1074,8 @@ static R2J get_r2j(JNIEnv* jenv, jobject o, int* siglen,  char* sigp)
     int len, i;
     const char* cname;
     R2J result = NULL;
-    jstring nm = (*jenv)->CallObjectMethod(jenv, o, class_getName);
-    check_exception(jenv, 0);
+    jstring nm = (*jenv)->CallObjectMethod(jenv, o, rjb_class_getName);
+    rjb_check_exception(jenv, 0);
     cname = (*jenv)->GetStringUTFChars(jenv, nm, NULL);
     if (*cname == '[')
     {
@@ -1112,7 +1111,7 @@ static R2J get_r2j(JNIEnv* jenv, jobject o, int* siglen,  char* sigp)
             result = rv2jobject;
 	}
     }
-    release_string(jenv, nm, cname);
+    rjb_release_string(jenv, nm, cname);
     return result;
 }
 
@@ -1122,8 +1121,8 @@ static J2R get_j2r(JNIEnv* jenv, jobject cls, char* psig, char* pdepth, char* pp
     J2R result = NULL;
     const char* cname;
     const char* jname = NULL;
-    jstring nm = (*jenv)->CallObjectMethod(jenv, cls, class_getName);
-    check_exception(jenv, 0);	    
+    jstring nm = (*jenv)->CallObjectMethod(jenv, cls, rjb_class_getName);
+    rjb_check_exception(jenv, 0);	    
     cname = (*jenv)->GetStringUTFChars(jenv, nm, NULL);
 
     if (*cname == '[')
@@ -1179,7 +1178,7 @@ static J2R get_j2r(JNIEnv* jenv, jobject cls, char* psig, char* pdepth, char* pp
 	}
 	java2jniname(ppsig);
     }
-    release_string(jenv, nm, cname);
+    rjb_release_string(jenv, nm, cname);
     return result;
 }
 
@@ -1256,20 +1255,20 @@ static void create_methodinfo(JNIEnv* jenv, st_table* tbl, jobject m, int static
 
     result = ALLOC(struct cls_method);
     parama = (*jenv)->CallObjectMethod(jenv, m, getParameterTypes);
-    check_exception(jenv, 0);
+    rjb_check_exception(jenv, 0);
     param_count = (*jenv)->GetArrayLength(jenv, parama);
-    check_exception(jenv, 0);
+    rjb_check_exception(jenv, 0);
     setup_methodbase(jenv, &result->basic, parama, param_count);
 
     nm = (*jenv)->CallObjectMethod(jenv, m, method_getName);
-    check_exception(jenv, 0);	    
+    rjb_check_exception(jenv, 0);	    
     jname = (*jenv)->GetStringUTFChars(jenv, nm, NULL);
     result->name = rb_intern(jname);
-    release_string(jenv, nm, jname);
+    rjb_release_string(jenv, nm, jname);
     result->basic.id = (*jenv)->FromReflectedMethod(jenv, m);
-    check_exception(jenv, 0);
+    rjb_check_exception(jenv, 0);
     cls = (*jenv)->CallObjectMethod(jenv, m, getReturnType);
-    check_exception(jenv, 0);
+    rjb_check_exception(jenv, 0);
     setup_j2r(jenv, cls, result, static_method);
     (*jenv)->DeleteLocalRef(jenv, cls);
     result->static_method = static_method;
@@ -1298,14 +1297,14 @@ static void create_fieldinfo(JNIEnv* jenv, st_table* tbl, jobject f, int readonl
     result = ALLOC(struct cls_field);
     memset(result, 0, sizeof(struct cls_field));
     nm = (*jenv)->CallObjectMethod(jenv, f, field_getName);
-    check_exception(jenv, 0);	    
+    rjb_check_exception(jenv, 0);	    
     jname = (*jenv)->GetStringUTFChars(jenv, nm, NULL);
     result->name = rb_intern(jname);
-    release_string(jenv, nm, jname);
+    rjb_release_string(jenv, nm, jname);
     result->id = (*jenv)->FromReflectedField(jenv, f);
-    check_exception(jenv, 0);
+    rjb_check_exception(jenv, 0);
     cls = (*jenv)->CallObjectMethod(jenv, f, field_getType);
-    check_exception(jenv, 0);
+    rjb_check_exception(jenv, 0);
     result->value_convert = get_j2r(jenv, cls, &result->result_signature, &result->result_arraydepth, sigs, &iv, 0);
     result->arg_convert = get_r2j(jenv, cls, NULL, NULL);
     (*jenv)->DeleteLocalRef(jenv, cls);
@@ -1329,13 +1328,13 @@ static void setup_constructors(JNIEnv* jenv, struct cls_constructor*** pptr, job
 	jobjectArray parama;
 	jsize pcount;
 	jobject c = (*jenv)->GetObjectArrayElement(jenv, methods, i);
-	check_exception(jenv, 0);
+	rjb_check_exception(jenv, 0);
 	pc = ALLOC(struct cls_constructor);
 	tbl[i] = pc;
 	parama = (*jenv)->CallObjectMethod(jenv, c, ctrGetParameterTypes);
-	check_exception(jenv, 0);
+	rjb_check_exception(jenv, 0);
 	pcount = (*jenv)->GetArrayLength(jenv, parama);
-	check_exception(jenv, 0);
+	rjb_check_exception(jenv, 0);
 	setup_methodbase(jenv, pc, parama, pcount);
 	pc->id = (*jenv)->FromReflectedMethod(jenv, c);
 	(*jenv)->DeleteLocalRef(jenv, c);
@@ -1354,7 +1353,7 @@ static void setup_methods(JNIEnv* jenv, st_table** tbl, st_table** static_tbl,
     for (i = 0; i < mcount; i++)
     {
 	jobject m = (*jenv)->GetObjectArrayElement(jenv, methods, i);
-	check_exception(jenv, 0);	
+	rjb_check_exception(jenv, 0);	
 	modifier = (*jenv)->CallIntMethod(jenv, m, method_getModifiers);
 	if (!(modifier & ACC_STATIC))
 	{
@@ -1377,7 +1376,7 @@ static void setup_fields(JNIEnv* jenv, st_table** tbl, jobjectArray flds)
     for (i = 0; i < fcount; i++)
     {
 	jobject f = (*jenv)->GetObjectArrayElement(jenv, flds, i);
-	check_exception(jenv, 0);	
+	rjb_check_exception(jenv, 0);	
 	modifier = (*jenv)->CallIntMethod(jenv, f, field_getModifiers);
 	create_fieldinfo(jenv, *tbl, f, modifier & ACC_FINAL, modifier & ACC_STATIC);
 	(*jenv)->DeleteLocalRef(jenv, f);
@@ -1392,9 +1391,9 @@ static void load_constants(JNIEnv* jenv, jclass klass, VALUE self, jobjectArray 
     for (i = 0; i < fcount; i++)
     {
 	jobject f = (*jenv)->GetObjectArrayElement(jenv, flds, i);
-	check_exception(jenv, 0);
+	rjb_check_exception(jenv, 0);
 	modifier = (*jenv)->CallIntMethod(jenv, f, field_getModifiers);
-	check_exception(jenv, 0);
+	rjb_check_exception(jenv, 0);
 	if ((modifier & (ACC_PUBLIC | ACC_STATIC | ACC_FINAL)) == (ACC_PUBLIC | ACC_STATIC | ACC_FINAL))
 	{
 	    jstring nm;
@@ -1410,18 +1409,18 @@ static void load_constants(JNIEnv* jenv, jclass klass, VALUE self, jobjectArray 
 
 	    // constants make define directly in the ruby object
 	    cls = (*jenv)->CallObjectMethod(jenv, f, field_getType);
-	    check_exception(jenv, 0);
+	    rjb_check_exception(jenv, 0);
 	    iv = 0;
 	    sig = depth = 0;
 	    j2r = get_j2r(jenv, cls, &sig, &depth, sigs, &iv, 1);
 	    if (!j2r) j2r = jv2rv;
 	    (*jenv)->DeleteLocalRef(jenv, cls);
 	    nm = (*jenv)->CallObjectMethod(jenv, f, field_getName);
-	    check_exception(jenv, 0);
+	    rjb_check_exception(jenv, 0);
 	    cname = (*jenv)->GetStringUTFChars(jenv, nm, NULL);
-	    check_exception(jenv, 0);
+	    rjb_check_exception(jenv, 0);
 	    jfid = (*jenv)->GetStaticFieldID(jenv, klass, cname, sigs);
-	    check_exception(jenv, 0);
+	    rjb_check_exception(jenv, 0);
 	    switch (sig) 
 	    {
 	    case 'D':
@@ -1467,7 +1466,7 @@ static void load_constants(JNIEnv* jenv, jclass klass, VALUE self, jobjectArray 
 	        rb_define_const(RBASIC(self)->klass, cname, j2r(jenv, jv));
 	    }
 
-	    release_string(jenv, nm, cname);
+	    rjb_release_string(jenv, nm, cname);
 	}
 	(*jenv)->DeleteLocalRef(jenv, f);
     }
@@ -1481,21 +1480,21 @@ static void setup_metadata(JNIEnv* jenv, VALUE self, struct jv_data* ptr, VALUE 
     
     jclass klass = (*jenv)->GetObjectClass(jenv, ptr->idata.obj);
     ptr->idata.klass = (*jenv)->NewGlobalRef(jenv, klass);
-    check_exception(jenv, 0);
+    rjb_check_exception(jenv, 0);
     mid = (*jenv)->GetMethodID(jenv, klass, "getMethods", "()[Ljava/lang/reflect/Method;");
-    check_exception(jenv, 0);
+    rjb_check_exception(jenv, 0);
     methods = (*jenv)->CallNonvirtualObjectMethod(jenv, ptr->idata.obj, klass, mid);
-    check_exception(jenv, 0);
+    rjb_check_exception(jenv, 0);
     setup_methods(jenv, &ptr->idata.methods, &ptr->static_methods, methods);
     mid = (*jenv)->GetMethodID(jenv, klass, "getConstructors", "()[Ljava/lang/reflect/Constructor;");
-    check_exception(jenv, 0);
+    rjb_check_exception(jenv, 0);
     methods = (*jenv)->CallNonvirtualObjectMethod(jenv, ptr->idata.obj, klass, mid);
-    check_exception(jenv, 0);
+    rjb_check_exception(jenv, 0);
     setup_constructors(jenv, &ptr->constructors, methods);
     mid = (*jenv)->GetMethodID(jenv, klass, "getFields", "()[Ljava/lang/reflect/Field;");
-    check_exception(jenv, 0);
+    rjb_check_exception(jenv, 0);
     flds = (*jenv)->CallNonvirtualObjectMethod(jenv, ptr->idata.obj, klass, mid);
-    check_exception(jenv, 0);
+    rjb_check_exception(jenv, 0);
     setup_fields(jenv, &ptr->idata.fields, flds);
 
     register_class(self, classname);
@@ -1525,7 +1524,7 @@ static VALUE rjb_s_load(int argc, VALUE* argv, VALUE self)
     jclass jfield;
     jclass jconstructor;
 
-    if (jvm)
+    if (rjb_jvm)
     {
 	return Qnil;
     }
@@ -1547,56 +1546,56 @@ static VALUE rjb_s_load(int argc, VALUE* argv, VALUE self)
         Check_Type(vm_argv, T_ARRAY);
     }
     jenv = NULL;
-    res = create_jvm(&jenv, &vm_args, userpath, vm_argv);
+    res = rjb_create_jvm(&jenv, &vm_args, userpath, vm_argv);
     if (res < 0)
     {
-	jvm = NULL;
+	rjb_jvm = NULL;
 	rb_raise(rb_eRuntimeError, "can't create Java VM");
     } else {
         main_jenv = jenv;
     }
 
     jconstructor = (*jenv)->FindClass(jenv, "java/lang/reflect/Constructor");
-    check_exception(jenv, 1);
+    rjb_check_exception(jenv, 1);
     ctrGetParameterTypes = (*jenv)->GetMethodID(jenv, jconstructor, "getParameterTypes", "()[Ljava/lang/Class;");
-    check_exception(jenv, 1);
+    rjb_check_exception(jenv, 1);
     jmethod = (*jenv)->FindClass(jenv, "java/lang/reflect/Method");
     method_getModifiers = (*jenv)->GetMethodID(jenv, jmethod, "getModifiers", "()I");
-    check_exception(jenv, 1);
+    rjb_check_exception(jenv, 1);
     method_getName = (*jenv)->GetMethodID(jenv, jmethod, "getName", "()Ljava/lang/String;");
-    check_exception(jenv, 1);	
+    rjb_check_exception(jenv, 1);	
     getParameterTypes = (*jenv)->GetMethodID(jenv, jmethod, "getParameterTypes", "()[Ljava/lang/Class;");
-    check_exception(jenv, 1);	
+    rjb_check_exception(jenv, 1);	
     getReturnType = (*jenv)->GetMethodID(jenv, jmethod, "getReturnType", "()Ljava/lang/Class;");
-    check_exception(jenv, 1);
+    rjb_check_exception(jenv, 1);
 
     jfield = (*jenv)->FindClass(jenv, "java/lang/reflect/Field");
     field_getModifiers = (*jenv)->GetMethodID(jenv, jfield, "getModifiers", "()I");
-    check_exception(jenv, 1);
+    rjb_check_exception(jenv, 1);
     field_getName = (*jenv)->GetMethodID(jenv, jfield, "getName", "()Ljava/lang/String;");
-    check_exception(jenv, 1);	
+    rjb_check_exception(jenv, 1);	
     field_getType = (*jenv)->GetMethodID(jenv, jfield, "getType", "()Ljava/lang/Class;");
-    check_exception(jenv, 1);	
+    rjb_check_exception(jenv, 1);	
 
     j_class = (*jenv)->FindClass(jenv, "java/lang/Class");
-    check_exception(jenv, 1);
-    class_getName = (*jenv)->GetMethodID(jenv, j_class, "getName", "()Ljava/lang/String;");
-    check_exception(jenv, 1);
+    rjb_check_exception(jenv, 1);
+    rjb_class_getName = (*jenv)->GetMethodID(jenv, j_class, "getName", "()Ljava/lang/String;");
+    rjb_check_exception(jenv, 1);
     j_class = (*jenv)->NewGlobalRef(jenv, j_class);
 
-    j_throwable = (*jenv)->FindClass(jenv, "java/lang/Throwable");
-    check_exception(jenv, 1);
-    throwable_getMessage = (*jenv)->GetMethodID(jenv, j_throwable, "getMessage", "()Ljava/lang/String;");
-    check_exception(jenv, 1);
+    rjb_j_throwable = (*jenv)->FindClass(jenv, "java/lang/Throwable");
+    rjb_check_exception(jenv, 1);
+    rjb_throwable_getMessage = (*jenv)->GetMethodID(jenv, rjb_j_throwable, "getMessage", "()Ljava/lang/String;");
+    rjb_check_exception(jenv, 1);
 
     j_string = (*jenv)->FindClass(jenv, "java/lang/String");
-    check_exception(jenv, 1);
+    rjb_check_exception(jenv, 1);
     str_tostring = (*jenv)->GetMethodID(jenv, j_string, "toString", "()Ljava/lang/String;");
-    check_exception(jenv, 1);
+    rjb_check_exception(jenv, 1);
     j_string = (*jenv)->NewGlobalRef(jenv, j_string);
 
     j_object = (*jenv)->FindClass(jenv, "java/lang/Object");
-    check_exception(jenv, 1);
+    rjb_check_exception(jenv, 1);
     j_object = (*jenv)->NewGlobalRef(jenv, j_object);
 
     for (i = PRM_INT; i < PRM_LAST; i++)
@@ -1606,17 +1605,17 @@ static VALUE rjb_s_load(int argc, VALUE* argv, VALUE self)
 	{
 	    jpcvt[i].ctr_id = (*jenv)->GetStaticMethodID(jenv,
 			 klass, "valueOf", jpcvt[i].ctrsig);
-	    check_exception(jenv, 1);
+	    rjb_check_exception(jenv, 1);
 	}
 	else if (jpcvt[i].ctrsig)
 	{
 	    jpcvt[i].ctr_id = (*jenv)->GetMethodID(jenv, klass,
 						   "<init>", jpcvt[i].ctrsig);
-	    check_exception(jenv, 1);
+	    rjb_check_exception(jenv, 1);
 	}
 	jpcvt[i].to_prim_id = (*jenv)->GetMethodID(jenv, klass,
 				   jpcvt[i].to_prim_method, jpcvt[i].prmsig);
-	check_exception(jenv, 1);
+	rjb_check_exception(jenv, 1);
         jpcvt[i].klass = (*jenv)->NewGlobalRef(jenv, klass);
     }
 
@@ -1641,11 +1640,11 @@ static int clear_classes(VALUE key, VALUE val, VALUE dummy)
 }
 static VALUE rjb_s_unload(int argc, VALUE* argv, VALUE self)
 {
-    st_foreach(RHASH(loaded_classes)->tbl, clear_classes, 0);
-    if (jvm)
+    st_foreach(RHASH(rjb_loaded_classes)->tbl, clear_classes, 0);
+    if (rjb_jvm)
     {
-	(*jvm)->DestroyJavaVM(jvm);
-	jvm = NULL;
+	(*rjb_jvm)->DestroyJavaVM(rjb_jvm);
+	rjb_jvm = NULL;
     }
     return Qnil;
 }
@@ -1657,7 +1656,7 @@ static VALUE rjb_s_unload(int argc, VALUE* argv, VALUE self)
  */
 static VALUE rjb_s_classes(VALUE self)
 {
-    return loaded_classes;
+    return rjb_loaded_classes;
 }
 
 /*
@@ -1682,7 +1681,7 @@ static int free_method_item(ID key, struct cls_method* pm, int dummy)
  */
 static VALUE rjb_delete_ref(struct jvi_data* ptr)
 {
-    JNIEnv* jenv = attach_current_thread();
+    JNIEnv* jenv = rjb_attach_current_thread();
     if (jenv)
     {
 	(*jenv)->DeleteGlobalRef(jenv, ptr->obj);
@@ -1695,7 +1694,7 @@ static VALUE rjb_delete_ref(struct jvi_data* ptr)
  */
 static VALUE rj_bridge_free(struct rj_bridge* ptr)
 {
-    JNIEnv* jenv = attach_current_thread();    
+    JNIEnv* jenv = rjb_attach_current_thread();    
     (*jenv)->DeleteLocalRef(jenv, ptr->proxy);    
     (*jenv)->DeleteLocalRef(jenv, ptr->bridge);
     return Qnil;
@@ -1715,7 +1714,7 @@ static void rj_bridge_mark(struct rj_bridge* ptr)
 static VALUE rjb_s_free(struct jv_data* ptr)
 {
     /* class never delete
-    JNIEnv* jenv = attach_current_thread();
+    JNIEnv* jenv = rjb_attach_current_thread();
     struct cls_constructor** c;
     
     rjb_delete_ref(&ptr->idata);
@@ -1733,7 +1732,7 @@ static VALUE rjb_s_free(struct jv_data* ptr)
 	st_free_table(ptr->idata.methods);
     }
     (*jenv)->DeleteGlobalRef(jenv, ptr->idata.klass);	
-    st_delete(RHASH(loaded_classes)->tbl, clsname, NULL);
+    st_delete(RHASH(rjb_loaded_classes)->tbl, clsname, NULL);
     */
     return Qnil;
 }
@@ -1759,7 +1758,7 @@ static VALUE createinstance(JNIEnv* jenv, int argc, VALUE* argv,
     obj = (*jenv)->NewObjectA(jenv, org->obj, pc->id, args);
     if (!obj)
     {
-	check_exception(jenv, 1);
+	rjb_check_exception(jenv, 1);
     }
     psig = pc->method_signature;
     for (i = 0; i < argc; i++)
@@ -1885,7 +1884,7 @@ static VALUE rjb_newinstance_s(int argc, VALUE* argv, VALUE self)
     char* sig;
     VALUE ret = Qnil;
     struct jv_data* ptr;
-    JNIEnv* jenv = attach_current_thread();
+    JNIEnv* jenv = rjb_attach_current_thread();
 
     rb_scan_args(argc, argv, "1*", &vsig, &rest);
     sig = StringValueCStr(vsig);
@@ -1911,7 +1910,7 @@ static VALUE rjb_newinstance(int argc, VALUE* argv, VALUE self)
     VALUE ret = Qnil;
     struct jv_data* ptr;
     struct cls_constructor** pc;
-    JNIEnv* jenv = attach_current_thread();
+    JNIEnv* jenv = rjb_attach_current_thread();
 
     Data_Get_Struct(self, struct jv_data, ptr);
 
@@ -1948,7 +1947,7 @@ static VALUE rjb_newinstance(int argc, VALUE* argv, VALUE self)
 /*
  * find java class from classname
  */
-jclass find_class(JNIEnv* jenv, VALUE name)
+jclass rjb_find_class(JNIEnv* jenv, VALUE name)
 {
     char* cname;
     char* jnicls;
@@ -1965,24 +1964,24 @@ jclass find_class(JNIEnv* jenv, VALUE name)
 static VALUE rjb_s_bind(VALUE self, VALUE rbobj, VALUE itfname)
 {
     VALUE result = Qnil;
-    JNIEnv* jenv = attach_current_thread();
+    JNIEnv* jenv = rjb_attach_current_thread();
     
-    jclass itf = find_class(jenv, itfname); 
-    check_exception(jenv, 1);
+    jclass itf = rjb_find_class(jenv, itfname); 
+    rjb_check_exception(jenv, 1);
     if (itf)
     {
 	struct rj_bridge* ptr = ALLOC(struct rj_bridge);
 	memset(ptr, 0, sizeof(struct rj_bridge));
 	ptr->bridge = (*jenv)->NewGlobalRef(jenv,
-                                   (*jenv)->AllocObject(jenv, rbridge));
+                                   (*jenv)->AllocObject(jenv, rjb_rbridge));
 	if (!ptr->bridge)
 	{
 	    free(ptr);
-	    check_exception(jenv, 1);
+	    rjb_check_exception(jenv, 1);
 	    return Qnil;
 	}
 	ptr->proxy = (*jenv)->CallObjectMethod(jenv, ptr->bridge,
-					       register_bridge, itf);
+					       rjb_register_bridge, itf);
         ptr->proxy = (*jenv)->NewGlobalRef(jenv, ptr->proxy);
 	ptr->wrapped = rbobj;
 	result = Data_Wrap_Struct(rjbb, rj_bridge_mark, rj_bridge_free, ptr);
@@ -1998,22 +1997,22 @@ static VALUE rjb_s_import(VALUE self, VALUE clsname)
 {
     JNIEnv* jenv;
     jclass jcls;
-    VALUE v = rb_hash_aref(loaded_classes, clsname);
+    VALUE v = rb_hash_aref(rjb_loaded_classes, clsname);
     if (v != Qnil)
     {
 	return v;
     }
 
-    if (!jvm) 
+    if (!rjb_jvm) 
     {
         /* auto-load with default setting */
         rjb_s_load(0, NULL, 0);
     }
-    jenv = attach_current_thread();
-    jcls = find_class(jenv, clsname);
+    jenv = rjb_attach_current_thread();
+    jcls = rjb_find_class(jenv, clsname);
     if (!jcls)
     {
-	check_exception(jenv, 0);
+	rjb_check_exception(jenv, 0);
 	rb_raise(rb_eRuntimeError, "`%s' not found", StringValueCStr(clsname));
     }
     v = import_class(jenv, jcls, clsname);
@@ -2027,7 +2026,7 @@ static void register_class(VALUE self, VALUE clsname)
     /*
      * the hash was frozen, so it need to call st_ func directly.
      */
-    st_insert(RHASH(loaded_classes)->tbl, clsname, self);
+    st_insert(RHASH(rjb_loaded_classes)->tbl, clsname, self);
 }
 
 /*
@@ -2035,12 +2034,12 @@ static void register_class(VALUE self, VALUE clsname)
  */
 static VALUE rjb_i_class(VALUE self)
 {
-    JNIEnv* jenv = attach_current_thread();
+    JNIEnv* jenv = rjb_attach_current_thread();
     struct jvi_data* ptr;
     jstring nm;
     Data_Get_Struct(self, struct jvi_data, ptr);
-    nm = (*jenv)->CallObjectMethod(jenv, ptr->klass, class_getName);
-    check_exception(jenv, 0);
+    nm = (*jenv)->CallObjectMethod(jenv, ptr->klass, rjb_class_getName);
+    rjb_check_exception(jenv, 0);
     return jstring2val(jenv, nm);
 }
 
@@ -2354,7 +2353,7 @@ static VALUE invoke(JNIEnv* jenv, struct cls_method* pm, struct jvi_data* ptr,
       }
       break;
     }
-    check_exception(jenv, 1);
+    rjb_check_exception(jenv, 1);
     psig = pm->basic.method_signature;
     for (i = 0; i < argc; i++)
     {
@@ -2379,7 +2378,7 @@ static VALUE invoke_by_instance(ID rmid, int argc, VALUE* argv,
 				struct jvi_data* ptr, char* sig)
 {
     VALUE ret = Qnil;
-    JNIEnv* jenv = attach_current_thread();
+    JNIEnv* jenv = rjb_attach_current_thread();
     struct cls_field* pf;
     struct cls_method* pm;
     char* tname = rb_id2name(rmid);
@@ -2448,7 +2447,7 @@ static VALUE invoke_by_class(ID rmid, int argc, VALUE* argv,
     struct cls_field* pf;
     struct cls_method* pm;
     char* tname = rb_id2name(rmid);
-    JNIEnv* jenv = attach_current_thread();
+    JNIEnv* jenv = rjb_attach_current_thread();
 
     Data_Get_Struct(jklass, struct jv_data, clsptr);
     if (argc == 0 && st_lookup(ptr->idata.fields, rmid, (st_data_t*)&pf))
@@ -2567,9 +2566,9 @@ void Init_rjbcore()
 {
     rb_protect((VALUE(*)(VALUE))rb_require, (VALUE)"iconv", NULL);
 
-    loaded_classes = rb_hash_new();
-    OBJ_FREEZE(loaded_classes);
-    rb_global_variable(&loaded_classes);
+    rjb_loaded_classes = rb_hash_new();
+    OBJ_FREEZE(rjb_loaded_classes);
+    rb_global_variable(&rjb_loaded_classes);
     proxies = rb_ary_new();
     rb_global_variable(&proxies);
     

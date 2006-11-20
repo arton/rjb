@@ -63,9 +63,6 @@
 typedef void (*GETDEFAULTJAVAVMINITARGS)(void*);
 typedef int (*CREATEJAVAVM)(JavaVM**, void**, void*);
 
-extern JavaVM* jvm;
-extern jclass rbridge;
-extern jmethodID register_bridge;
 static VALUE jvmdll = Qnil;
 static VALUE GetDefaultJavaVMInitArgs;
 static VALUE CreateJavaVM;
@@ -119,7 +116,7 @@ static VALUE load_jvm(char* jvmtype)
     return Qtrue;
 }
 
-int load_bridge(JNIEnv* jenv)
+static int load_bridge(JNIEnv* jenv)
 {
     JNINativeMethod nmethod[1];
     jbyte buff[8192];
@@ -151,23 +148,23 @@ int load_bridge(JNIEnv* jenv)
     }
     len = fread(buff, 1, sizeof(buff), f);
     fclose(f);
-    rbridge = (*jenv)->DefineClass(jenv,
+    rjb_rbridge = (*jenv)->DefineClass(jenv,
 		   "jp/co/infoseek/hp/arton/rjb/RBridge", iloader, buff, len);
-    if (rbridge == NULL)
+    if (rjb_rbridge == NULL)
     {
 	check_exception(jenv, 1);
     }
-    register_bridge = (*jenv)->GetMethodID(jenv, rbridge, "register",
+    rjb_register_bridge = (*jenv)->GetMethodID(jenv, rjb_rbridge, "register",
 			   "(Ljava/lang/Class;)Ljava/lang/Object;");
     nmethod[0].name = "call";
     nmethod[0].signature = "(Ljava/lang/String;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;";
     nmethod[0].fnPtr = Java_jp_co_infoseek_hp_arton_rjb_RBridge_call;
-    (*jenv)->RegisterNatives(jenv, rbridge, nmethod, 1);
-    rbridge = (*jenv)->NewGlobalRef(jenv, rbridge);
+    (*jenv)->RegisterNatives(jenv, rjb_rbridge, nmethod, 1);
+    rjb_rbridge = (*jenv)->NewGlobalRef(jenv, rjb_rbridge);
     return 0;
 }
 
-int create_jvm(JNIEnv** pjenv, JavaVMInitArgs* vm_args, char* userpath, VALUE argv)
+int rjb_create_jvm(JNIEnv** pjenv, JavaVMInitArgs* vm_args, char* userpath, VALUE argv)
 {
     static JavaVMOption soptions[] = {
 #if defined(__sparc_v9__) || defined(__sparc__)
@@ -244,7 +241,7 @@ int create_jvm(JNIEnv** pjenv, JavaVMInitArgs* vm_args, char* userpath, VALUE ar
     vm_args->ignoreUnrecognized = JNI_TRUE;
     ptr = rb_funcall(CreateJavaVM, rb_intern("to_i"), 0);
     createjavavm = *(CREATEJAVAVM*)FIX2INT(ptr);
-    result = createjavavm(&jvm, (void**)pjenv, vm_args);
+    result = createjavavm(&rjb_jvm, (void**)pjenv, vm_args);
     if (!result)
     {
 	result = load_bridge(*pjenv);

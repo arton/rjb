@@ -26,7 +26,7 @@
  *  At this time, the Java exception is defined without the package name.
  *  This design may change in future release.
  */
-VALUE get_exception_class(JNIEnv* jenv, jstring str)
+VALUE rjb_get_exception_class(JNIEnv* jenv, jstring str)
 {
     VALUE rexp;
     char* pcls;
@@ -34,7 +34,7 @@ VALUE get_exception_class(JNIEnv* jenv, jstring str)
     const char* p = (*jenv)->GetStringUTFChars(jenv, str, JNI_FALSE);
     char* clsname = ALLOCA_N(char, strlen(p) + 1);
     strcpy(clsname, p);
-    release_string(jenv, str, p);
+    rjb_release_string(jenv, str, p);
     pcls = strrchr(clsname, '.');
     if (pcls)
     {
@@ -45,11 +45,11 @@ VALUE get_exception_class(JNIEnv* jenv, jstring str)
 	pcls = clsname;
     }
     cname = rb_str_new2(pcls);
-    rexp = rb_hash_aref(loaded_classes, cname);
+    rexp = rb_hash_aref(rjb_loaded_classes, cname);
     if (rexp == Qnil)
     {
 	rexp = rb_define_class(pcls, rb_eStandardError);
-	st_insert(RHASH(loaded_classes)->tbl, cname, rexp);
+	st_insert(RHASH(rjb_loaded_classes)->tbl, cname, rexp);
     }
     return rexp;
 }
@@ -61,10 +61,10 @@ VALUE rjb_s_throw(int argc, VALUE* argv, VALUE self)
 {
     VALUE klass;
     VALUE message;
-    JNIEnv* jenv = attach_current_thread();
+    JNIEnv* jenv = rjb_attach_current_thread();
     if (rb_scan_args(argc, argv, "11", &klass, &message) == 2)
     {
-        jclass excep = find_class(jenv, klass);
+        jclass excep = rjb_find_class(jenv, klass);
 	if (excep == NULL)
 	{
 	    rb_raise(rb_eRuntimeError, "`%s' not found", StringValueCStr(klass));
@@ -75,7 +75,7 @@ VALUE rjb_s_throw(int argc, VALUE* argv, VALUE self)
     {
         struct jvi_data* ptr;
 	Data_Get_Struct(klass, struct jvi_data, ptr);
-	if (!(*jenv)->IsInstanceOf(jenv, ptr->obj, j_throwable))
+	if (!(*jenv)->IsInstanceOf(jenv, ptr->obj, rjb_j_throwable))
 	{
 	    rb_raise(rb_eRuntimeError, "arg1 must be a throwable");
 	}
@@ -87,7 +87,7 @@ VALUE rjb_s_throw(int argc, VALUE* argv, VALUE self)
     return Qnil;
 }
 
-void check_exception(JNIEnv* jenv, int t)
+void rjb_check_exception(JNIEnv* jenv, int t)
 {
     jthrowable exp = (*jenv)->ExceptionOccurred(jenv);
     if (exp)
@@ -103,18 +103,18 @@ void check_exception(JNIEnv* jenv, int t)
 	{
  	    char* msg = "unknown exception";
 	    jclass cls = (*jenv)->GetObjectClass(jenv, exp);
- 	    jstring str = (*jenv)->CallObjectMethod(jenv, exp, throwable_getMessage);
+ 	    jstring str = (*jenv)->CallObjectMethod(jenv, exp, rjb_throwable_getMessage);
 	    if (str)
 	    {
 	        const char* p = (*jenv)->GetStringUTFChars(jenv, str, JNI_FALSE);
 		msg = ALLOCA_N(char, strlen(p) + 1);
 		strcpy(msg, p);
-		release_string(jenv, str, p);
+		rjb_release_string(jenv, str, p);
 	    }
-	    str = (*jenv)->CallObjectMethod(jenv, cls, class_getName);
+	    str = (*jenv)->CallObjectMethod(jenv, cls, rjb_class_getName);
 	    if (str)
 	    {
-		rexp = get_exception_class(jenv, str);
+		rexp = rjb_get_exception_class(jenv, str);
 	    }
 	    if (rexp == Qnil)
 	    {
