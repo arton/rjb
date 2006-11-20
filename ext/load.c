@@ -152,7 +152,7 @@ static int load_bridge(JNIEnv* jenv)
 		   "jp/co/infoseek/hp/arton/rjb/RBridge", iloader, buff, len);
     if (rjb_rbridge == NULL)
     {
-	check_exception(jenv, 1);
+	rjb_check_exception(jenv, 1);
     }
     rjb_register_bridge = (*jenv)->GetMethodID(jenv, rjb_rbridge, "register",
 			   "(Ljava/lang/Class;)Ljava/lang/Object;");
