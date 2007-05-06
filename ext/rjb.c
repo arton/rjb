@@ -15,7 +15,7 @@
  * $Id$
  */
 
-#define RJB_VERSION "1.0.3"
+#define RJB_VERSION "1.0.4"
 
 #include "ruby.h"
 #include "st.h"
@@ -1885,6 +1885,7 @@ static VALUE rjb_newinstance_s(int argc, VALUE* argv, VALUE self)
     VALUE ret = Qnil;
     struct jv_data* ptr;
     JNIEnv* jenv = rjb_attach_current_thread();
+    int found = 0;
 
     rb_scan_args(argc, argv, "1*", &vsig, &rest);
     sig = StringValueCStr(vsig);
@@ -1897,10 +1898,14 @@ static VALUE rjb_newinstance_s(int argc, VALUE* argv, VALUE self)
 	    if ((*pc)->arg_count == argc - 1
 		&& !strcmp(sig, (*pc)->method_signature))
 	    {
+	        found = 1;
 		ret = createinstance(jenv, argc - 1, argv + 1, &ptr->idata, *pc);
 		break;
 	    }
 	}
+    }
+    if (!found) {
+	rb_raise(rb_eRuntimeError, "Constructor not found");
     }
     return ret;
 }
@@ -1911,12 +1916,13 @@ static VALUE rjb_newinstance(int argc, VALUE* argv, VALUE self)
     struct jv_data* ptr;
     struct cls_constructor** pc;
     JNIEnv* jenv = rjb_attach_current_thread();
+    int found = 0;
 
     Data_Get_Struct(self, struct jv_data, ptr);
 
     if (ptr->constructors)
     {
-        int i, found = 0;
+        int i;
 	char* psig;
 	for (pc = ptr->constructors; *pc; pc++)
 	{
@@ -1940,6 +1946,9 @@ static VALUE rjb_newinstance(int argc, VALUE* argv, VALUE self)
 		}
 	    }
 	}
+    }
+    if (!found) {
+	rb_raise(rb_eRuntimeError, "Constructor not found");
     }
     return ret;
 }

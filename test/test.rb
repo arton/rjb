@@ -1,5 +1,5 @@
 #!/usr/local/env ruby
-# $Id:$
+# $Id$
 
 require 'test/unit'
 require 'rjb'
@@ -410,6 +410,16 @@ class TestRjb < Test::Unit::TestCase
     test = import('jp.co.infoseek.hp.arton.rjb.Test').new
     assert_equal(nil, test.callWithArraies(nil, nil, nil, nil, nil, nil,
                                            nil, nil))
+  end
+
+  def test_failed_constructor_call()
+    test = import('java.lang.String')
+    begin
+      s = test.new('a', 'b', 'c')
+      flunk('no exception')
+    rescue RuntimeError => e
+      assert(e)
+    end
   end
 end
 
