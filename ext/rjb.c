@@ -15,7 +15,7 @@
  * $Id$
  */
 
-#define RJB_VERSION "1.0.4"
+#define RJB_VERSION "1.0.5"
 
 #include "ruby.h"
 #include "st.h"
@@ -1406,6 +1406,7 @@ static void load_constants(JNIEnv* jenv, jclass klass, VALUE self, jobjectArray 
 	    jvalue jv;
 	    jfieldID jfid;
 	    char sigs[256];
+            char* pname;
 
 	    // constants make define directly in the ruby object
 	    cls = (*jenv)->CallObjectMethod(jenv, f, field_getType);
@@ -1451,21 +1452,22 @@ static void load_constants(JNIEnv* jenv, jclass klass, VALUE self, jobjectArray 
 		jv.l = (*jenv)->GetStaticObjectField(jenv, klass, jfid);
 		break;
 	    }
+            pname = cname; 
 	    if (!isupper(*cname))
 	    {
- 	        char* p = ALLOCA_N(char, strlen(cname) + 1);
-		strcpy(p, cname);
-		*p = toupper(*p);
-		if (isupper(*p)) 
+ 	        pname = ALLOCA_N(char, strlen(cname) + 1);
+		strcpy(pname, cname);
+		*pname = toupper(*pname);
+		if (!isupper(*pname) 
+                    || rb_const_defined(RBASIC(self)->klass, rb_intern(pname))) 
 		{
-	            rb_define_const(RBASIC(self)->klass, p, j2r(jenv, jv));
+	            pname = NULL;
 		}
 	    }
-	    else
+	    if (pname)
 	    {
-	        rb_define_const(RBASIC(self)->klass, cname, j2r(jenv, jv));
+	        rb_define_const(RBASIC(self)->klass, pname, j2r(jenv, jv));
 	    }
-
 	    rjb_release_string(jenv, nm, cname);
 	}
 	(*jenv)->DeleteLocalRef(jenv, f);
@@ -1498,7 +1500,6 @@ static void setup_metadata(JNIEnv* jenv, VALUE self, struct jv_data* ptr, VALUE 
     setup_fields(jenv, &ptr->idata.fields, flds);
 
     register_class(self, classname);
-
     load_constants(jenv, ptr->idata.obj, self, flds);
 }
 
