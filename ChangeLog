@@ -1,3 +1,12 @@
+Sun Jun 17 arton
+ *rjb.c
+        add method aliases.
+	setXxYy -> xx_yy=
+	getXxYy -> xx_yy
+	isXxYy  -> xx_yy?
+	xxYyZz  -> xx_yy_zz
+ *test.rb
+	add a test for the method alias feature.
 Tue Nov 21 arton
  *rjb.c
        Skip the constant registering process, if the constant was already defined. 
