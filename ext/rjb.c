@@ -1,6 +1,6 @@
 /*
  * Rjb - Ruby <-> Java Bridge
- * Copyright(c) 2004,2005,2006 arton
+ * Copyright(c) 2004,2005,2006,2007 arton
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,7 @@
  * $Id$
  */
 
-#define RJB_VERSION "1.0.5"
+#define RJB_VERSION "1.0.6"
 
 #include "ruby.h"
 #include "st.h"
@@ -1241,7 +1241,47 @@ static void setup_methodbase(JNIEnv* jenv, struct cls_constructor* pm,
 	fill_convert(jenv, pm, parama, pcount);
     }
 }
- 
+
+static void register_methodinfo(struct cls_method* newpm, st_table* tbl)
+{
+    struct cls_method* pm;
+    
+    if (st_lookup(tbl, newpm->name, (st_data_t*)&pm))
+    {
+	newpm->next = pm->next;
+	pm->next = newpm;
+    }
+    else
+    {
+	newpm->next = NULL;
+	st_insert(tbl, newpm->name, (VALUE)newpm);
+    }
+}
+
+static struct cls_method* clone_methodinfo(struct cls_method* pm)
+{
+    struct cls_method* result = ALLOC(struct cls_method);
+    memcpy(result, pm, sizeof(struct cls_method));
+    return result;
+}
+
+static void make_alias(const char* jname, char* rname)
+{
+    while (*jname)
+    {
+        if (isupper(*jname))
+        {
+            *rname++ = '_';
+            *rname++ = tolower(*jname++);
+        }
+        else
+        {
+            *rname++ = *jname++;
+        }
+    }
+    *rname = '\0';
+}
+
 static void create_methodinfo(JNIEnv* jenv, st_table* tbl, jobject m, int static_method)
 {
     struct cls_method* result;
@@ -1252,6 +1292,7 @@ static void create_methodinfo(JNIEnv* jenv, st_table* tbl, jobject m, int static
     jobjectArray parama;
     jobject cls;
     jsize param_count;
+    char* rname;
 
     result = ALLOC(struct cls_method);
     parama = (*jenv)->CallObjectMethod(jenv, m, getParameterTypes);
@@ -1259,12 +1300,13 @@ static void create_methodinfo(JNIEnv* jenv, st_table* tbl, jobject m, int static
     param_count = (*jenv)->GetArrayLength(jenv, parama);
     rjb_check_exception(jenv, 0);
     setup_methodbase(jenv, &result->basic, parama, param_count);
-
     nm = (*jenv)->CallObjectMethod(jenv, m, method_getName);
     rjb_check_exception(jenv, 0);	    
     jname = (*jenv)->GetStringUTFChars(jenv, nm, NULL);
+    rname = ALLOCA_N(char, strlen(jname) * 2 + 8);
+    make_alias(jname, rname);
     result->name = rb_intern(jname);
-    rjb_release_string(jenv, nm, jname);
+    rjb_release_string(jenv, nm, jname);    
     result->basic.id = (*jenv)->FromReflectedMethod(jenv, m);
     rjb_check_exception(jenv, 0);
     cls = (*jenv)->CallObjectMethod(jenv, m, getReturnType);
@@ -1272,15 +1314,43 @@ static void create_methodinfo(JNIEnv* jenv, st_table* tbl, jobject m, int static
     setup_j2r(jenv, cls, result, static_method);
     (*jenv)->DeleteLocalRef(jenv, cls);
     result->static_method = static_method;
-    if (st_lookup(tbl, result->name, (st_data_t*)&pm))
+    register_methodinfo(result, tbl);
+    // create method alias
+    pm = NULL;
+    if (strlen(rname) > 3
+        && (*rname == 'g' || *rname == 's') && *(rname + 1) == 'e' && *(rname + 2) == 't')
     {
-	result->next = pm->next;
-	pm->next = result;
+        pm = clone_methodinfo(result);
+        if (*rname == 's') 
+        {
+            if (result->basic.arg_count == 1)
+            {
+                rname += 3;
+                strcat(rname, "=");
+            }
+        }
+        else
+        {
+            rname += 3;
+        }
+        if (*rname == '_') rname++;
+    }
+    else if (strlen(rname) > 2 && result->basic.result_signature == 'Z'
+             && *rname == 'i' && *(rname + 1) == 's')
+    {
+        pm = clone_methodinfo(result);
+        rname += 2;
+        if (*rname == '_') rname++;
+        strcat(rname, "?");
     }
     else
     {
-	result->next = NULL;
-	st_insert(tbl, result->name, (VALUE)result);
+        pm = clone_methodinfo(result);
+    }
+    if (pm)
+    {
+        pm->name = rb_intern(rname);
+        register_methodinfo(pm, tbl);
     }
 }
 
@@ -1452,7 +1522,7 @@ static void load_constants(JNIEnv* jenv, jclass klass, VALUE self, jobjectArray 
 		jv.l = (*jenv)->GetStaticObjectField(jenv, klass, jfid);
 		break;
 	    }
-            pname = cname; 
+            pname = (char*)cname; 
 	    if (!isupper(*cname))
 	    {
  	        pname = ALLOCA_N(char, strlen(cname) + 1);
@@ -2405,13 +2475,11 @@ static VALUE invoke_by_instance(ID rmid, int argc, VALUE* argv,
 	if (st_lookup(ptr->fields, rb_intern(fname), (st_data_t*)&pf))
 	{
 	    setter(jenv, pf, ptr, *argv);
+            return ret;
         }
-	else
-	{
-	    rb_raise(rb_eRuntimeError, "Fail: unknown field name `%s'", fname);
-	}
+        // fall through for the setter alias name
     }
-    else if (st_lookup(ptr->methods, rmid, (st_data_t*)&pm))
+    if (st_lookup(ptr->methods, rmid, (st_data_t*)&pm))
     {
 	ret = invoke(jenv, pm, ptr, argc, argv, sig);
     }
