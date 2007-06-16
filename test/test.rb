@@ -421,5 +421,19 @@ class TestRjb < Test::Unit::TestCase
       assert(e)
     end
   end
+
+  def test_rubyize
+    loader = Rjb::import('java.lang.ClassLoader')
+    cls = import('java.lang.Class')
+    b = cls.for_name('jp.co.infoseek.hp.arton.rjb.IBase', true, loader.system_class_loader)
+    assert(b.interface?)
+    stringbuffer = Rjb::import('java.lang.StringBuffer')
+    sb = stringbuffer.new('abc')
+    assert_equal(1, sb.index_of('bc'))
+    sb.set_char_at(1, ?B)
+    assert_equal('aBc', sb.to_string)
+    sb.length = 2
+    assert_equal('aB', sb.to_string)
+  end
 end
 
