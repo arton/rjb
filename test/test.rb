@@ -9,6 +9,7 @@ class TestRjb < Test::Unit::TestCase
   include Rjb
   def setup
     load('.')
+    Rjb::primitive_conversion = false
   end
 
   def tearDown
@@ -434,6 +435,27 @@ class TestRjb < Test::Unit::TestCase
     assert_equal('aBc', sb.to_string)
     sb.length = 2
     assert_equal('aB', sb.to_string)
+  end
+
+  def test_auto_conv
+    assert_equal(false, Rjb::primitive_conversion)
+    Rjb::primitive_conversion = true
+    assert_equal(true, Rjb::primitive_conversion)
+    jInteger = Rjb::import('java.lang.Integer')
+    assert_equal(1, jInteger.valueOf('1'))
+    assert_equal(-1, jInteger.valueOf('-1'))
+    jShort = Rjb::import('java.lang.Short')
+    assert_equal(2, jShort.valueOf('2'))
+    assert_equal(-2, jShort.valueOf('-2'))
+    jDouble = Rjb::import('java.lang.Double')
+    assert_equal(3.1, jDouble.valueOf('3.1'))
+    jFloat = Rjb::import('java.lang.Float')
+    assert_equal(4.5, jFloat.valueOf('4.5'))
+    jBoolean = Rjb::import('java.lang.Boolean')
+    assert(jBoolean.TRUE)
+    jByte = Rjb::import('java.lang.Byte')
+    assert_equal(5, jByte.valueOf('5'))
+    assert_equal(-6, jByte.valueOf('-6'))
   end
 end
 

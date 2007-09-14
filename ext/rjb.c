@@ -15,7 +15,7 @@
  * $Id$
  */
 
-#define RJB_VERSION "1.0.6"
+#define RJB_VERSION "1.0.7"
 
 #include "ruby.h"
 #include "st.h"
@@ -44,6 +44,7 @@ static VALUE rjb_class_forname(int argc, VALUE* argv, VALUE self);
 static void setup_metadata(JNIEnv* jenv, VALUE self, struct jv_data*, VALUE classname);
 static VALUE jarray2rv(JNIEnv* jenv, jvalue val);
 static jarray r2objarray(JNIEnv* jenv, VALUE v, const char* cls);
+static VALUE jv2rv_withprim(JNIEnv* jenv, jobject o);
 
 static VALUE rjb;
 static VALUE jklass;
@@ -57,6 +58,7 @@ JavaVM* rjb_jvm;
 jclass rjb_rbridge;
 jmethodID rjb_register_bridge;
 static JNIEnv* main_jenv;
+static VALUE primitive_conversion = Qfalse;
 
 /*
  * Object cache, never destroyed
@@ -224,7 +226,7 @@ static VALUE jv2rclass(JNIEnv* jenv, jclass jc)
     return v;
 }
 
-static VALUE jv2rv(JNIEnv* jenv, jvalue val)
+static VALUE jv2rv_r(JNIEnv* jenv, jvalue val)
 {
     const char* cname;
     jstring nm;
@@ -260,6 +262,15 @@ static VALUE jv2rv(JNIEnv* jenv, jvalue val)
     (*jenv)->DeleteLocalRef(jenv, klass);
     (*jenv)->DeleteLocalRef(jenv, val.l);    
     return v;
+}
+
+static VALUE jv2rv(JNIEnv* jenv, jvalue val)
+{
+    if (primitive_conversion == Qfalse)
+    {
+        return jv2rv_r(jenv, val);
+    }
+    return jv2rv_withprim(jenv, val.l);
 }
 
 static VALUE jvoid2rv(JNIEnv* jenv, jvalue val)
@@ -535,7 +546,7 @@ static VALUE jv2rv_withprim(JNIEnv* jenv, jobject o)
 	}
     }
     jv.l = o;
-    return jv2rv(jenv, jv);
+    return jv2rv_r(jenv, jv);
 }
 
 /*
@@ -1730,6 +1741,24 @@ static VALUE rjb_s_classes(VALUE self)
     return rjb_loaded_classes;
 }
 
+/**
+ * For JRuby conpatible optsion
+ */
+static VALUE rjb_s_set_pconversion(VALUE self, VALUE val)
+{
+    primitive_conversion = (val == Qnil || val == Qfalse) ? Qfalse : Qtrue;
+    return val;
+}
+
+/**
+ * For JRuby conpatible optsion
+ */
+static VALUE rjb_s_get_pconversion(VALUE self)
+{
+    return primitive_conversion;
+}
+
+
 /*
  * free java class
  */
@@ -2657,6 +2686,8 @@ void Init_rjbcore()
     rb_define_module_function(rjb, "bind", rjb_s_bind, 2);
     rb_define_module_function(rjb, "classes", rjb_s_classes, 0);
     rb_define_module_function(rjb, "throw", rjb_s_throw, -1);
+    rb_define_module_function(rjb, "primitive_conversion=", rjb_s_set_pconversion, 1);
+    rb_define_module_function(rjb, "primitive_conversion", rjb_s_get_pconversion, 0);
     rb_define_const(rjb, "VERSION", rb_str_new2(RJB_VERSION));
 
     /* Java class object */    
