@@ -15,7 +15,7 @@
  * $Id$
  */
 
-#define RJB_VERSION "1.0.7"
+#define RJB_VERSION "1.0.8"
 
 #include "ruby.h"
 #include "st.h"
@@ -538,6 +538,9 @@ static VALUE jv2rv_withprim(JNIEnv* jenv, jobject o)
 	    case 'c':
 		jv.c = (*jenv)->CallCharMethod(jenv, o, jpcvt[i].to_prim_id);
 		break;
+            case 'l':
+                jv.j = (*jenv)->CallLongMethod(jenv, o, jpcvt[i].to_prim_id);
+                break;
 	    default:
 		rb_raise(rb_eRuntimeError, "no convertor defined(%d)", i);
 		break;

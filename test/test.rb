@@ -456,6 +456,9 @@ class TestRjb < Test::Unit::TestCase
     jByte = Rjb::import('java.lang.Byte')
     assert_equal(5, jByte.valueOf('5'))
     assert_equal(-6, jByte.valueOf('-6'))
+    jLong = Rjb::import('java.lang.Long')
+    assert_equal(0x7000000000000000, jLong.valueOf('8070450532247928832'))
+    assert_equal(-9223372036854775807, jLong.valueOf('-9223372036854775807'))
   end
 end
 
