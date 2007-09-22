@@ -15,7 +15,7 @@
  * $Id$
  */
 
-#define RJB_VERSION "1.0.8"
+#define RJB_VERSION "1.0.9"
 
 #include "ruby.h"
 #include "st.h"
@@ -520,6 +520,7 @@ static VALUE jv2rv_withprim(JNIEnv* jenv, jobject o)
     jvalue jv;
     int i;
     jclass klass = (*jenv)->GetObjectClass(jenv, o);
+    jv.j = 0;
     for (i = PRM_INT; i < PRM_LAST; i++)
     {
         if ((*jenv)->IsSameObject(jenv, jpcvt[i].klass, klass))
@@ -545,8 +546,13 @@ static VALUE jv2rv_withprim(JNIEnv* jenv, jobject o)
 		rb_raise(rb_eRuntimeError, "no convertor defined(%d)", i);
 		break;
 	    }
+            (*jenv)->DeleteLocalRef(jenv, o);
 	    return jpcvt[i].func(jenv, jv);
 	}
+    }
+    if ((*jenv)->IsSameObject(jenv, j_string, klass))
+    {
+        return jstring2val(jenv, o);
     }
     jv.l = o;
     return jv2rv_r(jenv, jv);
@@ -760,6 +766,16 @@ static void rv2jobject(JNIEnv* jenv, VALUE val, jvalue* jv, const char* psig, in
 	    case T_ARRAY:
 		jv->l = r2objarray(jenv, val, "Ljava/lang/Object;");
 		break;
+#if HAVE_LONG_LONG                
+            case T_BIGNUM:
+                arg.j = rb_big2ll(val);
+                jv->l = (*jenv)->NewObject(jenv, jpcvt[PRM_LONG].klass,
+				       jpcvt[PRM_LONG].ctr_id, arg);
+                break;
+#endif                
+            default:
+                rb_raise(rb_eRuntimeError, "can't convert to java type");
+                break;
 	    }
 	}
     }

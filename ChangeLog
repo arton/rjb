@@ -1,3 +1,12 @@
+Sun Sep 23 arton
+ *rjb.c
+	version 1.0.9
+	convert to Ruby's type if Rjb::primitive_converion is enalbed and the result type is java.lang.Object
+	support the object conversion for a bignum to long.
+Sat Sep 15 arton
+ *rjb.c
+	version 1.0.8
+	correction of 1.0.7, support long type.
 Fri Sep 14 arton
  *rjb.c
 	version 1.0.7

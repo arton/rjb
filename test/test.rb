@@ -10,6 +10,16 @@ class TestRjb < Test::Unit::TestCase
   def setup
     load('.')
     Rjb::primitive_conversion = false
+
+    @jString = import('java.lang.String')
+    @jInteger = Rjb::import('java.lang.Integer')
+    @jShort = Rjb::import('java.lang.Short')
+    @jDouble = Rjb::import('java.lang.Double')
+    @jFloat = Rjb::import('java.lang.Float')
+    @jBoolean = Rjb::import('java.lang.Boolean')
+    @jByte = Rjb::import('java.lang.Byte')
+    @jLong = Rjb::import('java.lang.Long')
+    @jChar = Rjb::import('java.lang.Character')
   end
 
   def tearDown
@@ -24,14 +34,13 @@ class TestRjb < Test::Unit::TestCase
   end
 
   def test_scalar
-    cls = import('java.lang.String')
-    assert_equal('java.lang.Class', cls._classname)
-    assert_equal('class java.lang.String', cls.toString)
-    str = cls.new
+    assert_equal('java.lang.Class', @jString._classname)
+    assert_equal('class java.lang.String', @jString.toString)
+    str = @jString.new
     assert_equal('java.lang.String', str._classname)
     assert_equal(0, str.length)
     assert_equal('', str.toString)
-    str = cls.new_with_sig('Ljava.lang.String;', "abcde")
+    str = @jString.new_with_sig('Ljava.lang.String;', "abcde")
     # result integer
     assert_equal(5, str.length)
     # result string
@@ -45,14 +54,13 @@ class TestRjb < Test::Unit::TestCase
     assert_equal('bc', str.substring(1, 3))
     assert_equal('e', str.substring(4))
     # float with static
-    assert_equal('5.23', cls._invoke('valueOf', 'F', 5.23))
-    assert_equal('25.233', cls._invoke('valueOf', 'D', 25.233))
+    assert_equal('5.23', @jString._invoke('valueOf', 'F', 5.23))
+    assert_equal('25.233', @jString._invoke('valueOf', 'D', 25.233))
     # rjb object (String)
-    str2 = cls.new_with_sig('Ljava.lang.String;', 'fghijk')
+    str2 = @jString.new_with_sig('Ljava.lang.String;', 'fghijk')
     assert_equal('abcdefghijk', str.concat(str2))
     # rjb object other (implicit toString call is Rjb feature)
-    jint = import('java.lang.Integer')
-    i = jint.new_with_sig('I', 35901)
+    i = @jInteger.new_with_sig('I', 35901)
     assert_equal('abcde35901', str.concat(i))
     # result boolean and argument is rjb object
     assert_equal(false, i.equals(str))
@@ -60,35 +68,28 @@ class TestRjb < Test::Unit::TestCase
     assert_equal(true, str.equals("abcde"))
     assert_equal(true, str.equals(str))
     # long
-    lng = import('java.lang.Long')
-    l = lng.new_with_sig('J', -9223372036854775808)
+    l = @jLong.new_with_sig('J', -9223372036854775808)
     assert_equal(-9223372036854775808, l.longValue)
-    l = lng.new_with_sig('J', 9223372036854775807)
+    l = @jLong.new_with_sig('J', 9223372036854775807)
     assert_equal(9223372036854775807, l.longValue)
     # double
-    dbl = import('java.lang.Double')
-    d = dbl.new_with_sig('D', 1234.5678901234567890)
+    d = @jDouble.new_with_sig('D', 1234.5678901234567890)
     assert_equal(1234.5678901234567890, d.doubleValue)
     # byte
-    byt = import('java.lang.Byte')
-    b = byt.new_with_sig('B', 13)
+    b = @jByte.new_with_sig('B', 13)
     assert_equal(13, b.byteValue)
     # float
-    flt = import('java.lang.Float')
-    f = flt.new_with_sig('F', 13.5)
+    f = @jFloat.new_with_sig('F', 13.5)
     assert_equal(13.5, f.floatValue)
     # short
-    sht = import('java.lang.Short')
-    s = sht.new_with_sig('S', 1532)
+    s = @jShort.new_with_sig('S', 1532)
     assert_equal(1532, s.shortValue)
-    chr = import('java.lang.Character')
-    c = chr.new_with_sig('C', ?A)
+    c = @jChar.new_with_sig('C', ?A)
     assert_equal(?A, c.charValue)
   end
 
   def test_array
-    cls = import('java.lang.String')
-    str = cls.new_with_sig('[C', [?a, ?b, ?c, ?d, ?e, ?c, ?f, ?c, ?g])
+    str = @jString.new_with_sig('[C', [?a, ?b, ?c, ?d, ?e, ?c, ?f, ?c, ?g])
     assert_equal('abcdecfcg', str.toString)
     # conv string array
     splt = str.split('c')
@@ -113,20 +114,18 @@ class TestRjb < Test::Unit::TestCase
     else
       assert_equal(Dir::pwd, props.getProperty('user.dir').gsub('\\', '/'))
     end
-    boolean = import('java.lang.Boolean')
-    assert_equal(boolean.valueOf(true).booleanValue(), true)
-    assert_equal(boolean.valueOf(false).booleanValue(), false)
-    assert_equal(boolean.valueOf('true').booleanValue(), true)
-    assert_equal(boolean.valueOf('false').booleanValue(), false)
+    assert_equal(@jBoolean.valueOf(true).booleanValue(), true)
+    assert_equal(@jBoolean.valueOf(false).booleanValue(), false)
+    assert_equal(@jBoolean.valueOf('true').booleanValue(), true)
+    assert_equal(@jBoolean.valueOf('false').booleanValue(), false)
   end
 
   def test_importobjarray()
     jarray = import('java.util.ArrayList')
     a = jarray.new()
-    jint = import('java.lang.Integer')
-    a.add(jint.new_with_sig('I', 1))
-    a.add(jint.new_with_sig('I', 2))
-    a.add(jint.new_with_sig('I', 3))
+    a.add(@jInteger.new_with_sig('I', 1))
+    a.add(@jInteger.new_with_sig('I', 2))
+    a.add(@jInteger.new_with_sig('I', 3))
     oa = a.toArray
     assert_equal(3, oa.size)
     assert_equal(1, oa[0].intValue)
@@ -136,20 +135,18 @@ class TestRjb < Test::Unit::TestCase
 
   def test_kjconv()
     $KCODE = 'euc'
-    cls = import('java.lang.String')
     euc_kj = "\xb4\xc1\xbb\xfa\xa5\xc6\xa5\xad\xa5\xb9\xa5\xc8"
-    s = cls.new(euc_kj)
+    s = @jString.new(euc_kj)
     assert_equal(s.toString(), euc_kj)
     $KCODE = 'sjis'
     sjis_kj = "\x8a\xbf\x8e\x9a\x83\x65\x83\x4c\x83\x58\x83\x67"
-    s = cls.new(sjis_kj)
+    s = @jString.new(sjis_kj)
     assert_equal(s.toString(), sjis_kj)
   end
 
   def test_constants()
-    lng = import('java.lang.Long')
-    assert_equal(0x7fffffffffffffff, lng.MAX_VALUE)
-    assert_equal(-9223372036854775808, lng.MIN_VALUE)
+    assert_equal(0x7fffffffffffffff, @jLong.MAX_VALUE)
+    assert_equal(-9223372036854775808, @jLong.MIN_VALUE)
   end
 
   class TestIter
@@ -195,9 +192,8 @@ class TestRjb < Test::Unit::TestCase
   # assert_raise is useless in this test, because NumberFormatException may be defined in
   # its block.
   def test_exception()
-    it = import('java.lang.Integer')
     begin
-      it.parseInt('blabla')
+      @jInteger.parseInt('blabla')
       flunk('no exception')
     rescue NumberFormatException => e
       # OK
@@ -265,7 +261,7 @@ class TestRjb < Test::Unit::TestCase
     rescue TypeError => e
     end
     begin
-      throw(import('java.lang.String').new('a'))
+      throw(@jString.new('a'))
       flunk('no exception')
     rescue RuntimeError => e
       assert_equal('arg1 must be a throwable', e.message)
@@ -289,9 +285,8 @@ class TestRjb < Test::Unit::TestCase
 
   def test_instancemethod_from_class()
     begin
-      cls = import('java.lang.String')
-      assert_equal('true', cls.valueOf(true))
-      cls.length
+      assert_equal('true', @jString.valueOf(true))
+      @jString.length
       flunk('no exception')
     rescue RuntimeError => e
       assert_equal('instance method `length\' for class', e.message)
@@ -414,9 +409,8 @@ class TestRjb < Test::Unit::TestCase
   end
 
   def test_failed_constructor_call()
-    test = import('java.lang.String')
     begin
-      s = test.new('a', 'b', 'c')
+      s = @jString.new('a', 'b', 'c')
       flunk('no exception')
     rescue RuntimeError => e
       assert(e)
@@ -441,24 +435,69 @@ class TestRjb < Test::Unit::TestCase
     assert_equal(false, Rjb::primitive_conversion)
     Rjb::primitive_conversion = true
     assert_equal(true, Rjb::primitive_conversion)
-    jInteger = Rjb::import('java.lang.Integer')
-    assert_equal(1, jInteger.valueOf('1'))
-    assert_equal(-1, jInteger.valueOf('-1'))
-    jShort = Rjb::import('java.lang.Short')
-    assert_equal(2, jShort.valueOf('2'))
-    assert_equal(-2, jShort.valueOf('-2'))
-    jDouble = Rjb::import('java.lang.Double')
-    assert_equal(3.1, jDouble.valueOf('3.1'))
-    jFloat = Rjb::import('java.lang.Float')
-    assert_equal(4.5, jFloat.valueOf('4.5'))
-    jBoolean = Rjb::import('java.lang.Boolean')
-    assert(jBoolean.TRUE)
-    jByte = Rjb::import('java.lang.Byte')
-    assert_equal(5, jByte.valueOf('5'))
-    assert_equal(-6, jByte.valueOf('-6'))
-    jLong = Rjb::import('java.lang.Long')
-    assert_equal(0x7000000000000000, jLong.valueOf('8070450532247928832'))
-    assert_equal(-9223372036854775807, jLong.valueOf('-9223372036854775807'))
+    assert_equal(1, @jInteger.valueOf('1'))
+    assert_equal(-1, @jInteger.valueOf('-1'))
+    assert_equal(2, @jShort.valueOf('2'))
+    assert_equal(-2, @jShort.valueOf('-2'))
+    assert_equal(3.1, @jDouble.valueOf('3.1'))
+    assert_equal(4.5, @jFloat.valueOf('4.5'))
+    assert(@jBoolean.TRUE)
+    assert_equal(5, @jByte.valueOf('5'))
+    assert_equal(-6, @jByte.valueOf('-6'))
+    assert_equal(0x7000000000000000, @jLong.valueOf('8070450532247928832'))
+    assert_equal(-9223372036854775807, @jLong.valueOf('-9223372036854775807'))
+    assert_equal(?A, @jChar.valueOf(?A))
+  end
+
+  def test_obj_to_primitive
+    ar = Rjb::import('java.util.ArrayList')
+    a = ar.new
+    a.add @jString.new('abcdef')
+    a.add @jInteger.valueOf('1')
+    a.add @jShort.valueOf('2')
+    a.add @jDouble.valueOf('3.1')
+    a.add @jFloat.valueOf('4.5')
+    a.add @jBoolean.TRUE
+    a.add @jByte.valueOf('5')
+    a.add @jLong.valueOf('8070450532247928832')
+    a.add @jChar.valueOf(?A)
+
+    Rjb::primitive_conversion = true
+
+    assert_equal 'abcdef', a.get(0)
+    assert_equal 1, a.get(1)
+    assert_equal 2, a.get(2)
+    assert_equal 3.1, a.get(3)
+    assert_equal 4.5, a.get(4)
+    assert a.get(5)
+    assert_equal 5, a.get(6)
+    assert_equal 8070450532247928832, a.get(7)
+    assert_equal ?A, a.get(8)
+  end
+
+  def test_primitive_to_obj
+    Rjb::primitive_conversion = true
+
+    ar = Rjb::import('java.util.ArrayList')
+    a = ar.new
+    a.add @jString.new('abcdef')
+    a.add @jInteger.valueOf('1')
+    a.add @jShort.valueOf('2')
+    a.add @jDouble.valueOf('3.1')
+    a.add @jFloat.valueOf('4.5')
+    a.add @jBoolean.TRUE
+    a.add @jByte.valueOf('5')
+    a.add @jLong.valueOf('8070450532247928832')
+    a.add @jChar.valueOf(?A)
+    assert_equal 'abcdef', a.get(0)
+    assert_equal 1, a.get(1)
+    assert_equal 2, a.get(2)
+    assert_equal 3.1, a.get(3)
+    assert_equal 4.5, a.get(4)
+    assert a.get(5)
+    assert_equal 5, a.get(6)
+    assert_equal 8070450532247928832, a.get(7)
+    assert_equal ?A, a.get(8)
   end
 end
 
