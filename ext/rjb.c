@@ -761,7 +761,7 @@ static void rv2jobject(JNIEnv* jenv, VALUE val, jvalue* jv, const char* psig, in
 	    case T_FLOAT:
 		arg.d = NUM2DBL(val);
 		jv->l = (*jenv)->NewObject(jenv, jpcvt[PRM_DOUBLE].klass,
-				       jpcvt[PRM_DOUBLE].ctr_id, arg);
+				       jpcvt[PRM_DOUBLE].ctr_id, arg.d);
 		break;
 	    case T_ARRAY:
 		jv->l = r2objarray(jenv, val, "Ljava/lang/Object;");
@@ -786,8 +786,9 @@ static void rv2jobject(JNIEnv* jenv, VALUE val, jvalue* jv, const char* psig, in
         case T_STRING:
         case T_FLOAT:
         case T_ARRAY:
-            (*jenv)->DeleteLocalRef(jenv, jv->l);
-	    break;
+        case T_BIGNUM:
+            if (jv->l) (*jenv)->DeleteLocalRef(jenv, jv->l);
+            break;
         }
     }
 }
