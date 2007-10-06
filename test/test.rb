@@ -499,5 +499,14 @@ class TestRjb < Test::Unit::TestCase
     assert_equal 8070450532247928832, a.get(7)
     assert_equal ?A, a.get(8)
   end
+
+  def test_enum
+    t = Rjb::import('jp.co.infoseek.hp.arton.rjb.Test$TestTypes')
+    assert t.ONE.equals(t.values()[0])
+    assert_equal 3, t.values().size
+    assert_equal 2, t.THREE.ordinal
+    assert_equal "TWO", t.TWO.name
+    assert_equal "THREE", t.THREE.toString
+  end
 end
 

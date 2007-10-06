@@ -1,5 +1,5 @@
 //
-// $Id:$
+// $Id$
 //
 package jp.co.infoseek.hp.arton.rjb;
 import java.util.ArrayList;
@@ -15,7 +15,7 @@ public class Test {
 	}
 	return new String(sb);
     }
-    public int check(Comparator c, int x, int y) {
+    public int check(Comparator<Integer> c, int x, int y) {
 	return c.compare(new Integer(x), new Integer(y));
     }
     public String[][] getStringArrayOfArrays() {
@@ -81,5 +81,8 @@ public class Test {
 				long[] al, double[] ad, float[] af,
 				String[] ax, Object[] ao)
     {
+    }
+    public enum TestTypes {
+        ONE, TWO, THREE
     }
 }
