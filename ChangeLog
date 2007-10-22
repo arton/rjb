@@ -2,6 +2,8 @@ Mon Oct 22 Kuwashima
  *riconv.c
  *riconv.h
 	recycle iconv instance.
+ *test/test.rb
+	add cases for test_kjconv
 Sun Sep 23 arton
  *rjb.c
 	version 1.0.9
