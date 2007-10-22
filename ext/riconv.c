@@ -18,138 +18,124 @@
 #include "ruby.h"
 #include "riconv.h"
 
-static const char* cs_eucjp = "EUC-JP";
-static const char* cs_sjis = "Shift_JIS";
-static const char* cs_cp932 = "CP932";
-static const char* cs_ms932 = "MS932";
-static const char* cs_utf8 = "UTF-8";
+static const char* const cs_eucjp = "EUC-JP";
+static const char* const cs_sjis = "Shift_JIS";
+static const char* const cs_cp932 = "CP932";
+static const char* const cs_ms932 = "MS932";
+static const char* const cs_utf8 = "UTF-8";
 
-/* Regexp::matchのラッパー */
+static VALUE objIconvJ2R;
+static VALUE objIconvR2J;
+static const char* charcode; //is this necessary?
+static char Kcode = 0; //
+
+/* wrap Regexp::match */
 static int regxp_is_match(VALUE str, VALUE regxp)
 {
     return rb_funcall(str, rb_intern("match"), 1, RREGEXP(regxp)) != Qnil ? 1 : 0 ;
 }
 
-/* RUBY_PLATFORMから類推してWindowsなら1を、そうでなければ0を返す */
+/* result true if windows */
 static int platform_is_windows()
 {
-  VALUE platform = rb_const_get(rb_cObject, rb_intern("RUBY_PLATFORM"));
+    VALUE platform = rb_const_get(rb_cObject, rb_intern("RUBY_PLATFORM"));
     return regxp_is_match(platform, rb_str_new2("msvcrt|mswin|bccwin|mingw|cygwin"))
-      ? 1
-      : 0;
+	? 1
+	: 0;
 }
 
 /*
- * RUBY_PLATFORMと$KCODEを元にIconvで有効な適当な文字コード名を返す
- * TODO: 実行環境のLOCALE,LANG,LC_ALL等も参考にする
+ * Get better charcode name
  */
-static char* get_charset_name()
+static const char* get_charcode_name()
 {
-    char* result = NULL;
-    ID id_Iconv = rb_intern("Iconv");
-    
-    if (rb_const_defined(rb_cObject, id_Iconv))
-      {
-        VALUE kcode = rb_gv_get("$KCODE");
-        VALUE platform = rb_const_get(rb_cObject, rb_intern("RUBY_PLATFORM"));
-        char* kcodep = (TYPE(kcode) == T_STRING) ? StringValuePtr(kcode) : "";
+    const char* result = NULL;
 
-        switch(toupper(*kcodep))
-        {
-        case 'E':
-            result = (char*)cs_eucjp;
-            break;
-        case 'S':
-          if (platform_is_windows())
-            {
-              result = (char*)cs_cp932;
-            }
-          else
-            {
-              result = (char*)cs_sjis;
-            }
-          break;
-        case 'N':
-          if (platform_is_windows())
-            {
-              result = (char*)cs_cp932;
-            }
-          else
-            {
-                result = NULL;
-            }
-            break;
-        case 'U':
-        default:
-            result = NULL;
-            break;
-        }
-      }else{
-        result = NULL;
-      }
+    switch(Kcode)
+    {
+	case 'E':
+	    result = cs_eucjp;
+	    break;
+	case 'S':
+	    if (platform_is_windows())
+	    {
+		result = cs_cp932;
+	    }
+	    else
+	    {
+		result = cs_sjis;
+	    }
+	    break;
+	case 'N':
+	    if (platform_is_windows())
+	    {
+		//for ruby1.8. YARV support better m17n.
+		result = cs_cp932;
+	    }
+	    else
+	    {
+		result = cs_utf8;
+	    }
+	    break;
+	case 'U':
+	default:
+	    result = cs_utf8;
+	    break;
+    }
     return result;
 }
 
-/*
- * 拡張ライブラリのIconvがある場合は1,ない場合は0を返す
- */
-static int has_exticonv()
+
+static void reinit()
 {
-	ID id_Iconv = rb_intern("Iconv");
-        VALUE Iconv = rb_const_get(rb_cObject, id_Iconv);
-	if(Iconv == Qnil)
+    VALUE rb_iconv_klass = rb_const_get(rb_cObject, rb_intern("Iconv"));
+    ID sym_new = rb_intern("new");
+    charcode = get_charcode_name();
+    objIconvR2J = rb_funcall(rb_iconv_klass, sym_new, 2, rb_str_new2(cs_utf8), rb_str_new2(charcode));
+    objIconvJ2R = rb_funcall(rb_iconv_klass, sym_new, 2, rb_str_new2(charcode), rb_str_new2(cs_utf8));
+}
+
+static void check_kcode()
+{
+    VALUE kcode = rb_gv_get("$KCODE");
+    if (TYPE(kcode) == T_STRING) {
+	char* kcodep = StringValuePtr(kcode);
+	char upper_kcode = toupper(*kcodep);
+	if (Kcode != upper_kcode) 
 	{
-	        return 0;
+	    Kcode = upper_kcode;
+	    reinit();
 	}
-	else
-	{
-		return 1;
-	}
+    }
+    else
+    {
+    	Kcode = 0;
+	objIconvR2J = objIconvJ2R = Qnil;
+    }
 }
 
 VALUE exticonv_local_to_utf8(VALUE local_string)
 {
-	char* cs = get_charset_name();
-	if(cs)
-	{
-		return exticonv_cc(local_string, cs, cs_utf8);
-	}
-	else
-	{
-		return local_string;
-	}
+    check_kcode();
+    if(Kcode && Kcode != 'U' && RTEST(objIconvR2J))
+    {
+	return rb_funcall(objIconvR2J, rb_intern("iconv"), 1, local_string);
+    }
+    else
+    {
+	return local_string;
+    }
 }
 
 VALUE exticonv_utf8_to_local(VALUE utf8_string)
 {
-	char* cs = get_charset_name();
-	if(cs)
-	{
-		return exticonv_cc(utf8_string, cs_utf8, cs);
-	}
-	else
-	{
-		return utf8_string;
-	}
-}
-
-VALUE exticonv_cc(VALUE original_string, const char* from, const char* to)
-{
-	return exticonv_vv(original_string, rb_str_new2(from), rb_str_new2(to));
-}
-
-VALUE exticonv_vv(VALUE original_string, VALUE from, VALUE to)
-{
-	if(has_exticonv())
-	{
-		ID id_Iconv = rb_intern("Iconv");
-		ID id_iconv = rb_intern("iconv");
-		VALUE Iconv = rb_const_get(rb_cObject, id_Iconv);
-		return rb_ary_entry(rb_funcall(Iconv, id_iconv, 3, to, from, original_string), 0);
-	}
-	else
-	{
-		//iconvがなければそのまま返す
-		return original_string;
-	}
+    check_kcode();
+    if(Kcode && Kcode != 'U' && RTEST(objIconvJ2R))
+    {
+	return rb_funcall(objIconvJ2R, rb_intern("iconv"), 1, utf8_string);
+    }
+    else
+    {
+	return utf8_string;
+    }
 }

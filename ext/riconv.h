@@ -19,7 +19,5 @@
 
 extern VALUE exticonv_local_to_utf8(VALUE);
 extern VALUE exticonv_utf8_to_local(VALUE);
-extern VALUE exticonv_cc(VALUE, const char*, const char*);
-extern VALUE exticonv_vv(VALUE, VALUE, VALUE);
 
 #endif /* _RICONV_H */
