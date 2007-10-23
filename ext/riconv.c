@@ -16,71 +16,107 @@
  */
 
 #include "ruby.h"
+#include "extconf.h"
+
+#if defined _WIN32 || defined __CYGWIN__
+#include <windows.h>
+#endif
+
+#if defined HAVE_NL_LANGINFO
+#include <langinfo.h>
+static const char* const NL_EUC_TABLE[] = { "EUC-JISX0213", "EUC-JP", "EUC-JP-MS" };
+static const char* const NL_SJIS_TABLE[] = { "SHIFT_JIS", "SHIFT_JISX0213", "WINDOWS-31J" };
+#endif
+
+#if defined HAVE_SETLOCALE
+#include <locale.h>
+static const char* const LOCALE_EUC_TABLE[] = { "japanese", "ja_JP.eucJP", "japanese.euc", "ja_JP", "ja_JP.ujis" };
+static const char* const LOCALE_SJIS_TABLE[] = { "japanese.sjis", "ja_JP.SJIS" };
+static const char* const LOCALE_UTF8_TABLE[] = { "ja_JP.UTF-8", "ja_JP.utf8" };
+#endif
+
 #include "riconv.h"
 
-static const char* const cs_eucjp = "EUC-JP";
-static const char* const cs_sjis = "Shift_JIS";
-static const char* const cs_cp932 = "CP932";
-static const char* const cs_ms932 = "MS932";
-static const char* const cs_utf8 = "UTF-8";
+static const char* const CS_EUCJP = "EUC-JP";
+static const char* const CS_CP932 = "CP932";
+static const char* const CS_SJIS = "SHIFT_JIS";
+static const char* const CS_UTF8 = "UTF-8";
+
 
 static VALUE objIconvJ2R;
 static VALUE objIconvR2J;
 static const char* charcode; //is this necessary?
-static char Kcode = 0; //
+static char Kcode = '\0';
 
-/* wrap Regexp::match */
-static int regxp_is_match(VALUE str, VALUE regxp)
+static int find_table(const char* const str, const char* const table[])
 {
-    return rb_funcall(str, rb_intern("match"), 1, RREGEXP(regxp)) != Qnil ? 1 : 0 ;
+    int i;
+    int size = sizeof(table);
+    for (i = 0; i < size; ++i)
+    {
+        if (strstr(str, table[i])) return 1;
+    }
+    return 0;
 }
 
-/* result true if windows */
-static int platform_is_windows()
+static const char* get_charcode_name_by_locale(const char* const name)
 {
-    VALUE platform = rb_const_get(rb_cObject, rb_intern("RUBY_PLATFORM"));
-    return regxp_is_match(platform, rb_str_new2("msvcrt|mswin|bccwin|mingw|cygwin"))
-	? 1
-	: 0;
+    if (find_table(name, LOCALE_UTF8_TABLE))
+        return NULL;
+    else if (find_table(name, LOCALE_EUC_TABLE))
+        return CS_EUCJP;
+    else if (find_table(name, LOCALE_SJIS_TABLE))
+        return CS_SJIS;
+    else
+        return NULL;
 }
-
 /*
- * Get better charcode name
+ * Get better charcode name.
  */
 static const char* get_charcode_name()
 {
     const char* result = NULL;
+    const char* lang = NULL;
 
     switch(Kcode)
     {
-	case 'E':
-	    result = cs_eucjp;
-	    break;
-	case 'S':
-	    if (platform_is_windows())
-	    {
-		result = cs_cp932;
-	    }
-	    else
-	    {
-		result = cs_sjis;
-	    }
-	    break;
-	case 'N':
-	    if (platform_is_windows())
-	    {
-		//for ruby1.8. YARV support better m17n.
-		result = cs_cp932;
-	    }
-	    else
-	    {
-		result = cs_utf8;
-	    }
-	    break;
-	case 'U':
-	default:
-	    result = cs_utf8;
-	    break;
+    case 'E':
+        result = CS_EUCJP;
+        break;
+    case 'S':
+#if defined _WIN32 || defined __CYGWIN__
+        result = CS_CP932;
+#else
+        result = CS_SJIS;
+#endif
+        break;
+    case 'U':
+        //as is.
+        break;
+    case 'N':
+    default:
+#if defined _WIN32 || defined __CYGWIN__
+        if (932 == GetACP()) result = CS_CP932;
+#elif defined HAVE_NL_LANGINFO
+        setlocale(LC_ALL, ""); //initialize
+        lang = nl_langinfo(CODESET);
+        if (find_table(lang, NL_EUC_TABLE))
+                result =  CS_EUCJP;
+        else if (find_table(lang, NL_SJIS_TABLE))
+                result = CS_SJIS;
+#elif defined HAVE_SETLOCALE
+        setlocale(LC_ALL, ""); //initialize
+        result = get_charcode_name_by_locale(setlocale(LC_ALL, NULL));
+#elif defined HAVE_GETENV
+        printf("HAVE_GETENV\n");
+        if (result = get_charcode_name_by_locale(getenv("LC_ALL")))
+                ;
+        else if (result = get_charcode_name_by_locale(getenv("LC_CTYPE")))
+                ;
+        else if (result = get_charcode_name_by_locale(getenv("LANG")))
+                ;
+#endif
+        break;
     }
     return result;
 }
@@ -88,54 +124,63 @@ static const char* get_charcode_name()
 
 static void reinit()
 {
-    VALUE rb_iconv_klass = rb_const_get(rb_cObject, rb_intern("Iconv"));
-    ID sym_new = rb_intern("new");
     charcode = get_charcode_name();
-    objIconvR2J = rb_funcall(rb_iconv_klass, sym_new, 2, rb_str_new2(cs_utf8), rb_str_new2(charcode));
-    objIconvJ2R = rb_funcall(rb_iconv_klass, sym_new, 2, rb_str_new2(charcode), rb_str_new2(cs_utf8));
+    if (charcode)
+    {
+        VALUE rb_iconv_klass = rb_const_get(rb_cObject, rb_intern("Iconv"));
+        if (RTEST(rb_iconv_klass)) {
+            ID sym_new = rb_intern("new");
+            objIconvR2J = rb_funcall(rb_iconv_klass, sym_new, 2, rb_str_new2(CS_UTF8), rb_str_new2(charcode));
+            objIconvJ2R = rb_funcall(rb_iconv_klass, sym_new, 2, rb_str_new2(charcode), rb_str_new2(CS_UTF8));
+        }
+    }
+    else
+    {
+        objIconvR2J = objIconvJ2R = Qnil;
+    }
 }
 
 static void check_kcode()
 {
+    VALUE rb_iconv_klass = rb_const_get(rb_cObject, rb_intern("Iconv"));
     VALUE kcode = rb_gv_get("$KCODE");
-    if (TYPE(kcode) == T_STRING) {
-	char* kcodep = StringValuePtr(kcode);
-	char upper_kcode = toupper(*kcodep);
-	if (Kcode != upper_kcode) 
-	{
-	    Kcode = upper_kcode;
-	    reinit();
-	}
+    if (RTEST(rb_iconv_klass) && TYPE(kcode) == T_STRING) {
+        char* kcodep = StringValuePtr(kcode);
+        char upper_kcode = toupper(*kcodep);
+        if (Kcode != upper_kcode)
+        {
+            Kcode = upper_kcode;
+            reinit();
+        }
     }
     else
     {
-    	Kcode = 0;
-	objIconvR2J = objIconvJ2R = Qnil;
+        objIconvR2J = objIconvJ2R = Qnil;
     }
 }
 
 VALUE exticonv_local_to_utf8(VALUE local_string)
 {
     check_kcode();
-    if(Kcode && Kcode != 'U' && RTEST(objIconvR2J))
+    if(RTEST(objIconvR2J))
     {
-	return rb_funcall(objIconvR2J, rb_intern("iconv"), 1, local_string);
+        return rb_funcall(objIconvR2J, rb_intern("iconv"), 1, local_string);
     }
     else
     {
-	return local_string;
+        return local_string;
     }
 }
 
 VALUE exticonv_utf8_to_local(VALUE utf8_string)
 {
     check_kcode();
-    if(Kcode && Kcode != 'U' && RTEST(objIconvJ2R))
+    if(RTEST(objIconvR2J))
     {
-	return rb_funcall(objIconvJ2R, rb_intern("iconv"), 1, utf8_string);
+        return rb_funcall(objIconvJ2R, rb_intern("iconv"), 1, utf8_string);
     }
     else
     {
-	return utf8_string;
+        return utf8_string;
     }
 }

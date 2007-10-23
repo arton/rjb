@@ -147,7 +147,13 @@ class TestRjb < Test::Unit::TestCase
     s = @jString.new(utf8_kj)
     assert_equal(s.toString(), utf8_kj)
     $KCODE = 'none'
-    none_kj = "\xE6\xBC\xA2\xE5\xAD\x97\xE3\x83\x86\xE3\x82\xAD\xE3\x82\xB9\xE3\x83\x88"
+    if /mswin(?!ce)|mingw|cygwin|bccwin/ =~ RUBY_PLATFORM
+      #expecting shift_jis on windows
+      none_kj = "\x8a\xbf\x8e\x9a\x83\x65\x83\x4c\x83\x58\x83\x67"
+    else
+      #expecting utf-8 unless windows
+      none_kj = "\xE6\xBC\xA2\xE5\xAD\x97\xE3\x83\x86\xE3\x82\xAD\xE3\x82\xB9\xE3\x83\x88"
+    end
     s = @jString.new(none_kj)
     assert_equal(s.toString(), none_kj)
     $KCODE = 'utf8'

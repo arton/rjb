@@ -43,6 +43,11 @@ end
 
 def create_rjb_makefile
   if have_header("jni.h")
+    have_func("locale_charset", "iconv.h")
+    have_func("nl_langinfo", "langinfo.h")
+    have_func("setlocale", "locale.h")
+    have_func("getenv")
+    create_header
     create_makefile("rjbcore")
   end
 end

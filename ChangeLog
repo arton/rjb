@@ -1,3 +1,6 @@
+Tue Oct 23 Kuwashima
+ *riconv.c
+	Change string encoding conversion rule.
 Mon Oct 22 Kuwashima
  *riconv.c
  *riconv.h
