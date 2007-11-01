@@ -130,8 +130,12 @@ static void reinit()
         VALUE rb_iconv_klass = rb_const_get(rb_cObject, rb_intern("Iconv"));
         if (RTEST(rb_iconv_klass)) {
             ID sym_new = rb_intern("new");
+	    rb_gc_unregister_address(&objIconvR2J);
             objIconvR2J = rb_funcall(rb_iconv_klass, sym_new, 2, rb_str_new2(CS_UTF8), rb_str_new2(charcode));
+	    rb_gc_register_address(&objIconvR2J);
+	    rb_gc_unregister_address(&objIconvJ2R);
             objIconvJ2R = rb_funcall(rb_iconv_klass, sym_new, 2, rb_str_new2(charcode), rb_str_new2(CS_UTF8));
+	    rb_gc_register_address(&objIconvJ2R);
         }
     }
     else
