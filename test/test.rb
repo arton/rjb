@@ -539,7 +539,8 @@ class TestRjb < Test::Unit::TestCase
   def test_generics_map
     test = import('jp.co.infoseek.hp.arton.rjb.Test').new
     map = test.sorted_map
-    assert_equals "\0\x1\x2\x3\x4", map.get('abc')
+    assert_equal "\0\x1\x2\x3\x4", map.get('abc')
+    assert_equal "\x5\x6\x7\x8\x9", map.get('def')
   end
 end
 

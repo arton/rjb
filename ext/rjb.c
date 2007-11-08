@@ -15,7 +15,7 @@
  * $Id$
  */
 
-#define RJB_VERSION "1.0.9"
+#define RJB_VERSION "1.0.10"
 
 #include "ruby.h"
 #include "st.h"
@@ -45,6 +45,7 @@ static void setup_metadata(JNIEnv* jenv, VALUE self, struct jv_data*, VALUE clas
 static VALUE jarray2rv(JNIEnv* jenv, jvalue val);
 static jarray r2objarray(JNIEnv* jenv, VALUE v, const char* cls);
 static VALUE jv2rv_withprim(JNIEnv* jenv, jobject o);
+static J2R get_arrayconv(const char* cname, char* depth);
 
 static VALUE rjb;
 static VALUE jklass;
@@ -237,6 +238,7 @@ static VALUE jv2rv_r(JNIEnv* jenv, jvalue val)
     // object to ruby
     if (!val.l) return Qnil;
     klass = (*jenv)->GetObjectClass(jenv, val.l);
+
     if ((*jenv)->IsSameObject(jenv, klass, j_class))
     {
         (*jenv)->DeleteLocalRef(jenv, klass);
@@ -247,8 +249,13 @@ static VALUE jv2rv_r(JNIEnv* jenv, jvalue val)
     cname = (*jenv)->GetStringUTFChars(jenv, nm, NULL);
     if (*cname == '[')
     {
+        char depth = 0;
+        J2R j2r = get_arrayconv(cname, &depth);
         rjb_release_string(jenv, nm, cname);
-        return jarray2rv(jenv, val);
+        v = j2r(jenv, val);
+        (*jenv)->DeleteLocalRef(jenv, klass);
+        (*jenv)->DeleteLocalRef(jenv, val.l);
+        return v;
     }
     clsname = rb_str_new2(cname);
     rjb_release_string(jenv, nm, cname);
@@ -1146,6 +1153,27 @@ static R2J get_r2j(JNIEnv* jenv, jobject o, int* siglen,  char* sigp)
     return result;
 }
 
+static J2R get_arrayconv(const char* cname, char* pdepth)
+{
+    int i;
+    int start;
+    for (start = 1; *(cname + start) == '['; start++);
+    *pdepth = (char)start;
+    for (i = 0; i < COUNTOF(jcvt); i++)
+    {
+        if (*(cname + start) == jcvt[i].jntype[0])
+        {
+            if (jcvt[i].jntype[0] == 'L'
+                && strncmp(cname + start, jcvt[i].jntype, strlen(jcvt[i].jntype)))
+            {
+                break;
+            }
+            return jcvt[i].ja2r;
+        }
+    }
+    return &jarray2rv;
+}
+
 static J2R get_j2r(JNIEnv* jenv, jobject cls, char* psig, char* pdepth, char* ppsig, off_t* piv, int static_method)
 {
     int i;
@@ -1158,26 +1186,7 @@ static J2R get_j2r(JNIEnv* jenv, jobject cls, char* psig, char* pdepth, char* pp
 
     if (*cname == '[')
     {
-        int start;
-	for (start = 1; *(cname + start) == '['; start++);
-	*pdepth = (char)start;
-	for (i = 0; i < COUNTOF(jcvt); i++)
-	{
-	    if (*(cname + start) == jcvt[i].jntype[0])
-	    {
-		if (jcvt[i].jntype[0] == 'L'
-		    && strncmp(cname + start, jcvt[i].jntype, strlen(jcvt[i].jntype)))
-		{
-		    break;
-		}
-		result = jcvt[i].ja2r;
-		break;
-	    }
-	}
-	if (!result)
-	{
-	    result = jarray2rv;
-	}
+        result = get_arrayconv(cname, pdepth);
 	jname = cname;
     }
     else
