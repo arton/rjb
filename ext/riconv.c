@@ -51,7 +51,7 @@ static char Kcode = '\0';
 static int find_table(const char* const str, const char* const table[])
 {
     int i;
-    int size = sizeof(table);
+    int size = sizeof(table) / sizeof(table[0]);
     for (i = 0; i < size; ++i)
     {
         if (strstr(str, table[i])) return 1;
