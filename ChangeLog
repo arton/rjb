@@ -5,6 +5,8 @@ Fri Nov 9 arton
  *rjb.c
 	fix rjb-bugs-15430 that caused by bad array conversion.
 	(generics method result signature is an object, but the real result is typed array)
+ *riconv.c
+	correct to get the number of array element.
 Tue Oct 23 Kuwashima
  *riconv.c
 	Change string encoding conversion rule.
