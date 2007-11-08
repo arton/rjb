@@ -534,5 +534,12 @@ class TestRjb < Test::Unit::TestCase
     assert_equal "TWO", t.TWO.name
     assert_equal "THREE", t.THREE.toString
   end
+
+  #rjb-bugs-15430 rebported by Bryan Duxbury
+  def test_generics_map
+    test = import('jp.co.infoseek.hp.arton.rjb.Test').new
+    map = test.sorted_map
+    assert_equals "\0\x1\x2\x3\x4", map.get('abc')
+  end
 end
 

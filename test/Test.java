@@ -5,6 +5,8 @@ package jp.co.infoseek.hp.arton.rjb;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Comparator;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.math.BigDecimal;
 
 public class Test {
@@ -84,5 +86,11 @@ public class Test {
     }
     public enum TestTypes {
         ONE, TWO, THREE
+    }
+    public SortedMap<String, byte[]> getSortedMap() {
+        SortedMap<String, byte[]> map = new TreeMap<String, byte[]>();
+        map.put("abc", new byte[]{0,1,2,3,4});
+        map.put("def", new byte[]{5,6,7,8,9});
+        return map;
     }
 }
