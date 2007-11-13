@@ -1,3 +1,6 @@
+Wed Nov 14 Kuwashima
+ *rjb.c
+ 	add error check to constructor.
 Fri Nov 9 arton
  *test.rb
  *Test.java

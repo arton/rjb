@@ -1883,6 +1883,7 @@ static VALUE createinstance(JNIEnv* jenv, int argc, VALUE* argv,
 	R2J pr2j = *(pc->arg_convert + i);
 	pr2j(jenv, argv[i], args + i, psig, 0);
 	psig = next_sig(psig);
+	rjb_check_exception(jenv, 1);
     }
     obj = (*jenv)->NewObjectA(jenv, org->obj, pc->id, args);
     if (!obj)
