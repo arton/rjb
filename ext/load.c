@@ -86,6 +86,15 @@ static VALUE load_jvm(char* jvmtype)
     {
         return Qnil;
     }
+#if defined(_WIN32)
+    if (*jh == '"' && *(jh + strlen(jh) - 1) == '"')
+    {
+        char* p = ALLOCA_N(char, strlen(jh) + 1);
+        strcpy(p, jh + 1);
+        *(p + strlen(p) - 1) = '\0';
+        jh = p;
+    }
+#endif    
     java_home = ALLOCA_N(char, strlen(jh) + 1);
     strcpy(java_home, jh);
     if (*(java_home + strlen(jh) - 1) == DIRSEPARATOR)

@@ -1,3 +1,8 @@
+Tue Nov 20 arton
+ *rjb.c
+	mark version 1.10.12 for next relase.
+ *load.c
+	omit useless double-quotations from JAVA_HOME, maybe specifies a longpathname (but useless).
 Wed Nov 14 Kuwashima
  *rjb.c
  	add error check to constructor.
