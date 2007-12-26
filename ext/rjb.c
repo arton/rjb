@@ -18,7 +18,12 @@
 #define RJB_VERSION "1.0.12"
 
 #include "ruby.h"
+#include "extconf.h"
+#if RJB_RUBY_VERSION_CODE < 190
 #include "st.h"
+#else
+#include "ruby/st.h"
+#endif
 #include "jniwrap.h"
 #include "jp_co_infoseek_hp_arton_rjb_RBridge.h"
 #include "riconv.h"
@@ -273,11 +278,11 @@ static VALUE jv2rv_r(JNIEnv* jenv, jvalue val)
 
 static VALUE jv2rv(JNIEnv* jenv, jvalue val)
 {
-    if (primitive_conversion == Qfalse)
+    if (RTEST(primitive_conversion))
     {
-        return jv2rv_r(jenv, val);
+        return jv2rv_withprim(jenv, val.l);
     }
-    return jv2rv_withprim(jenv, val.l);
+    return jv2rv_r(jenv, val);
 }
 
 static VALUE jvoid2rv(JNIEnv* jenv, jvalue val)
@@ -426,8 +431,8 @@ static VALUE call_conv(JNIEnv* jenv, jvalue val, size_t sz, void* p, CONV conv, 
     char* cp = (char*)p;
     jsize len = (*jenv)->GetArrayLength(jenv, val.l);
     VALUE v = rb_ary_new2(len);
-    VALUE* pv = RARRAY(v)->ptr;
-    RARRAY(v)->len = len;
+    VALUE* pv = RARRAY_PTR(v);
+    RARRAY_LEN(v) = len;
     for (i = 0; i < len; i++)
     {
         *pv++ =conv(jenv, cp);
@@ -526,8 +531,11 @@ static VALUE jv2rv_withprim(JNIEnv* jenv, jobject o)
 {
     jvalue jv;
     int i;
-    jclass klass = (*jenv)->GetObjectClass(jenv, o);
+    jclass klass;
     jv.j = 0;
+    if (!o)
+	rb_raise(rb_eRuntimeError, "Object is NULL");
+    klass = (*jenv)->GetObjectClass(jenv, o);
     for (i = PRM_INT; i < PRM_LAST; i++)
     {
         if ((*jenv)->IsSameObject(jenv, jpcvt[i].klass, klass))
@@ -645,7 +653,7 @@ static void rv2jshort(JNIEnv* jenv, VALUE val, jvalue* jv, const char* psig, int
 static void rv2jboolean(JNIEnv* jenv, VALUE val, jvalue* jv, const char* psig, int release)
 {
     if (!release)
-	jv->z = (val == Qnil || val == Qfalse) ? JNI_FALSE : JNI_TRUE;
+	jv->z = (RTEST(val)) ? JNI_TRUE : JNI_FALSE;
 }
 static void rv2jstring(JNIEnv* jenv, VALUE val, jvalue* jv, const char* psig, int release)
 {
@@ -803,8 +811,8 @@ static void rv2jobject(JNIEnv* jenv, VALUE val, jvalue* jv, const char* psig, in
 static void check_fixnumarray(VALUE v)
 {
     int i;
-    int len = RARRAY(v)->len;
-    VALUE* p = RARRAY(v)->ptr;
+    int len = RARRAY_LEN(v);
+    VALUE* p = RARRAY_PTR(v);
     // check all fixnum (overflow is permit)
     for (i = 0; i < len; i++)
     {
@@ -820,20 +828,20 @@ static jarray r2barray(JNIEnv* jenv, VALUE v, const char* cls)
     jarray ary = NULL;
     if (TYPE(v) == T_STRING)
     {
-	ary = (*jenv)->NewByteArray(jenv, RSTRING(v)->len);
-	(*jenv)->SetByteArrayRegion(jenv, ary, 0, RSTRING(v)->len,
-				    RSTRING(v)->ptr);
+	ary = (*jenv)->NewByteArray(jenv, RSTRING_LEN(v));
+	(*jenv)->SetByteArrayRegion(jenv, ary, 0, RSTRING_LEN(v),
+				    RSTRING_PTR(v));
     }
     else if (TYPE(v) == T_ARRAY)
     {
 	int i;
 	jbyte* pb;
 	check_fixnumarray(v);
-	ary = (*jenv)->NewByteArray(jenv, RARRAY(v)->len);
+	ary = (*jenv)->NewByteArray(jenv, RARRAY_LEN(v));
 	pb = (*jenv)->GetByteArrayElements(jenv, ary, NULL);
-	for (i = 0; i < RARRAY(v)->len; i++)
+	for (i = 0; i < RARRAY_LEN(v); i++)
 	{
-	    *(pb + i) = (jbyte)FIX2ULONG(RARRAY(v)->ptr[i]);
+	    *(pb + i) = (jbyte)FIX2ULONG(RARRAY_PTR(v)[i]);
 	}
 	(*jenv)->ReleaseByteArrayElements(jenv, ary, pb, 0);
     }
@@ -852,11 +860,11 @@ static jarray r2carray(JNIEnv* jenv, VALUE v, const char* cls)
 	int i;
 	jchar* pb;
 	check_fixnumarray(v);
-	ary = (*jenv)->NewCharArray(jenv, RARRAY(v)->len);
+	ary = (*jenv)->NewCharArray(jenv, RARRAY_LEN(v));
 	pb = (*jenv)->GetCharArrayElements(jenv, ary, NULL);
-	for (i = 0; i < RARRAY(v)->len; i++)
+	for (i = 0; i < RARRAY_LEN(v); i++)
 	{
-	    *(pb + i) = (jchar)FIX2ULONG(RARRAY(v)->ptr[i]);
+	    *(pb + i) = (jchar)FIX2ULONG(RARRAY_PTR(v)[i]);
 	}
 	(*jenv)->ReleaseCharArrayElements(jenv, ary, pb, 0);
 	return ary;
@@ -871,11 +879,11 @@ static jarray r2darray(JNIEnv* jenv, VALUE v, const char* cls)
     {
 	int i;
 	jdouble* pb;
-	ary = (*jenv)->NewDoubleArray(jenv, RARRAY(v)->len);
+	ary = (*jenv)->NewDoubleArray(jenv, RARRAY_LEN(v));
 	pb = (*jenv)->GetDoubleArrayElements(jenv, ary, NULL);
-	for (i = 0; i < RARRAY(v)->len; i++)
+	for (i = 0; i < RARRAY_LEN(v); i++)
 	{
-	    *(pb + i) = (jdouble)rb_num2dbl(RARRAY(v)->ptr[i]);
+	    *(pb + i) = (jdouble)rb_num2dbl(RARRAY_PTR(v)[i]);
 	}
 	(*jenv)->ReleaseDoubleArrayElements(jenv, ary, pb, 0);
 	return ary;
@@ -890,11 +898,11 @@ static jarray r2farray(JNIEnv* jenv, VALUE v, const char* cls)
     {
 	int i;
 	jfloat* pb;
-	ary = (*jenv)->NewFloatArray(jenv, RARRAY(v)->len);
+	ary = (*jenv)->NewFloatArray(jenv, RARRAY_LEN(v));
 	pb = (*jenv)->GetFloatArrayElements(jenv, ary, NULL);
-	for (i = 0; i < RARRAY(v)->len; i++)
+	for (i = 0; i < RARRAY_LEN(v); i++)
 	{
-	    *(pb + i) = (jfloat)rb_num2dbl(RARRAY(v)->ptr[i]);
+	    *(pb + i) = (jfloat)rb_num2dbl(RARRAY_PTR(v)[i]);
 	}
 	(*jenv)->ReleaseFloatArrayElements(jenv, ary, pb, 0);
 	return ary;
@@ -910,11 +918,11 @@ static jarray r2iarray(JNIEnv* jenv, VALUE v, const char* cls)
 	int i;
 	jint* pb;
 	check_fixnumarray(v);
-	ary = (*jenv)->NewIntArray(jenv, RARRAY(v)->len);
+	ary = (*jenv)->NewIntArray(jenv, RARRAY_LEN(v));
 	pb = (*jenv)->GetIntArrayElements(jenv, ary, NULL);
-	for (i = 0; i < RARRAY(v)->len; i++)
+	for (i = 0; i < RARRAY_LEN(v); i++)
 	{
-	    *(pb + i) = (jint)FIX2LONG(RARRAY(v)->ptr[i]);
+	    *(pb + i) = (jint)FIX2LONG(RARRAY_PTR(v)[i]);
 	}
 	(*jenv)->ReleaseIntArrayElements(jenv, ary, pb, 0);
 	return ary;
@@ -929,14 +937,14 @@ static jarray r2larray(JNIEnv* jenv, VALUE v, const char* cls)
     {
 	int i;
 	jlong* pb;
-	ary = (*jenv)->NewLongArray(jenv, RARRAY(v)->len);
+	ary = (*jenv)->NewLongArray(jenv, RARRAY_LEN(v));
 	pb = (*jenv)->GetLongArrayElements(jenv, ary, NULL);
-	for (i = 0; i < RARRAY(v)->len; i++)
+	for (i = 0; i < RARRAY_LEN(v); i++)
 	{
 #if HAVE_LONG_LONG
-	    *(pb + i) = (jlong)rb_num2ll(RARRAY(v)->ptr[i]);
+	    *(pb + i) = (jlong)rb_num2ll(RARRAY_PTR(v)[i]);
 #else
-	    *(pb + i) = (jlong)FIX2LONG(RARRAY(v)->ptr[i]);
+	    *(pb + i) = (jlong)FIX2LONG(RARRAY_PTR(v)[i]);
 #endif
 	}
 	(*jenv)->ReleaseLongArrayElements(jenv, ary, pb, 0);
@@ -953,11 +961,11 @@ static jarray r2sarray(JNIEnv* jenv, VALUE v, const char* cls)
 	int i;
 	jshort* pb;
 	check_fixnumarray(v);
-	ary = (*jenv)->NewShortArray(jenv, RARRAY(v)->len);
+	ary = (*jenv)->NewShortArray(jenv, RARRAY_LEN(v));
 	pb = (*jenv)->GetShortArrayElements(jenv, ary, NULL);
-	for (i = 0; i < RARRAY(v)->len; i++)
+	for (i = 0; i < RARRAY_LEN(v); i++)
 	{
-	    *(pb + i) = (jshort)FIX2LONG(RARRAY(v)->ptr[i]);
+	    *(pb + i) = (jshort)FIX2LONG(RARRAY_PTR(v)[i]);
 	}
 	(*jenv)->ReleaseShortArrayElements(jenv, ary, pb, 0);
 	return ary;
@@ -972,12 +980,12 @@ static jarray r2boolarray(JNIEnv* jenv, VALUE v, const char* cls)
     {
 	int i;
 	jboolean* pb;
-	ary = (*jenv)->NewBooleanArray(jenv, RARRAY(v)->len);
+	ary = (*jenv)->NewBooleanArray(jenv, RARRAY_LEN(v));
 	pb = (*jenv)->GetBooleanArrayElements(jenv, ary, NULL);
-	for (i = 0; i < RARRAY(v)->len; i++)
+	for (i = 0; i < RARRAY_LEN(v); i++)
 	{
 	    *(pb + i)
-		= (NIL_P(RARRAY(v)->ptr[i]) || RARRAY(v)->ptr[i] == Qfalse)
+		= (!RTEST(RARRAY_PTR(v)[i]))
 			? JNI_FALSE : JNI_TRUE;
 	}
 	(*jenv)->ReleaseBooleanArrayElements(jenv, ary, pb, 0);
@@ -997,12 +1005,12 @@ static jarray r2objarray(JNIEnv* jenv, VALUE v, const char* cls)
     if (TYPE(v) == T_ARRAY)
     {
 	int i;
-	ary = (*jenv)->NewObjectArray(jenv, RARRAY(v)->len, j_object, NULL);
+	ary = (*jenv)->NewObjectArray(jenv, RARRAY_LEN(v), j_object, NULL);
 	rjb_check_exception(jenv, 0);
-	for (i = 0; i < RARRAY(v)->len; i++)
+	for (i = 0; i < RARRAY_LEN(v); i++)
 	{
 	    jvalue jv;
-	    rv2jobject(jenv, RARRAY(v)->ptr[i], &jv, NULL, 0);
+	    rv2jobject(jenv, RARRAY_PTR(v)[i], &jv, NULL, 0);
 	    (*jenv)->SetObjectArrayElement(jenv, ary, i, jv.l);
 	}
 	return ary;
@@ -1079,12 +1087,12 @@ static void rv2jarray(JNIEnv* jenv, VALUE val, jvalue* jv, const char* psig, int
             if (TYPE(val) != T_ARRAY) {
                 rb_raise(rb_eRuntimeError, "array's rank unmatch");
             }
-            ja = (*jenv)->NewObjectArray(jenv, RARRAY(val)->len, j_object, NULL);
+            ja = (*jenv)->NewObjectArray(jenv, RARRAY_LEN(val), j_object, NULL);
             rjb_check_exception(jenv, 0);
-            for (i = 0; i < RARRAY(val)->len; i++)
+            for (i = 0; i < RARRAY_LEN(val); i++)
             {
                 jvalue jv;
-                rv2jarray(jenv, RARRAY(val)->ptr[i], &jv, psig + 1, 0);
+                rv2jarray(jenv, RARRAY_PTR(val)[i], &jv, psig + 1, 0);
                 (*jenv)->SetObjectArrayElement(jenv, ja, i, jv.l);
             }
         }
@@ -1751,7 +1759,7 @@ static int clear_classes(VALUE key, VALUE val, VALUE dummy)
 }
 static VALUE rjb_s_unload(int argc, VALUE* argv, VALUE self)
 {
-    st_foreach(RHASH(rjb_loaded_classes)->tbl, clear_classes, 0);
+    st_foreach(RHASH_TBL(rjb_loaded_classes), clear_classes, 0);
     if (rjb_jvm)
     {
 	(*rjb_jvm)->DestroyJavaVM(rjb_jvm);
@@ -1775,7 +1783,7 @@ static VALUE rjb_s_classes(VALUE self)
  */
 static VALUE rjb_s_set_pconversion(VALUE self, VALUE val)
 {
-    primitive_conversion = (val == Qnil || val == Qfalse) ? Qfalse : Qtrue;
+    primitive_conversion = (RTEST(val)) ? Qtrue : Qfalse;
     return val;
 }
 
@@ -2165,7 +2173,7 @@ static void register_class(VALUE self, VALUE clsname)
     /*
      * the hash was frozen, so it need to call st_ func directly.
      */
-    st_insert(RHASH(rjb_loaded_classes)->tbl, clsname, self);
+    st_insert(RHASH_TBL(rjb_loaded_classes), clsname, self);
 }
 
 /*
@@ -2755,10 +2763,10 @@ JNIEXPORT jobject JNICALL Java_jp_co_infoseek_hp_arton_rjb_RBridge_call
     jvalue j;
     memset(&j, 0, sizeof(j));
 
-    for (i = 0; i < RARRAY(proxies)->len; i++)
+    for (i = 0; i < RARRAY_LEN(proxies); i++)
     {
 	struct rj_bridge* ptr;
-	VALUE val = RARRAY(proxies)->ptr[i];
+	VALUE val = RARRAY_PTR(proxies)[i];
 	Data_Get_Struct(val, struct rj_bridge, ptr);
 	if ((*jenv)->IsSameObject(jenv, proxy, ptr->proxy))
 	{

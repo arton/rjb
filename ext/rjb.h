@@ -34,6 +34,7 @@
 #define _I64_MAX      9223372036854775807i64
 #endif
 
+
 /* in load.c */
 extern int rjb_create_jvm(JNIEnv** pjenv, JavaVMInitArgs*, char*, VALUE);
 

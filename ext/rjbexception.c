@@ -16,7 +16,12 @@
  */
 
 #include "ruby.h"
+#include "extconf.h"
+#if RJB_RUBY_VERSION_CODE < 190
 #include "st.h"
+#else
+#include "ruby/st.h"
+#endif
 #include "jniwrap.h"
 #include "riconv.h"
 #include "rjb.h"
@@ -49,7 +54,7 @@ VALUE rjb_get_exception_class(JNIEnv* jenv, jstring str)
     if (rexp == Qnil)
     {
 	rexp = rb_define_class(pcls, rb_eStandardError);
-	st_insert(RHASH(rjb_loaded_classes)->tbl, cname, rexp);
+	st_insert(RHASH_TBL(rjb_loaded_classes), cname, rexp);
     }
     return rexp;
 }

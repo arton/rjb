@@ -18,9 +18,16 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "ruby.h"
+#include "extconf.h"
+#if RJB_RUBY_VERSION_CODE < 190
 #include "intern.h"
 #include "st.h"
 #include "util.h"
+#else
+#include "ruby/intern.h"
+#include "ruby/st.h"
+#include "ruby/util.h"
+#endif
 #include "jniwrap.h"
 #include "jp_co_infoseek_hp_arton_rjb_RBridge.h"
 #include "rjb.h"
@@ -60,22 +67,24 @@
  #define CLASSPATH_SEP ':'
 #endif
 
-typedef void (*GETDEFAULTJAVAVMINITARGS)(void*);
-typedef int (*CREATEJAVAVM)(JavaVM**, void**, void*);
+typedef int (*GETDEFAULTJAVAVMINITARGS)(void*);
+typedef int (*CREATEJAVAVM)(JavaVM**, JNIEnv**, void*);
+
 
 static VALUE jvmdll = Qnil;
-static VALUE GetDefaultJavaVMInitArgs;
-static VALUE CreateJavaVM;
+static VALUE getdefaultjavavminitargsfunc;
+static VALUE createjavavmfunc;
 
 /*
  * not completed, only valid under some circumstances.
  */
-static VALUE load_jvm(char* jvmtype)
+static int load_jvm(char* jvmtype)
 {
     char* libpath;
     char* java_home;
     char* jh;
     VALUE dl;
+    VALUE importer;
 
 #if defined(__APPLE__) && defined(__MACH__)
     jh = "/System/Library/Frameworks/JavaVM.framework";
@@ -84,7 +93,7 @@ static VALUE load_jvm(char* jvmtype)
 #endif
     if (!jh)
     {
-        return Qnil;
+        return 0;
     }
 #if defined(_WIN32)
     if (*jh == '"' && *(jh + strlen(jh) - 1) == '"')
@@ -113,16 +122,24 @@ static VALUE load_jvm(char* jvmtype)
 		       + strlen(ARCH) + strlen(jvmtype) + 1);
     sprintf(libpath, JVMDLL, java_home, ARCH, jvmtype);
 #endif
+
     rb_require("dl");
-    dl = rb_eval_string("DL");
-    jvmdll = rb_funcall(dl, rb_intern("dlopen"), 1, rb_str_new2(libpath));
-    GetDefaultJavaVMInitArgs = rb_funcall(jvmdll, rb_intern("sym"),
-			  2, rb_str_new2("JNI_GetDefaultJavaVMInitArgs"),
-			     rb_str_new2("0p"));
-    CreateJavaVM = rb_funcall(jvmdll, rb_intern("sym"),
-			      2, rb_str_new2("JNI_CreateJavaVM"),
-			         rb_str_new2("pppp"));
-    return Qtrue;
+    if (!rb_const_defined_at(rb_cObject, rb_intern("DL")))
+    {
+	rb_raise(rb_eRuntimeError, "Constants DL is not defined.");
+	return 0;
+    }
+    
+    jvmdll = rb_funcall(rb_const_get(rb_cObject, rb_intern("DL")), rb_intern("dlopen"), 1, rb_str_new2(libpath));
+
+#if RJB_RUBY_VERSION_CODE < 190
+    getdefaultjavavminitargsfunc = rb_funcall(rb_funcall(rb_funcall(jvmdll, rb_intern("[]"), 2, rb_str_new2("JNI_GetDefaultJavaVMInitArgs"), rb_str_new2("IP")), rb_intern("to_ptr"), 0), rb_intern("to_i"), 0); 
+    createjavavmfunc = rb_funcall(rb_funcall(rb_funcall(jvmdll, rb_intern("[]"), 2, rb_str_new2("JNI_CreateJavaVM"), rb_str_new2("IPPP")), rb_intern("to_ptr"), 0), rb_intern("to_i"), 0); 
+#else
+    getdefaultjavavminitargsfunc = rb_funcall(jvmdll, rb_intern("[]"), 1, rb_str_new2("JNI_GetDefaultJavaVMInitArgs"));
+    createjavavmfunc = rb_funcall(jvmdll, rb_intern("[]"), 1, rb_str_new2("JNI_CreateJavaVM"));
+#endif
+    return 1;
 }
 
 static int load_bridge(JNIEnv* jenv)
@@ -199,17 +216,24 @@ int rjb_create_jvm(JNIEnv** pjenv, JavaVMInitArgs* vm_args, char* userpath, VALU
     int i;
     VALUE optval;
 
-    if (jvmdll == Qnil)
+    if (!RTEST(jvmdll))
     {
-	if (load_jvm(JVM_TYPE) == Qnil)
+	if (!load_jvm(JVM_TYPE))
 	{
 	    return -1;
 	}
     }
 
-    ptr = rb_funcall(GetDefaultJavaVMInitArgs, rb_intern("to_i"), 0);
-    initargs = *(GETDEFAULTJAVAVMINITARGS*)FIX2INT(ptr);
-    initargs(vm_args);
+    if (NIL_P(getdefaultjavavminitargsfunc))
+    {
+	return -1;
+    }
+    initargs = (GETDEFAULTJAVAVMINITARGS)NUM2ULONG(getdefaultjavavminitargsfunc);
+    result = initargs(vm_args);
+    if (0 > result)
+    {
+        return result;
+    }
     len = strlen(userpath);
     if (getenv("CLASSPATH"))
     {
@@ -248,9 +272,12 @@ int rjb_create_jvm(JNIEnv** pjenv, JavaVMInitArgs* vm_args, char* userpath, VALU
     vm_args->nOptions = optlen;
     vm_args->options = options;
     vm_args->ignoreUnrecognized = JNI_TRUE;
-    ptr = rb_funcall(CreateJavaVM, rb_intern("to_i"), 0);
-    createjavavm = *(CREATEJAVAVM*)FIX2INT(ptr);
-    result = createjavavm(&rjb_jvm, (void**)pjenv, vm_args);
+    if (NIL_P(createjavavmfunc))
+    {
+	return -1;
+    }
+    createjavavm = (CREATEJAVAVM)NUM2ULONG(createjavavmfunc);
+    result = createjavavm(&rjb_jvm, pjenv, vm_args);
     if (!result)
     {
 	result = load_bridge(*pjenv);

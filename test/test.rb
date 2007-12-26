@@ -47,7 +47,7 @@ class TestRjb < Test::Unit::TestCase
     assert_equal('abcde', str.toString)
     # argument test
     # char
-    assert_equal('abxde', str.replace(?c, ?x))
+    assert_equal('abxde', str.replace("c".sum, "x".sum))
     # string
     assert_equal('abdxe', str.replaceAll('cd', 'dx'))
     # int
@@ -84,12 +84,12 @@ class TestRjb < Test::Unit::TestCase
     # short
     s = @jShort.new_with_sig('S', 1532)
     assert_equal(1532, s.shortValue)
-    c = @jChar.new_with_sig('C', ?A)
-    assert_equal(?A, c.charValue)
+    c = @jChar.new_with_sig('C', "A".sum)
+    assert_equal("A".sum, c.charValue)
   end
 
   def test_array
-    str = @jString.new_with_sig('[C', [?a, ?b, ?c, ?d, ?e, ?c, ?f, ?c, ?g])
+    str = @jString.new_with_sig('[C', ["a".sum, "b".sum, "c".sum, "d".sum, "e".sum, "c".sum, "f".sum, "c".sum, "g".sum])
     assert_equal('abcdecfcg', str.toString)
     # conv string array
     splt = str.split('c')
@@ -102,7 +102,7 @@ class TestRjb < Test::Unit::TestCase
     assert_equal('abcdecfcg', ba)
     # conv char array to array(int)
     ca = str.toCharArray
-    assert_equal([?a, ?b, ?c, ?d, ?e, ?c, ?f, ?c, ?g], ca)
+    assert_equal(["a".sum, "b".sum, "c".sum, "d".sum, "e".sum, "c".sum, "f".sum, "c".sum, "g".sum], ca)
   end
 
   def test_importobj()
@@ -134,40 +134,61 @@ class TestRjb < Test::Unit::TestCase
   end
 
   def test_kjconv()
-    $KCODE = 'euc'
-    euc_kj = "\xb4\xc1\xbb\xfa\xa5\xc6\xa5\xad\xa5\xb9\xa5\xc8"
-    s = @jString.new(euc_kj)
-    assert_equal(s.toString(), euc_kj)
-    $KCODE = 'sjis'
-    sjis_kj = "\x8a\xbf\x8e\x9a\x83\x65\x83\x4c\x83\x58\x83\x67"
-    s = @jString.new(sjis_kj)
-    assert_equal(s.toString(), sjis_kj)
-    $KCODE = 'utf8'
-    utf8_kj = "\xE6\xBC\xA2\xE5\xAD\x97\xE3\x83\x86\xE3\x82\xAD\xE3\x82\xB9\xE3\x83\x88"
-    s = @jString.new(utf8_kj)
-    assert_equal(s.toString(), utf8_kj)
-    $KCODE = 'none'
-    if /mswin(?!ce)|mingw|cygwin|bccwin/ =~ RUBY_PLATFORM
-      #expecting shift_jis on windows
-      none_kj = "\x8a\xbf\x8e\x9a\x83\x65\x83\x4c\x83\x58\x83\x67"
+    if Object::const_defined?(:Encoding)
+      euc_kj = "\xb4\xc1\xbb\xfa\xa5\xc6\xa5\xad\xa5\xb9\xa5\xc8".force_encoding "euc-jp"
+      s = @jString.new(euc_kj)
+      assert_equal(s.toString(), euc_kj.encode("utf-8"))
+      sjis_kj = "\x8a\xbf\x8e\x9a\x83\x65\x83\x4c\x83\x58\x83\x67".force_encoding "shift_jis"
+      s = @jString.new(sjis_kj)
+      assert_equal(s.toString(), sjis_kj.encode("utf-8"))
+      utf8_kj = "\xE6\xBC\xA2\xE5\xAD\x97\xE3\x83\x86\xE3\x82\xAD\xE3\x82\xB9\xE3\x83\x88".force_encoding "utf-8"
+      s = @jString.new(utf8_kj)
+      assert_equal(s.toString(), utf8_kj.encode("utf-8"))
+      if /mswin(?!ce)|mingw|cygwin|bccwin/ =~ RUBY_PLATFORM
+	#expecting shift_jis on windows
+	none_kj = "\x8a\xbf\x8e\x9a\x83\x65\x83\x4c\x83\x58\x83\x67" #.force_encoding "shift_jis"
+      else
+	#expecting utf-8 unless windows
+	none_kj = "\xE6\xBC\xA2\xE5\xAD\x97\xE3\x83\x86\xE3\x82\xAD\xE3\x82\xB9\xE3\x83\x88" #.force_encoding "utf-8"
+      end
+      s = @jString.new(none_kj)
+      assert_equal(s.toString(), none_kj.encode("utf-8"))
     else
-      #expecting utf-8 unless windows
-      none_kj = "\xE6\xBC\xA2\xE5\xAD\x97\xE3\x83\x86\xE3\x82\xAD\xE3\x82\xB9\xE3\x83\x88"
+      $KCODE = 'euc'
+      euc_kj = "\xb4\xc1\xbb\xfa\xa5\xc6\xa5\xad\xa5\xb9\xa5\xc8"
+      s = @jString.new(euc_kj)
+      assert_equal(s.toString(), euc_kj)
+      $KCODE = 'sjis'
+      sjis_kj = "\x8a\xbf\x8e\x9a\x83\x65\x83\x4c\x83\x58\x83\x67"
+      s = @jString.new(sjis_kj)
+      assert_equal(s.toString(), sjis_kj)
+      $KCODE = 'utf8'
+      utf8_kj = "\xE6\xBC\xA2\xE5\xAD\x97\xE3\x83\x86\xE3\x82\xAD\xE3\x82\xB9\xE3\x83\x88"
+      s = @jString.new(utf8_kj)
+      assert_equal(s.toString(), utf8_kj)
+      $KCODE = 'none'
+      if /mswin(?!ce)|mingw|cygwin|bccwin/ =~ RUBY_PLATFORM
+	#expecting shift_jis on windows
+	none_kj = "\x8a\xbf\x8e\x9a\x83\x65\x83\x4c\x83\x58\x83\x67"
+      else
+	#expecting utf-8 unless windows
+	none_kj = "\xE6\xBC\xA2\xE5\xAD\x97\xE3\x83\x86\xE3\x82\xAD\xE3\x82\xB9\xE3\x83\x88"
+      end
+      s = @jString.new(none_kj)
+      assert_equal(s.toString(), none_kj)
+      $KCODE = 'utf8'
+      utf8_kj = "\xE6\xBC\xA2\xE5\xAD\x97\xE3\x83\x86\xE3\x82\xAD\xE3\x82\xB9\xE3\x83\x88"
+      s = @jString.new(utf8_kj)
+      assert_equal(s.toString(), utf8_kj)
+      $KCODE = 'sjis'
+      sjis_kj = "\x8a\xbf\x8e\x9a\x83\x65\x83\x4c\x83\x58\x83\x67"
+      s = @jString.new(sjis_kj)
+      assert_equal(s.toString(), sjis_kj)
+      $KCODE = 'euc'
+      euc_kj = "\xb4\xc1\xbb\xfa\xa5\xc6\xa5\xad\xa5\xb9\xa5\xc8"
+      s = @jString.new(euc_kj)
+      assert_equal(s.toString(), euc_kj)
     end
-    s = @jString.new(none_kj)
-    assert_equal(s.toString(), none_kj)
-    $KCODE = 'utf8'
-    utf8_kj = "\xE6\xBC\xA2\xE5\xAD\x97\xE3\x83\x86\xE3\x82\xAD\xE3\x82\xB9\xE3\x83\x88"
-    s = @jString.new(utf8_kj)
-    assert_equal(s.toString(), utf8_kj)
-    $KCODE = 'sjis'
-    sjis_kj = "\x8a\xbf\x8e\x9a\x83\x65\x83\x4c\x83\x58\x83\x67"
-    s = @jString.new(sjis_kj)
-    assert_equal(s.toString(), sjis_kj)
-    $KCODE = 'euc'
-    euc_kj = "\xb4\xc1\xbb\xfa\xa5\xc6\xa5\xad\xa5\xb9\xa5\xc8"
-    s = @jString.new(euc_kj)
-    assert_equal(s.toString(), euc_kj)
   end
 
   def test_constants()
@@ -451,7 +472,7 @@ class TestRjb < Test::Unit::TestCase
     stringbuffer = Rjb::import('java.lang.StringBuffer')
     sb = stringbuffer.new('abc')
     assert_equal(1, sb.index_of('bc'))
-    sb.set_char_at(1, ?B)
+    sb.set_char_at(1, "B".sum)
     assert_equal('aBc', sb.to_string)
     sb.length = 2
     assert_equal('aB', sb.to_string)
@@ -472,7 +493,7 @@ class TestRjb < Test::Unit::TestCase
     assert_equal(-6, @jByte.valueOf('-6'))
     assert_equal(0x7000000000000000, @jLong.valueOf('8070450532247928832'))
     assert_equal(-9223372036854775807, @jLong.valueOf('-9223372036854775807'))
-    assert_equal(?A, @jChar.valueOf(?A))
+    assert_equal("A".sum, @jChar.valueOf("A".sum))
   end
 
   def test_obj_to_primitive
@@ -486,7 +507,7 @@ class TestRjb < Test::Unit::TestCase
     a.add @jBoolean.TRUE
     a.add @jByte.valueOf('5')
     a.add @jLong.valueOf('8070450532247928832')
-    a.add @jChar.valueOf(?A)
+    a.add @jChar.valueOf("A".sum)
 
     Rjb::primitive_conversion = true
 
@@ -498,7 +519,7 @@ class TestRjb < Test::Unit::TestCase
     assert a.get(5)
     assert_equal 5, a.get(6)
     assert_equal 8070450532247928832, a.get(7)
-    assert_equal ?A, a.get(8)
+    assert_equal "A".sum, a.get(8)
   end
 
   def test_primitive_to_obj
@@ -514,7 +535,7 @@ class TestRjb < Test::Unit::TestCase
     a.add @jBoolean.TRUE
     a.add @jByte.valueOf('5')
     a.add @jLong.valueOf('8070450532247928832')
-    a.add @jChar.valueOf(?A)
+    a.add @jChar.valueOf("A".sum)
     assert_equal 'abcdef', a.get(0)
     assert_equal 1, a.get(1)
     assert_equal 2, a.get(2)
@@ -523,7 +544,7 @@ class TestRjb < Test::Unit::TestCase
     assert a.get(5)
     assert_equal 5, a.get(6)
     assert_equal 8070450532247928832, a.get(7)
-    assert_equal ?A, a.get(8)
+    assert_equal "A".sum, a.get(8)
   end
 
   def test_enum

@@ -1,7 +1,7 @@
-riconv.o : riconv.c $(hdrdir)/ruby.h $(hdrdir)/config.h $(hdrdir)/defines.h jp_co_infoseek_hp_arton_rjb_RBridge.h
-rjb.o : rjb.c $(hdrdir)/ruby.h $(hdrdir)/config.h $(hdrdir)/defines.h jp_co_infoseek_hp_arton_rjb_RBridge.h riconv.h rjb.h
-rjbexception.o : rjbexception.c $(hdrdir)/ruby.h $(hdrdir)/config.h $(hdrdir)/defines.h jp_co_infoseek_hp_arton_rjb_RBridge.h riconv.h rjb.h
-load.o : load.c $(hdrdir)/ruby.h $(hdrdir)/config.h $(hdrdir)/defines.h jp_co_infoseek_hp_arton_rjb_RBridge.h
+riconv.o : riconv.c jp_co_infoseek_hp_arton_rjb_RBridge.h
+rjb.o : rjb.c jp_co_infoseek_hp_arton_rjb_RBridge.h riconv.h rjb.h
+rjbexception.o : rjbexception.c jp_co_infoseek_hp_arton_rjb_RBridge.h riconv.h rjb.h
+load.o : load.c jp_co_infoseek_hp_arton_rjb_RBridge.h
 jp_co_infoseek_hp_arton_rjb_RBridge.h : jniwrap.h ../data/rjb/jp/co/infoseek/hp/arton/rjb/RBridge.class
 	javah -classpath ../data/rjb jp.co.infoseek.hp.arton.rjb.RBridge
 ../data/rjb/jp/co/infoseek/hp/arton/rjb/RBridge.class : RBridge.java

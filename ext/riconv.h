@@ -17,7 +17,8 @@
 #ifndef _RICONV_H
 #define _RICONV_H
 
-extern VALUE exticonv_local_to_utf8(VALUE);
-extern VALUE exticonv_utf8_to_local(VALUE);
+
+VALUE exticonv_local_to_utf8(VALUE);
+VALUE exticonv_utf8_to_local(VALUE);
 
 #endif /* _RICONV_H */

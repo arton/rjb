@@ -1,3 +1,13 @@
+Tue Dec 27 Kuwashima
+ *test/Test.java
+ *test/test.rb
+ *ext/depend
+ *ext/load.c
+ *ext/extconf.rb
+ *ext/rjbexception.c
+ *ext/rjb.c
+ *ext/riconv.c
+ 	change for compatibility with Ruby-1.9.0
 Tue Nov 20 arton
  *rjb.c
 	mark version 1.10.12 for next relase.

@@ -42,11 +42,12 @@ if !javahome.nil?
 end
 
 def create_rjb_makefile
-  if have_header("jni.h")
+  if have_header("jni.h") && have_header("dl.h") || have_header("ruby/dl.h")
     have_func("locale_charset", "iconv.h")
     have_func("nl_langinfo", "langinfo.h")
     have_func("setlocale", "locale.h")
     have_func("getenv")
+    $defs << "-DRJB_RUBY_VERSION_CODE="+RUBY_VERSION.gsub(/\./, '')
     create_header
     create_makefile("rjbcore")
   end

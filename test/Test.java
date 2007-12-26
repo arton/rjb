@@ -87,10 +87,26 @@ public class Test {
     public enum TestTypes {
         ONE, TWO, THREE
     }
+
     public SortedMap<String, byte[]> getSortedMap() {
         SortedMap<String, byte[]> map = new TreeMap<String, byte[]>();
         map.put("abc", new byte[]{0,1,2,3,4});
         map.put("def", new byte[]{5,6,7,8,9});
         return map;
+    }
+
+    public static SortedMap<String, byte[]> getSortedMapS() {
+        SortedMap<String, byte[]> map = new TreeMap<String, byte[]>();
+        map.put("abc", new byte[]{0,1,2,3,4});
+        map.put("def", new byte[]{5,6,7,8,9});
+        return map;
+    }
+
+    public void setSortedMap(SortedMap<String, byte[]> map) {
+        SortedMap<String, byte[]> value = map;
+    }
+
+    public static void setSortedMapS(SortedMap<String, byte[]> map) {
+        SortedMap<String, byte[]> value = map;
     }
 }
