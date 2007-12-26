@@ -137,22 +137,25 @@ class TestRjb < Test::Unit::TestCase
     if Object::const_defined?(:Encoding)
       euc_kj = "\xb4\xc1\xbb\xfa\xa5\xc6\xa5\xad\xa5\xb9\xa5\xc8".force_encoding "euc-jp"
       s = @jString.new(euc_kj)
-      assert_equal(s.toString(), euc_kj.encode(Encoding::default_external))
+      assert_equal(s.toString().encoding, Encoding::UTF_8)
+      assert_equal(s.toString().encode("euc-jp"), euc_kj)
       sjis_kj = "\x8a\xbf\x8e\x9a\x83\x65\x83\x4c\x83\x58\x83\x67".force_encoding "shift_jis"
       s = @jString.new(sjis_kj)
-      assert_equal(s.toString(), sjis_kj.encode(Encoding::default_external))
+      assert_equal(s.toString().encode("shift_jis"), sjis_kj)
       utf8_kj = "\xE6\xBC\xA2\xE5\xAD\x97\xE3\x83\x86\xE3\x82\xAD\xE3\x82\xB9\xE3\x83\x88".force_encoding "utf-8"
-      s = @jString.new(utf8_kj)
-      assert_equal(s.toString(), utf8_kj.encode(Encoding::default_external))
+      s = @jString.new(utf8_kj.encode("utf-8"))
+      assert_equal(s.toString(), utf8_kj)
       if /mswin(?!ce)|mingw|cygwin|bccwin/ =~ RUBY_PLATFORM
 	#expecting shift_jis on windows
 	none_kj = "\x8a\xbf\x8e\x9a\x83\x65\x83\x4c\x83\x58\x83\x67" #.force_encoding "shift_jis"
+        s = @jString.new(none_kj)
+        assert_equal(s.toString().encode("shift_jis"), none_kj)
       else
 	#expecting utf-8 unless windows
-	none_kj = "\xE6\xBC\xA2\xE5\xAD\x97\xE3\x83\x86\xE3\x82\xAD\xE3\x82\xB9\xE3\x83\x88" #.force_encoding "utf-8"
+	none_kj = "\xE6\xBC\xA2\xE5\xAD\x97\xE3\x83\x86\xE3\x82\xAD\xE3\x82\xB9\xE3\x83\x88".force_encoding "utf-8"
+        s = @jString.new(none_kj)
+        assert_equal(s.toString(), none_kj)
       end
-      s = @jString.new(none_kj)
-      assert_equal(s.toString(), none_kj.encode(Encoding::default_external))
     else
       $KCODE = 'euc'
       euc_kj = "\xb4\xc1\xbb\xfa\xa5\xc6\xa5\xad\xa5\xb9\xa5\xc8"

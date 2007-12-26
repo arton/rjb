@@ -182,8 +182,13 @@ VALUE exticonv_local_to_utf8(VALUE local_string)
     ascii8bit = rb_const_get(rb_cEncoding, rb_intern("ASCII_8BIT"));
     encoding = rb_funcall(local_string, rb_intern("encoding"), 0);
 
-    if (ascii8bit == encoding) {
-        local_string = rb_funcall(local_string, rb_intern("force_encoding"), 1, default_external);
+    if (ascii8bit == encoding && ascii8bit == default_external)
+    {
+	return local_string; //don't know default encoding
+    }
+    else if (encoding == ascii8bit)
+    {
+	local_string = rb_funcall(local_string, rb_intern("force_encoding"), 1, default_external);
     }
     return rb_funcall(local_string, rb_intern("encode"), 1, rb_str_new2("utf-8"));
 #endif
@@ -202,10 +207,19 @@ VALUE exticonv_utf8_to_local(VALUE utf8_string)
         return utf8_string;
     }
 #else
-    VALUE encoding;
+    VALUE rb_cEncoding, encoding, ascii8bit;
+    rb_cEncoding = rb_const_get(rb_cObject, rb_intern("Encoding"));
+    encoding = rb_funcall(rb_cEncoding, rb_intern("default_external"), 0);
+    ascii8bit = rb_const_get(rb_cEncoding, rb_intern("ASCII_8BIT"));
+
     utf8_string = rb_funcall(utf8_string, rb_intern("force_encoding"), 1, rb_str_new2("utf-8"));
-    encoding = rb_const_get(rb_cObject, rb_intern("Encoding"));
-    encoding = rb_funcall(encoding, rb_intern("default_external"), 0);
-    return rb_funcall(utf8_string, rb_intern("encode"), 1, encoding);
+    if (ascii8bit == encoding)
+    {
+	return utf8_string; //don't know default encoding
+    }
+    else
+    {
+        return rb_funcall(utf8_string, rb_intern("encode"), 1, encoding);
+    }
 #endif
 }
