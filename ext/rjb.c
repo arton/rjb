@@ -1179,7 +1179,7 @@ static J2R get_arrayconv(const char* cname, char* pdepth)
             return jcvt[i].ja2r;
         }
     }
-    return &jarray2rv;
+    return jarray2rv;
 }
 
 static J2R get_j2r(JNIEnv* jenv, jobject cls, char* psig, char* pdepth, char* ppsig, off_t* piv, int static_method)
@@ -1974,9 +1974,9 @@ static int check_rtype(JNIEnv* jenv, VALUE v, char* p)
     switch (TYPE(v))
     {
     case T_FIXNUM:
-        return (int)strchr("BCDFIJS", *p);
+        return strchr("BCDFIJS", *p) != NULL;
     case T_FLOAT:
-	return (int)strchr("DF", *p);
+	return strchr("DF", *p) != NULL;
     case T_STRING:
       return pcls && !strcmp("java.lang.String", pcls);
     case T_TRUE:
