@@ -19,6 +19,7 @@
 #include "extconf.h"
 #if RJB_RUBY_VERSION_CODE < 190
 #include "st.h"
+#define RHASH_TBL(x) RHASH((x))->tbl
 #else
 #include "ruby/st.h"
 #endif

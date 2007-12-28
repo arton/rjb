@@ -23,6 +23,10 @@
 #ifndef RJB_H
 #define RJB_H
 
+#if RJB_RUBY_VERSION_CODE < 190
+#define RHASH_TBL(x) RHASH((x))->tbl
+#endif
+
 #if !defined(COUNTOF)
 #define COUNTOF(x) (sizeof(x)/sizeof(x[0]))
 #endif
