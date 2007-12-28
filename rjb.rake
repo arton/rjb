@@ -1,5 +1,6 @@
 require 'rubygems'
 require 'rake/gempackagetask'
+require 'fileutils'
 
 def read_version
   File.open('ext/rjb.c').each_line do |x|
@@ -18,7 +19,7 @@ spec = Gem::Specification.new do |s|
   s.authors = 'arton'
   s.email = 'artonx@gmail.com'
   if /mswin32|mingw/ =~ RUBY_PLATFORM
-    s.platform = Gem::Platform::WIN32
+    s.platform = Gem::Platform::CURRENT
   else
     s.platform = Gem::Platform::RUBY
     s.extensions << 'ext/extconf.rb'
@@ -35,7 +36,7 @@ spec = Gem::Specification.new do |s|
                    'data/rjb/**/*.class', 'lib/*.rb', 'samples/**/*.rb', 
                    'test/*.rb', 'test/**/*.class', 'COPYING', 'ChangeLog', 'readme.*']
   if /mswin32/ =~ RUBY_PLATFORM
-    File.cp 'ext/rjbcore.so', 'lib/rjbcore.so'
+    FileUtils.cp 'ext/rjbcore.so', 'lib/rjbcore.so'
     files << "lib/rjbcore.so"
     s.requirements << ' VC6 version of Ruby' 
   end
