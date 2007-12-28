@@ -24,7 +24,9 @@
 #define RJB_H
 
 #if RJB_RUBY_VERSION_CODE < 190
+#if !defined(RHASH_TBL)
 #define RHASH_TBL(x) RHASH((x))->tbl
+#endif
 #endif
 
 #if !defined(COUNTOF)
