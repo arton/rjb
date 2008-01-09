@@ -1,3 +1,9 @@
+Wed Jan 9 arton
+ *ext/rjb.h
+	add some ruby macros that defined after 1.8.6 for compatibility
+	Change RBridge.class by 1.4.2
+ *data/rjb/jp/co/infoseek/hp/arton/rjb/RBridge.class 
+	compiled by 1.4.2 version of Java	
 Tue Dec 27 Kuwashima
  *test/Test.java
  *test/test.rb
