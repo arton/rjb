@@ -29,6 +29,19 @@
 #endif
 #endif
 
+#if !defined(RSTRING_LEN)
+#define RSTRING_LEN(s) (RSTRING(s)->len)
+#endif
+#if !defined(RSTRING_PTR)
+#define RSTRING_PTR(s) (RSTRING(s)->ptr)
+#endif
+#if !defined(RARRAY_LEN)
+#define RARRAY_LEN(s) (RARRAY(s)->len)
+#endif
+#if !defined(RARRAY_PTR)
+#define RARRAY_PTR(s) (RARRAY(s)->ptr)
+#endif
+
 #if !defined(COUNTOF)
 #define COUNTOF(x) (sizeof(x)/sizeof(x[0]))
 #endif
