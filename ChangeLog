@@ -4,6 +4,8 @@ Wed Jan 9 arton
 	Change RBridge.class by 1.4.2
  *data/rjb/jp/co/infoseek/hp/arton/rjb/RBridge.class 
 	compiled by 1.4.2 version of Java	
+ *rjb.c
+        mark version 1.1.2 for the next release.
 Tue Dec 27 Kuwashima
  *test/Test.java
  *test/test.rb
