@@ -109,4 +109,8 @@ public class Test {
     public static void setSortedMapS(SortedMap<String, byte[]> map) {
         SortedMap<String, byte[]> value = map;
     }
+
+    public boolean isSameString(String s) {
+	return "漢字テキスト".equals(s);
+    }
 }

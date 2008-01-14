@@ -135,27 +135,33 @@ class TestRjb < Test::Unit::TestCase
 
   def test_kjconv()
     if Object::const_defined?(:Encoding)
-      euc_kj = "\xb4\xc1\xbb\xfa\xa5\xc6\xa5\xad\xa5\xb9\xa5\xc8".force_encoding "euc-jp"
+      test = import('jp.co.infoseek.hp.arton.rjb.Test').new
+      euc_kj = "\xb4\xc1\xbb\xfa\xa5\xc6\xa5\xad\xa5\xb9\xa5\xc8".force_encoding Encoding::EUC_JP
       s = @jString.new(euc_kj)
       assert_equal(s.toString().encoding, Encoding::UTF_8)
-      assert_equal(s.toString().encode("euc-jp"), euc_kj)
-      sjis_kj = "\x8a\xbf\x8e\x9a\x83\x65\x83\x4c\x83\x58\x83\x67".force_encoding "shift_jis"
+      assert(test.isSameString(s))
+      assert(test.isSameString(euc_kj))
+      assert_equal(s.toString().encode(Encoding::EUC_JP), euc_kj)
+      sjis_kj = "\x8a\xbf\x8e\x9a\x83\x65\x83\x4c\x83\x58\x83\x67".force_encoding Encoding::SHIFT_JIS
       s = @jString.new(sjis_kj)
-      assert_equal(s.toString().encode("shift_jis"), sjis_kj)
-      utf8_kj = "\xE6\xBC\xA2\xE5\xAD\x97\xE3\x83\x86\xE3\x82\xAD\xE3\x82\xB9\xE3\x83\x88".force_encoding "utf-8"
-      s = @jString.new(utf8_kj.encode("utf-8"))
-      assert_equal(s.toString(), utf8_kj)
-      if /mswin(?!ce)|mingw|cygwin|bccwin/ =~ RUBY_PLATFORM
-	#expecting shift_jis on windows
-	none_kj = "\x8a\xbf\x8e\x9a\x83\x65\x83\x4c\x83\x58\x83\x67" #.force_encoding "shift_jis"
-        s = @jString.new(none_kj)
-        assert_equal(s.toString().encode("shift_jis"), none_kj)
-      else
-	#expecting utf-8 unless windows
-	none_kj = "\xE6\xBC\xA2\xE5\xAD\x97\xE3\x83\x86\xE3\x82\xAD\xE3\x82\xB9\xE3\x83\x88".force_encoding "utf-8"
-        s = @jString.new(none_kj)
-        assert_equal(s.toString(), none_kj)
-      end
+      assert_equal(s.toString().encoding, Encoding::UTF_8)
+      assert(test.isSameString(s))
+      assert(test.isSameString(sjis_kj))
+      assert_equal(s.toString().encode(Encoding::SHIFT_JIS), sjis_kj)
+      utf8_kj = "\xE6\xBC\xA2\xE5\xAD\x97\xE3\x83\x86\xE3\x82\xAD\xE3\x82\xB9\xE3\x83\x88".force_encoding Encoding::UTF_8
+      s = @jString.new(utf8_kj)
+      assert_equal(s.toString().encoding, Encoding::UTF_8)
+      assert(test.isSameString(s))
+      assert(test.isSameString(utf8_kj))
+      assert_equal(s.toString().encode(Encoding::UTF_8), utf8_kj)
+      iso2022jp_kj = "\x1b\x24\x42\x34\x41\x3b\x7a\x25\x46\x25\x2d\x25\x39\x25\x48\x1b\x28\x42".force_encoding Encoding::ISO_2022_JP
+      s = @jString.new(iso2022jp_kj)
+      assert_equal(s.toString().encoding, Encoding::UTF_8)
+      assert(test.isSameString(s))
+      assert(test.isSameString(iso2022jp_kj))
+      assert_equal(s.toString().encode(Encoding::ISO_2022_JP), iso2022jp_kj)
+      assert_equal(@jString.new("abcdef".force_encoding(Encoding::ASCII_8BIT)).toString(), "abcdef")
+      assert_equal(@jString.new("abcdef".force_encoding(Encoding::find("us-ascii"))).toString(), "abcdef")
     else
       $KCODE = 'euc'
       euc_kj = "\xb4\xc1\xbb\xfa\xa5\xc6\xa5\xad\xa5\xb9\xa5\xc8"

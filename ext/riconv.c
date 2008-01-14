@@ -176,21 +176,21 @@ VALUE exticonv_local_to_utf8(VALUE local_string)
         return local_string;
     }
 #else
-    VALUE rb_cEncoding, default_external, encoding, ascii8bit;
+    VALUE rb_cEncoding, encoding, sjis, eucjp, iso2022jp;
     rb_cEncoding = rb_const_get(rb_cObject, rb_intern("Encoding"));
-    default_external = rb_funcall(rb_cEncoding, rb_intern("default_external"), 0);
-    ascii8bit = rb_const_get(rb_cEncoding, rb_intern("ASCII_8BIT"));
+    sjis = rb_const_get(rb_cEncoding, rb_intern("SHIFT_JIS"));
+    eucjp = rb_const_get(rb_cEncoding, rb_intern("EUC_JP"));
+    iso2022jp = rb_const_get(rb_cEncoding, rb_intern("ISO_2022_JP"));
     encoding = rb_funcall(local_string, rb_intern("encoding"), 0);
 
-    if (ascii8bit == encoding && ascii8bit == default_external)
+    if (encoding == sjis || encoding == eucjp || encoding == iso2022jp)
     {
-	return local_string; //don't know default encoding
+        return rb_funcall(local_string, rb_intern("encode"), 1, rb_str_new2("utf-8"));
     }
-    else if (encoding == ascii8bit)
+    else
     {
-	local_string = rb_funcall(local_string, rb_intern("force_encoding"), 1, default_external);
+	return local_string;
     }
-    return rb_funcall(local_string, rb_intern("encode"), 1, rb_str_new2("utf-8"));
 #endif
 }
 
@@ -207,19 +207,6 @@ VALUE exticonv_utf8_to_local(VALUE utf8_string)
         return utf8_string;
     }
 #else
-    VALUE rb_cEncoding, encoding, ascii8bit;
-    rb_cEncoding = rb_const_get(rb_cObject, rb_intern("Encoding"));
-    encoding = rb_funcall(rb_cEncoding, rb_intern("default_external"), 0);
-    ascii8bit = rb_const_get(rb_cEncoding, rb_intern("ASCII_8BIT"));
-
-    utf8_string = rb_funcall(utf8_string, rb_intern("force_encoding"), 1, rb_str_new2("utf-8"));
-    if (ascii8bit == encoding)
-    {
-	return utf8_string; //don't know default encoding
-    }
-    else
-    {
-        return rb_funcall(utf8_string, rb_intern("encode"), 1, encoding);
-    }
+    return rb_funcall(utf8_string, rb_intern("force_encoding"), 1, rb_str_new2("utf-8"));
 #endif
 }
