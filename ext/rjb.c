@@ -2534,25 +2534,28 @@ static VALUE invoke_by_instance(ID rmid, int argc, VALUE* argv,
     {
         ret = getter(jenv, pf, ptr);
     }
-    else if (argc == 1 && *(tname + strlen(tname) - 1) == '=')
+    else 
     {
-        char* fname = ALLOCA_N(char, strlen(tname) + 1);
-	strcpy(fname, tname);
-	fname[strlen(tname) - 1] = '\0';
-	if (st_lookup(ptr->fields, rb_intern(fname), (st_data_t*)&pf))
-	{
-	    setter(jenv, pf, ptr, *argv);
-            return ret;
+        if (argc == 1 && *(tname + strlen(tname) - 1) == '=')
+        {
+            char* fname = ALLOCA_N(char, strlen(tname) + 1);
+            strcpy(fname, tname);
+            fname[strlen(tname) - 1] = '\0';
+            if (st_lookup(ptr->fields, rb_intern(fname), (st_data_t*)&pf))
+            {
+                setter(jenv, pf, ptr, *argv);
+                return ret;
+            }
+            // fall through for the setter alias name
         }
-        // fall through for the setter alias name
-    }
-    if (st_lookup(ptr->methods, rmid, (st_data_t*)&pm))
-    {
-	ret = invoke(jenv, pm, ptr, argc, argv, sig);
-    }
-    else
-    {
-	rb_raise(rb_eRuntimeError, "Fail: unknown method name `%s'", tname);
+        if (st_lookup(ptr->methods, rmid, (st_data_t*)&pm))
+        {
+            ret = invoke(jenv, pm, ptr, argc, argv, sig);
+        }
+        else
+        {
+            rb_raise(rb_eRuntimeError, "Fail: unknown method name `%s'", tname);
+        }
     }
     return ret;
 }

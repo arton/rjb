@@ -27,7 +27,7 @@ spec = Gem::Specification.new do |s|
   s.required_ruby_version = '>= 1.8.2'
   s.summary = 'Ruby Java bridge'
   s.name = 'rjb'
-  s.homepage = 'http://arton.no-ip.info/collabo/backyard/?RubyJavaBridge'
+  s.homepage = 'http://rjb.rubyforge.org/'
   s.version = read_version
   s.requirements << 'none'
   s.require_path = 'lib'

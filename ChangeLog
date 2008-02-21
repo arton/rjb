@@ -1,3 +1,6 @@
+Fri Feb 22 arton
+ *ext/rjb.c
+	fix field reference (bug# 18238)
 Wed Jan 9 arton
  *ext/rjb.h
 	add some ruby macros that defined after 1.8.6 for compatibility
