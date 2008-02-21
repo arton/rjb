@@ -15,7 +15,7 @@
  * $Id$
  */
 
-#define RJB_VERSION "1.1.2"
+#define RJB_VERSION "1.1.3"
 
 #include "ruby.h"
 #include "extconf.h"
