@@ -113,4 +113,6 @@ public class Test {
     public boolean isSameString(String s) {
 	return "漢字テキスト".equals(s);
     }
+
+    public String helloData = "Hello World !!";
 }

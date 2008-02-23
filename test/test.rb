@@ -331,12 +331,10 @@ class TestRjb < Test::Unit::TestCase
   end
 
   def test_field()
-    point = import('java.awt.Point')
-    pnt = point.new(11, 13)
-    assert_equal(11, pnt.x)
-    assert_equal(13, pnt.y)
-    pnt.x = 32
-    assert_equal(32, pnt.x)
+    test = import('jp.co.infoseek.hp.arton.rjb.Test').new
+    assert_equal('Hello World !!', test.helloData)
+    test.helloData = 'Goodby World !'
+    assert_equal('Goodby World !', test.helloData)
   end
 
   def test_instancemethod_from_class()
