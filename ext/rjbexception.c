@@ -66,7 +66,16 @@ VALUE rjb_s_throw(int argc, VALUE* argv, VALUE self)
 {
     VALUE klass;
     VALUE message;
-    JNIEnv* jenv = rjb_attach_current_thread();
+    JNIEnv* jenv = NULL; 
+
+    if (!rjb_jvm)
+    {
+        rb_funcall(rb_const_get(rb_cObject, rb_intern("Rjb")), rb_intern("load"), 0);
+    } 
+
+    jenv = rjb_attach_current_thread();
+    (*jenv)->ExceptionClear(jenv);
+
     if (rb_scan_args(argc, argv, "11", &klass, &message) == 2)
     {
         jclass excep = rjb_find_class(jenv, klass);

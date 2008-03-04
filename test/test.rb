@@ -1,8 +1,13 @@
 #!/usr/local/env ruby
 # $Id$
 
+begin
+  require 'rjb'
+rescue LoadError 
+  require 'rubygems' 
+  require 'rjb'
+end
 require 'test/unit'
-require 'rjb'
 
 puts "start RJB(#{Rjb::VERSION}) test"
 class TestRjb < Test::Unit::TestCase
@@ -226,6 +231,12 @@ class TestRjb < Test::Unit::TestCase
     assert("43210", a.concat(it))
   end
 
+  def test_unbind()
+    it = TestIter.new
+    it = bind(it, 'java.util.Iterator')
+    assert(it, unbind(it))
+  end
+
   class TestComparator
     def compare(o1, o2)
       o1.to_i - o2.to_i
@@ -328,6 +339,41 @@ class TestRjb < Test::Unit::TestCase
     rescue RuntimeError => e
       assert_equal("`java.lang.NoSuchException' not found", e.message)
     end
+  end
+
+  def test_throw_clear()
+    assert_nothing_raised {
+      begin
+	Rjb::throw('java.util.NoSuchElementException', 'test exception')
+      rescue #drop ruby exception
+      end
+      test = import('jp.co.infoseek.hp.arton.rjb.Test')
+      begin
+	Rjb::throw('java.util.NoSuchElementException', 'test exception')
+      rescue #drop ruby exception
+      end
+      test.new
+      begin
+	Rjb::throw('java.util.NoSuchElementException', 'test exception')
+      rescue #drop ruby exception
+      end
+      @jString.new_with_sig('Ljava.lang.String;', "abcde")
+      begin
+	Rjb::throw('java.util.NoSuchElementException', 'test exception')
+      rescue #drop ruby exception
+      end
+      it = TestIterator.new(0)
+      it = bind(it, 'java.util.Iterator')
+      begin
+	Rjb::throw('java.util.NoSuchElementException', 'test exception')
+      rescue NoSuchElementException
+      end
+      begin
+	Rjb::throw('java.lang.IllegalAccessException', 'test exception')
+      rescue IllegalAccessException
+      end
+      unbind(it)
+    }
   end
 
   def test_field()

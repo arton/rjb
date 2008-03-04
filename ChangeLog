@@ -1,3 +1,16 @@
+Tue Mar  4 Kuwashima
+ *ext/rjbexception.c
+ *ext/rjb.c
+ *test/test.rb
+ 	clear(ignore) exception in current java thread, before some operation.
+ *ext/rjbexception.c
+ *ext/rjb.c
+	add auto load for Rjb::bind, Rjb::throw
+ *ext/rjb.c
+ *test/test.rb
+	add Rjb::unbind
+ *test/test.rb
+ 	add loading rubygems 
 Sat Feb 23 arton
  *test/test.rb
 	let test_field metod use Test.class instead of Point.class

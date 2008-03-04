@@ -119,6 +119,15 @@ typedef struct jobject_ruby_table {
     J2R func;
 } jprimitive_table;
 
+/* auto-load with default setting */\
+#define rjb_load_vm_default() do {\
+    if (!rjb_jvm) \
+    {\
+        rjb_s_load(0, NULL, 0);\
+    }\
+} while (0)
+
+
 JNIEnv* rjb_attach_current_thread(void)
 {
   JNIEnv* env;
@@ -1762,6 +1771,8 @@ static VALUE rjb_s_unload(int argc, VALUE* argv, VALUE self)
     st_foreach(RHASH_TBL(rjb_loaded_classes), clear_classes, 0);
     if (rjb_jvm)
     {
+        JNIEnv* jenv = rjb_attach_current_thread();
+	(*jenv)->ExceptionClear(jenv);
 	(*rjb_jvm)->DestroyJavaVM(rjb_jvm);
 	rjb_jvm = NULL;
     }
@@ -2022,8 +2033,12 @@ static VALUE rjb_newinstance_s(int argc, VALUE* argv, VALUE self)
     char* sig;
     VALUE ret = Qnil;
     struct jv_data* ptr;
-    JNIEnv* jenv = rjb_attach_current_thread();
     int found = 0;
+    JNIEnv* jenv = NULL;
+
+    rjb_load_vm_default();
+    jenv = rjb_attach_current_thread();
+    (*jenv)->ExceptionClear(jenv);
 
     rb_scan_args(argc, argv, "1*", &vsig, &rest);
     sig = StringValueCStr(vsig);
@@ -2053,8 +2068,12 @@ static VALUE rjb_newinstance(int argc, VALUE* argv, VALUE self)
     VALUE ret = Qnil;
     struct jv_data* ptr;
     struct cls_constructor** pc;
-    JNIEnv* jenv = rjb_attach_current_thread();
     int found = 0;
+    JNIEnv* jenv = NULL;
+    
+    rjb_load_vm_default();
+    jenv = rjb_attach_current_thread();
+    (*jenv)->ExceptionClear(jenv);
 
     Data_Get_Struct(self, struct jv_data, ptr);
 
@@ -2111,8 +2130,11 @@ jclass rjb_find_class(JNIEnv* jenv, VALUE name)
 static VALUE rjb_s_bind(VALUE self, VALUE rbobj, VALUE itfname)
 {
     VALUE result = Qnil;
-    JNIEnv* jenv = rjb_attach_current_thread();
-    
+    JNIEnv* jenv = NULL;
+
+    rjb_load_vm_default();
+    jenv = rjb_attach_current_thread();
+    (*jenv)->ExceptionClear(jenv);
     jclass itf = rjb_find_class(jenv, itfname); 
     rjb_check_exception(jenv, 1);
     if (itf)
@@ -2138,6 +2160,18 @@ static VALUE rjb_s_bind(VALUE self, VALUE rbobj, VALUE itfname)
 }
 
 /*
+ * jclass Rjb::bind(rbobj, interface_name)
+ */
+static VALUE rjb_s_unbind(VALUE self, VALUE rbobj)
+{
+    JNIEnv* jenv;
+    rjb_load_vm_default();
+    jenv = rjb_attach_current_thread();
+    (*jenv)->ExceptionClear(jenv);
+    return rb_ary_delete(proxies, rbobj);
+}
+
+/*
  * Jclass Rjb::import(classname)
  */
 static VALUE rjb_s_import(VALUE self, VALUE clsname)
@@ -2150,12 +2184,9 @@ static VALUE rjb_s_import(VALUE self, VALUE clsname)
 	return v;
     }
 
-    if (!rjb_jvm) 
-    {
-        /* auto-load with default setting */
-        rjb_s_load(0, NULL, 0);
-    }
+    rjb_load_vm_default();
     jenv = rjb_attach_current_thread();
+    (*jenv)->ExceptionClear(jenv);
     jcls = rjb_find_class(jenv, clsname);
     if (!jcls)
     {
@@ -2725,6 +2756,7 @@ void Init_rjbcore()
     rb_define_module_function(rjb, "unload", rjb_s_unload, -1);
     rb_define_module_function(rjb, "import", rjb_s_import, 1);
     rb_define_module_function(rjb, "bind", rjb_s_bind, 2);
+    rb_define_module_function(rjb, "unbind", rjb_s_unbind, 1);
     rb_define_module_function(rjb, "classes", rjb_s_classes, 0);
     rb_define_module_function(rjb, "throw", rjb_s_throw, -1);
     rb_define_module_function(rjb, "primitive_conversion=", rjb_s_set_pconversion, 1);
