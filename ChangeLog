@@ -1,3 +1,8 @@
+Tue Mar 5 Kuwashima
+ *ext/rjb.c
+ *ext/rjb.h
+ *ext/rjbexception.c
+ 	add auto load method.
 Tue Mar  4 Kuwashima
  *ext/rjbexception.c
  *ext/rjb.c

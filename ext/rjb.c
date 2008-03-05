@@ -119,22 +119,12 @@ typedef struct jobject_ruby_table {
     J2R func;
 } jprimitive_table;
 
-/* auto-load with default setting */\
-#define rjb_load_vm_default() do {\
-    if (!rjb_jvm) \
-    {\
-        rjb_s_load(0, NULL, 0);\
-    }\
-} while (0)
-
-
 JNIEnv* rjb_attach_current_thread(void)
 {
   JNIEnv* env;
   (*rjb_jvm)->AttachCurrentThread(rjb_jvm, (void**)&env, '\0');
   return env;
 }
-
 
 void rjb_release_string(JNIEnv *jenv, jstring str, const char* chrs)
 {
@@ -1752,6 +1742,14 @@ static VALUE rjb_s_load(int argc, VALUE* argv, VALUE self)
     rb_gc_register_address(&jklass);
     
     return Qnil;
+}
+
+/*
+ * load Java Virtual Machine with default arguments.
+ */
+VALUE rjb_load_vm_default()
+{
+    return rjb_s_load(0, NULL, 0);
 }
 
 /*

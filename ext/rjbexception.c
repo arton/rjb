@@ -68,10 +68,7 @@ VALUE rjb_s_throw(int argc, VALUE* argv, VALUE self)
     VALUE message;
     JNIEnv* jenv = NULL; 
 
-    if (!rjb_jvm)
-    {
-        rb_funcall(rb_const_get(rb_cObject, rb_intern("Rjb")), rb_intern("load"), 0);
-    } 
+    rjb_load_vm_default();
 
     jenv = rjb_attach_current_thread();
     (*jenv)->ExceptionClear(jenv);
