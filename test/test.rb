@@ -27,8 +27,7 @@ class TestRjb < Test::Unit::TestCase
     @jChar = Rjb::import('java.lang.Character')
   end
 
-  def tearDown
-    unload
+  def teardown
   end
 
   def test_metaclass

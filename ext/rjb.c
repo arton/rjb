@@ -1,6 +1,6 @@
 /*
  * Rjb - Ruby <-> Java Bridge
- * Copyright(c) 2004,2005,2006,2007 arton
+ * Copyright(c) 2004,2005,2006,2007,2008 arton
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,7 @@
  * $Id$
  */
 
-#define RJB_VERSION "1.1.3"
+#define RJB_VERSION "1.1.4"
 
 #include "ruby.h"
 #include "extconf.h"
