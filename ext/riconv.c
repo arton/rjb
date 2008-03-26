@@ -30,10 +30,10 @@ static const char* const NL_SJIS_TABLE[] = { "SHIFT_JIS", "SHIFT_JISX0213", "WIN
 
 #if defined HAVE_SETLOCALE
 #include <locale.h>
+#endif
 static const char* const LOCALE_EUC_TABLE[] = { "japanese", "ja_JP.eucJP", "japanese.euc", "ja_JP", "ja_JP.ujis" };
 static const char* const LOCALE_SJIS_TABLE[] = { "japanese.sjis", "ja_JP.SJIS" };
 static const char* const LOCALE_UTF8_TABLE[] = { "ja_JP.UTF-8", "ja_JP.utf8" };
-#endif
 
 #include "riconv.h"
 
@@ -108,7 +108,6 @@ static const char* get_charcode_name()
         setlocale(LC_ALL, ""); //initialize
         result = get_charcode_name_by_locale(setlocale(LC_ALL, NULL));
 #elif defined HAVE_GETENV
-        printf("HAVE_GETENV\n");
         if (result = get_charcode_name_by_locale(getenv("LC_ALL")))
                 ;
         else if (result = get_charcode_name_by_locale(getenv("LC_CTYPE")))

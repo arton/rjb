@@ -93,6 +93,10 @@ static int load_jvm(char* jvmtype)
 #endif
     if (!jh)
     {
+        if (RTEST(ruby_verbose))
+        {
+            fprintf(stderr, "no JAVA_HOME environment\n");
+        }
         return 0;
     }
 #if defined(_WIN32)
@@ -282,6 +286,10 @@ int rjb_create_jvm(JNIEnv** pjenv, JavaVMInitArgs* vm_args, char* userpath, VALU
     if (!result)
     {
 	result = load_bridge(*pjenv);
+        if (RTEST(ruby_verbose) && result < 0)
+        {
+            fprintf(stderr, "failed to load the bridge class\n");
+        }
     }
     return result;
 }
