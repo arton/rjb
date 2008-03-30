@@ -1767,14 +1767,15 @@ static int clear_classes(VALUE key, VALUE val, VALUE dummy)
 static VALUE rjb_s_unload(int argc, VALUE* argv, VALUE self)
 {
     st_foreach(RHASH_TBL(rjb_loaded_classes), clear_classes, 0);
+    int result = 0;
     if (rjb_jvm)
     {
         JNIEnv* jenv = rjb_attach_current_thread();
-	(*jenv)->ExceptionClear(jenv);
-	(*rjb_jvm)->DestroyJavaVM(rjb_jvm);
-	rjb_jvm = NULL;
+        (*jenv)->ExceptionClear(jenv);
+        result = (*rjb_jvm)->DestroyJavaVM(rjb_jvm);
+        rjb_jvm = NULL;
     }
-    return Qnil;
+    return INT2NUM(result);
 }
 
 /*
