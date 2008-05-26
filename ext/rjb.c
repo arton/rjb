@@ -41,6 +41,20 @@
 #define ACC_VOLATILE  0x0040
 #define ACC_TRANSIENT  0x0080
 
+#define RJB_FIND_CLASS(var, name)              \
+    var = (*jenv)->FindClass(jenv, name); \
+    rjb_check_exception(jenv, 1)
+#define RJB_HOLD_CLASS(var, name)              \
+    var = (*jenv)->FindClass(jenv, name); \
+    rjb_check_exception(jenv, 1);               \
+    var = (*jenv)->NewGlobalRef(jenv, var)
+#define RJB_LOAD_METHOD(var, obj, name, sig) \
+    var = (*jenv)->GetMethodID(jenv, obj, name, sig); \
+    rjb_check_exception(jenv, 1)
+#define RJB_LOAD_STATIC_METHOD(var, obj, name, sig) \
+    var = (*jenv)->GetStaticMethodID(jenv, obj, name, sig); \
+    rjb_check_exception(jenv, 1)
+
 static void register_class(VALUE, VALUE);
 static VALUE import_class(JNIEnv* jenv, jclass, VALUE);
 static VALUE register_instance(JNIEnv* jenv, struct jvi_data*, jobject);
@@ -517,7 +531,7 @@ static jprimitive_table jpcvt[] = {
     { "java/lang/Double", "doubleValue", "()D", "(D)V", NULL, 0, 0, jdouble2rv, },
     { "java/lang/Boolean", "booleanValue", "()Z", "(Z)Ljava/lang/Boolean;",
       NULL, 0, 0, jboolean2rv, },
-    { "java/lang/Character", "charValue", "()C", NULL, NULL, 0, 0, jint2rv, },
+    { "java/lang/Character", "charValue", "()C", NULL, NULL, 0, 0, jchar2rv, },
     { "java/lang/Short", "intValue", "()I", NULL, NULL, 0, 0, jint2rv, },
     { "java/lang/Byte", "intValue", "()I", NULL, NULL, 0, 0, jint2rv, },
     { "java/lang/Float", "doubleValue", "()D", NULL, NULL, 0, 0, jdouble2rv, },        
@@ -1673,67 +1687,44 @@ static VALUE rjb_s_load(int argc, VALUE* argv, VALUE self)
         main_jenv = jenv;
     }
 
-    jconstructor = (*jenv)->FindClass(jenv, "java/lang/reflect/Constructor");
-    rjb_check_exception(jenv, 1);
-    ctrGetParameterTypes = (*jenv)->GetMethodID(jenv, jconstructor, "getParameterTypes", "()[Ljava/lang/Class;");
-    rjb_check_exception(jenv, 1);
-    jmethod = (*jenv)->FindClass(jenv, "java/lang/reflect/Method");
-    method_getModifiers = (*jenv)->GetMethodID(jenv, jmethod, "getModifiers", "()I");
-    rjb_check_exception(jenv, 1);
-    method_getName = (*jenv)->GetMethodID(jenv, jmethod, "getName", "()Ljava/lang/String;");
-    rjb_check_exception(jenv, 1);	
-    getParameterTypes = (*jenv)->GetMethodID(jenv, jmethod, "getParameterTypes", "()[Ljava/lang/Class;");
-    rjb_check_exception(jenv, 1);	
-    getReturnType = (*jenv)->GetMethodID(jenv, jmethod, "getReturnType", "()Ljava/lang/Class;");
-    rjb_check_exception(jenv, 1);
+    RJB_FIND_CLASS(jconstructor, "java/lang/reflect/Constructor");
+    RJB_LOAD_METHOD(ctrGetParameterTypes, jconstructor, "getParameterTypes", "()[Ljava/lang/Class;");
+    RJB_FIND_CLASS(jmethod, "java/lang/reflect/Method");
+    RJB_LOAD_METHOD(method_getModifiers, jmethod, "getModifiers", "()I");
+    RJB_LOAD_METHOD(method_getName, jmethod, "getName", "()Ljava/lang/String;");
+    RJB_LOAD_METHOD(getParameterTypes, jmethod, "getParameterTypes", "()[Ljava/lang/Class;");
+    RJB_LOAD_METHOD(getReturnType, jmethod, "getReturnType", "()Ljava/lang/Class;");
 
-    jfield = (*jenv)->FindClass(jenv, "java/lang/reflect/Field");
-    field_getModifiers = (*jenv)->GetMethodID(jenv, jfield, "getModifiers", "()I");
-    rjb_check_exception(jenv, 1);
-    field_getName = (*jenv)->GetMethodID(jenv, jfield, "getName", "()Ljava/lang/String;");
-    rjb_check_exception(jenv, 1);	
-    field_getType = (*jenv)->GetMethodID(jenv, jfield, "getType", "()Ljava/lang/Class;");
-    rjb_check_exception(jenv, 1);	
+    RJB_FIND_CLASS(jfield, "java/lang/reflect/Field");
+    RJB_LOAD_METHOD(field_getModifiers, jfield, "getModifiers", "()I");
+    RJB_LOAD_METHOD(field_getName, jfield, "getName", "()Ljava/lang/String;");
+    RJB_LOAD_METHOD(field_getType, jfield, "getType", "()Ljava/lang/Class;");
 
-    j_class = (*jenv)->FindClass(jenv, "java/lang/Class");
-    rjb_check_exception(jenv, 1);
-    rjb_class_getName = (*jenv)->GetMethodID(jenv, j_class, "getName", "()Ljava/lang/String;");
-    rjb_check_exception(jenv, 1);
-    j_class = (*jenv)->NewGlobalRef(jenv, j_class);
+    RJB_HOLD_CLASS(j_class, "java/lang/Class");
+    RJB_LOAD_METHOD(rjb_class_getName, j_class, "getName", "()Ljava/lang/String;");
 
-    rjb_j_throwable = (*jenv)->FindClass(jenv, "java/lang/Throwable");
-    rjb_check_exception(jenv, 1);
-    rjb_throwable_getMessage = (*jenv)->GetMethodID(jenv, rjb_j_throwable, "getMessage", "()Ljava/lang/String;");
-    rjb_check_exception(jenv, 1);
+    RJB_HOLD_CLASS(rjb_j_throwable, "java/lang/Throwable");
+    RJB_LOAD_METHOD(rjb_throwable_getMessage, rjb_j_throwable, "getMessage", "()Ljava/lang/String;");
 
-    j_string = (*jenv)->FindClass(jenv, "java/lang/String");
-    rjb_check_exception(jenv, 1);
-    str_tostring = (*jenv)->GetMethodID(jenv, j_string, "toString", "()Ljava/lang/String;");
-    rjb_check_exception(jenv, 1);
-    j_string = (*jenv)->NewGlobalRef(jenv, j_string);
+    RJB_HOLD_CLASS(j_string, "java/lang/String");
+    RJB_LOAD_METHOD(str_tostring, j_string, "toString", "()Ljava/lang/String;");
 
-    j_object = (*jenv)->FindClass(jenv, "java/lang/Object");
-    rjb_check_exception(jenv, 1);
-    j_object = (*jenv)->NewGlobalRef(jenv, j_object);
+    RJB_HOLD_CLASS(j_object, "java/lang/Object");
 
     for (i = PRM_INT; i < PRM_LAST; i++)
     {
 	jclass klass = (*jenv)->FindClass(jenv, jpcvt[i].classname);
 	if (i == PRM_BOOLEAN)
 	{
-	    jpcvt[i].ctr_id = (*jenv)->GetStaticMethodID(jenv,
-			 klass, "valueOf", jpcvt[i].ctrsig);
-	    rjb_check_exception(jenv, 1);
+            RJB_LOAD_STATIC_METHOD(jpcvt[i].ctr_id, klass, "valueOf", jpcvt[i].ctrsig);
 	}
 	else if (jpcvt[i].ctrsig)
 	{
-	    jpcvt[i].ctr_id = (*jenv)->GetMethodID(jenv, klass,
-						   "<init>", jpcvt[i].ctrsig);
-	    rjb_check_exception(jenv, 1);
+            RJB_LOAD_METHOD(jpcvt[i].ctr_id, klass, "<init>", jpcvt[i].ctrsig);
 	}
-	jpcvt[i].to_prim_id = (*jenv)->GetMethodID(jenv, klass,
+        RJB_LOAD_METHOD(jpcvt[i].to_prim_id, klass,
 				   jpcvt[i].to_prim_method, jpcvt[i].prmsig);
-	rjb_check_exception(jenv, 1);
+
         jpcvt[i].klass = (*jenv)->NewGlobalRef(jenv, klass);
     }
 

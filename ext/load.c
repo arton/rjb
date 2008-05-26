@@ -86,10 +86,12 @@ static int load_jvm(char* jvmtype)
     VALUE dl;
     VALUE importer;
 
-#if defined(__APPLE__) && defined(__MACH__)
-    jh = "/System/Library/Frameworks/JavaVM.framework";
-#else
     jh = getenv("JAVA_HOME");
+#if defined(__APPLE__) && defined(__MACH__)
+    if (!jh)
+    {
+        jh = "/System/Library/Frameworks/JavaVM.framework";
+    }
 #endif
     if (!jh)
     {

@@ -615,5 +615,16 @@ class TestRjb < Test::Unit::TestCase
     assert_equal "\0\x1\x2\x3\x4", map.get('abc')
     assert_equal "\x5\x6\x7\x8\x9", map.get('def')
   end
+
+  def x_test_zzunload
+    # this test should run at the last
+    unload
+    begin
+      load('.')
+      fail 'no exception'
+    rescue
+      assert_equal "can't create Java VM", $!.message
+    end
+  end
 end
 

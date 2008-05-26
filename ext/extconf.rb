@@ -33,6 +33,7 @@ if !javahome.nil?
   raise "JAVA_HOME is not directory." unless File.directory?(javahome)
   p = Path.new
   inc = p.include(javahome, 'include')
+  inc = p.include(javahome, 'Home/include') unless File.exists?(inc)
   Dir.open(inc).each do |d|
     next if d[0] == ?.
     if File.directory?(p.joint(inc, d))

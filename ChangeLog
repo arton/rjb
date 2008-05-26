@@ -1,3 +1,11 @@
+Mon May 26 arton
+ *ext/rjb.c
+	correct char primitive conversion for Bigendian machine.
+	use macroes for loading classes
+ *ext/load.c
+	adjust OS X's directory
+ *ext/extconf.rb	
+	adjust OS X's directory if Home exists	
 Thu Mar 27 arton
  *ext/rjb.c
 	mark version 1.1.4 for the next release.
