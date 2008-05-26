@@ -47,6 +47,9 @@
   #define JVMDLL "%s/Libraries/libjvm_compat.dylib"
   #define DIRSEPARATOR '/'
   #define CLASSPATH_SEP ':'
+  #define HOME_NAME "/Home"
+  #define HOME_NAME_LEN strlen(HOME_NAME)
+  #define DEFAULT_HOME "/System/Library/Frameworks/JavaVM.framework"
 #else /* defined(_WIN32) || defined(__CYGWIN__) */
  #if defined(__sparc_v9__)
    #define ARCH "sparcv9"
@@ -90,7 +93,18 @@ static int load_jvm(char* jvmtype)
 #if defined(__APPLE__) && defined(__MACH__)
     if (!jh)
     {
-        jh = "/System/Library/Frameworks/JavaVM.framework";
+        jh = DEFAULT_HOME;
+    }
+    else
+    {
+        if (strlen(jh) > HOME_NAME_LEN 
+            && strcasecmp(jh + strlen(jh) - HOME_NAME_LEN, HOME_NAME) == 0)
+        {
+            char* p = ALLOCA_N(char, strlen(jh));
+            strncpy(p, jh, strlen(jh) - 5);
+            *(p + strlen(jh) - 5) = 0;
+            jh = p;
+        }
     }
 #endif
     if (!jh)
