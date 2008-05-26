@@ -100,9 +100,8 @@ static int load_jvm(char* jvmtype)
         if (strlen(jh) > HOME_NAME_LEN 
             && strcasecmp(jh + strlen(jh) - HOME_NAME_LEN, HOME_NAME) == 0)
         {
-            char* p = ALLOCA_N(char, strlen(jh));
-            strncpy(p, jh, strlen(jh) - 5);
-            *(p + strlen(jh) - 5) = 0;
+            char* p = ALLOCA_N(char, strlen(jh) + 8);
+            sprintf(p, "%s/..", jh);
             jh = p;
         }
     }
