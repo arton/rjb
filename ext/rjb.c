@@ -1192,7 +1192,7 @@ static J2R get_arrayconv(const char* cname, char* pdepth)
             return jcvt[i].ja2r;
         }
     }
-    return jarray2rv;
+    return &jarray2rv;
 }
 
 static J2R get_j2r(JNIEnv* jenv, jobject cls, char* psig, char* pdepth, char* ppsig, off_t* piv, int static_method)
@@ -1757,8 +1757,8 @@ static int clear_classes(VALUE key, VALUE val, VALUE dummy)
 }
 static VALUE rjb_s_unload(int argc, VALUE* argv, VALUE self)
 {
-    st_foreach(RHASH_TBL(rjb_loaded_classes), clear_classes, 0);
     int result = 0;
+    st_foreach(RHASH_TBL(rjb_loaded_classes), clear_classes, 0);
     if (rjb_jvm)
     {
         JNIEnv* jenv = rjb_attach_current_thread();
@@ -2121,11 +2121,12 @@ static VALUE rjb_s_bind(VALUE self, VALUE rbobj, VALUE itfname)
 {
     VALUE result = Qnil;
     JNIEnv* jenv = NULL;
-
+    jclass itf;
+    
     rjb_load_vm_default();
     jenv = rjb_attach_current_thread();
     (*jenv)->ExceptionClear(jenv);
-    jclass itf = rjb_find_class(jenv, itfname); 
+    itf = rjb_find_class(jenv, itfname); 
     rjb_check_exception(jenv, 1);
     if (itf)
     {
@@ -2460,7 +2461,7 @@ static VALUE invoke(JNIEnv* jenv, struct cls_method* pm, struct jvi_data* ptr,
     }
     if (!found)
     {
-	char* tname = rb_id2name(orgpm->name);
+	const char* tname = rb_id2name(orgpm->name);
 	if (sig) 
 	{
 	    rb_raise(rb_eRuntimeError, "Fail: unknown method name `%s(\'%s\')'", tname, sig);
@@ -2549,7 +2550,7 @@ static VALUE invoke_by_instance(ID rmid, int argc, VALUE* argv,
     JNIEnv* jenv = rjb_attach_current_thread();
     struct cls_field* pf;
     struct cls_method* pm;
-    char* tname = rb_id2name(rmid);
+    const char* tname = rb_id2name(rmid);
     
     if (argc == 0 && st_lookup(ptr->fields, rmid, (st_data_t*)&pf))
     {
@@ -2615,7 +2616,7 @@ static VALUE invoke_by_class(ID rmid, int argc, VALUE* argv,
     struct jv_data* clsptr;
     struct cls_field* pf;
     struct cls_method* pm;
-    char* tname = rb_id2name(rmid);
+    const char* tname = rb_id2name(rmid);
     JNIEnv* jenv = rjb_attach_current_thread();
 
     Data_Get_Struct(jklass, struct jv_data, clsptr);
@@ -2692,7 +2693,7 @@ static VALUE rjb_missing(int argc, VALUE* argv, VALUE self)
 {
     struct jv_data* ptr;
     ID rmid = rb_to_id(argv[0]);
-    char* rmname = rb_id2name(rmid);
+    const char* rmname = rb_id2name(rmid);
     if (isupper(*rmname))
     {
         VALUE r, args[2];
