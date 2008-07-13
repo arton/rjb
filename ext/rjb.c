@@ -1740,6 +1740,9 @@ static VALUE rjb_s_load(int argc, VALUE* argv, VALUE self)
  */
 VALUE rjb_load_vm_default()
 {
+    if (rjb_jvm) return Qfalse;
+
+    rb_warning("Rjb::implicit jvm loading");
     return rjb_s_load(0, NULL, 0);
 }
 

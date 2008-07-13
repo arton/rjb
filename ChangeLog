@@ -1,3 +1,6 @@
+Sun Jul 13 arton
+ *ext/rjb.c
+	display warning when Rjb load jvm implicitly if $DEBUG or $VERBOSE.
 Mon May 26 arton
  *ext/rjb.c
 	correct char primitive conversion for Bigendian machine.
