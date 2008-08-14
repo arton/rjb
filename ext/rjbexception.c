@@ -109,7 +109,6 @@ void rjb_check_exception(JNIEnv* jenv, int t)
 	    (*jenv)->ExceptionDescribe(jenv);
 	}
 	(*jenv)->ExceptionClear(jenv);
-//        if (t)
         if(1)
 	{
  	    char* msg = "unknown exception";

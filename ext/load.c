@@ -50,6 +50,9 @@
   #define HOME_NAME "/Home"
   #define HOME_NAME_LEN strlen(HOME_NAME)
   #define DEFAULT_HOME "/System/Library/Frameworks/JavaVM.framework"
+#elif defined(_AIX)
+  #define ARCH "ppc"
+  #define JVM_TYPE "j9vm"
 #else /* defined(_WIN32) || defined(__CYGWIN__) */
  #if defined(__sparc_v9__)
    #define ARCH "sparcv9"
@@ -151,7 +154,7 @@ static int load_jvm(char* jvmtype)
     
     jvmdll = rb_funcall(rb_const_get(rb_cObject, rb_intern("DL")), rb_intern("dlopen"), 1, rb_str_new2(libpath));
 
-    //get function pointers of JNI
+    /* get function pointers of JNI */
 #if RJB_RUBY_VERSION_CODE < 190
     getdefaultjavavminitargsfunc = rb_funcall(rb_funcall(rb_funcall(jvmdll, rb_intern("[]"), 2, rb_str_new2("JNI_GetDefaultJavaVMInitArgs"), rb_str_new2("IP")), rb_intern("to_ptr"), 0), rb_intern("to_i"), 0); 
     createjavavmfunc = rb_funcall(rb_funcall(rb_funcall(jvmdll, rb_intern("[]"), 2, rb_str_new2("JNI_CreateJavaVM"), rb_str_new2("IPPP")), rb_intern("to_ptr"), 0), rb_intern("to_i"), 0); 

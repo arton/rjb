@@ -115,7 +115,7 @@ enum PrimitiveType {
     PRM_SHORT,
     PRM_BYTE,
     PRM_FLOAT,
-    //
+    /* */
     PRM_LAST
 };
 
@@ -253,7 +253,7 @@ static VALUE jv2rv_r(JNIEnv* jenv, jvalue val)
     VALUE clsname;
     VALUE v;
     struct jv_data* ptr;
-    // object to ruby
+    /* object to ruby */
     if (!val.l) return Qnil;
     klass = (*jenv)->GetObjectClass(jenv, val.l);
 
@@ -715,7 +715,7 @@ static void rv2jstring(JNIEnv* jenv, VALUE val, jvalue* jv, const char* psig, in
 		Data_Get_Struct(val, struct jvi_data, ptr);
 		if ((*jenv)->IsInstanceOf(jenv, ptr->obj, j_string))
 		{
-		    return; // never delete at this time
+		    return; /* never delete at this time */
 		}
 	    }
 	}
@@ -739,7 +739,7 @@ static void rv2jobject(JNIEnv* jenv, VALUE val, jvalue* jv, const char* psig, in
 	}
 	else if (NIL_P(val))
 	{
-	    // no-op
+	    /* no-op */
 	}
 	else if (FIXNUM_P(val))
 	{
@@ -765,7 +765,7 @@ static void rv2jobject(JNIEnv* jenv, VALUE val, jvalue* jv, const char* psig, in
 	    case T_DATA:
 	        if (RBASIC(val)->klass == rjbi || RBASIC(val)->klass == rjb)
 		{
-		    // TODO: check instanceof (class (in psig) )
+		    /* TODO: check instanceof (class (in psig) ) */
 		    struct jvi_data* ptr;
 		    Data_Get_Struct(val, struct jvi_data, ptr);
 		    jv->l = ptr->obj;
@@ -826,7 +826,7 @@ static void check_fixnumarray(VALUE v)
     int i;
     int len = RARRAY_LEN(v);
     VALUE* p = RARRAY_PTR(v);
-    // check all fixnum (overflow is permit)
+    /* check all fixnum (overflow is permit) */
     for (i = 0; i < len; i++)
     {
 	if (!FIXNUM_P(*p++))
@@ -1093,7 +1093,7 @@ static void rv2jarray(JNIEnv* jenv, VALUE val, jvalue* jv, const char* psig, int
         jarray ja = NULL;
 	if (NIL_P(val))
 	{
-	    // no-op, null for an array
+	    /* no-op, null for an array */
 	}
         else if (*(psig + 1) == '[')
         {
@@ -1376,7 +1376,7 @@ static void create_methodinfo(JNIEnv* jenv, st_table* tbl, jobject m, int static
     (*jenv)->DeleteLocalRef(jenv, cls);
     result->static_method = static_method;
     register_methodinfo(result, tbl);
-    // create method alias
+    /* create method alias */
     pm = NULL;
     if (strlen(rname) > 3
         && (*rname == 'g' || *rname == 's') && *(rname + 1) == 'e' && *(rname + 2) == 't')
@@ -1539,7 +1539,7 @@ static void load_constants(JNIEnv* jenv, jclass klass, VALUE self, jobjectArray 
 	    char sigs[256];
             char* pname;
 
-	    // constants make define directly in the ruby object
+	    /* constants make define directly in the ruby object */
 	    cls = (*jenv)->CallObjectMethod(jenv, f, field_getType);
 	    rjb_check_exception(jenv, 0);
 	    iv = 0;
@@ -1991,7 +1991,7 @@ static int check_rtype(JNIEnv* jenv, VALUE v, char* p)
     case T_DATA:
         if (RBASIC(v)->klass == rjbi && pcls)
 	{
-	    // imported object
+	    /* imported object */
 	    jclass cls;
             struct jvi_data* ptr;
 	    int result = 0;
@@ -2005,9 +2005,9 @@ static int check_rtype(JNIEnv* jenv, VALUE v, char* p)
 	    }
 	    return result;
 	}
-	// fall down to the next case 
+	/* fall down to the next case */
     case T_OBJECT:
-	// fall down to the next case
+	/* fall down to the next case */
     default:
         if (pcls || *p == '[')
         {
@@ -2571,7 +2571,7 @@ static VALUE invoke_by_instance(ID rmid, int argc, VALUE* argv,
                 setter(jenv, pf, ptr, *argv);
                 return ret;
             }
-            // fall through for the setter alias name
+            /* fall through for the setter alias name */
         }
         if (st_lookup(ptr->methods, rmid, (st_data_t*)&pm))
         {
@@ -2828,7 +2828,7 @@ JNIEXPORT jobject JNICALL Java_jp_co_infoseek_hp_arton_rjb_RBridge_call
             *(argv + 2) = argc - 3;
             result = rb_protect(safe_funcall, (VALUE)argv, &sstat);
 	    rv2jobject(jenv, result, &j, NULL, 0);
-	    // I can't delete this object...
+	    /* I can't delete this object... */
             break;
 	}
     }
