@@ -1,3 +1,9 @@
+Thu Aug 14 arton
+ *ext/rjb.c, load.c, etc
+	change comment line // -> /* */ because AIX's compiler
+	add _AIX for load.c (this patch from Ittay Dror, thanks)
+ *ext/load.c
+	add ALT_JVM_TYPE for alternative jvm directory (by Kumar)
 Sun Jul 13 arton
  *ext/rjb.c
 	display warning when Rjb load jvm implicitly if $DEBUG or $VERBOSE.

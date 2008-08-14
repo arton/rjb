@@ -1804,12 +1804,12 @@ static VALUE rjb_s_get_pconversion(VALUE self)
 /*
  * free java class
  */
+#if 0
 static void free_constructor(struct cls_constructor* p)
 {
     free(p->arg_convert);
     free(p->method_signature);
 }
-#if 0
 static int free_method_item(ID key, struct cls_method* pm, int dummy)
 {
     for (; pm; pm = pm->next)

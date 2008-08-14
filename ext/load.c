@@ -33,6 +33,7 @@
 #include "rjb.h"
 
 #define JVM_TYPE "client"
+#define ALT_JVM_TYPE "classic"
 
 #if defined(_WIN32) || defined(__CYGWIN__)
  #if defined(__CYGWIN__)
@@ -89,8 +90,6 @@ static int load_jvm(char* jvmtype)
     char* libpath;
     char* java_home;
     char* jh;
-    VALUE dl;
-    VALUE importer;
 
     jh = getenv("JAVA_HOME");
 #if defined(__APPLE__) && defined(__MACH__)
@@ -229,7 +228,6 @@ int rjb_create_jvm(JNIEnv** pjenv, JavaVMInitArgs* vm_args, char* userpath, VALU
       { "DUMMY", NULL },   /* for classpath count */
     };
     char* newpath;
-    VALUE ptr;
     int len;
     int result;
     GETDEFAULTJAVAVMINITARGS initargs;
@@ -241,7 +239,7 @@ int rjb_create_jvm(JNIEnv** pjenv, JavaVMInitArgs* vm_args, char* userpath, VALU
 
     if (!RTEST(jvmdll))
     {
-	if (!load_jvm(JVM_TYPE))
+	if (!load_jvm(JVM_TYPE) && !load_jvm(ALT_JVM_TYPE))
 	{
 	    return -1;
 	}
