@@ -28,6 +28,7 @@
 #include "jp_co_infoseek_hp_arton_rjb_RBridge.h"
 #include "riconv.h"
 #include "rjb.h"
+#include "ctype.h"
 
 /*
  * Method Modifier Flag defined in
@@ -159,6 +160,7 @@ static char* java2jniname(char* jnicls)
     return jnicls;
 }
 
+#if 0
 static char* jni2javaname(char* jnicls)
 {
     char* p;
@@ -171,6 +173,7 @@ static char* jni2javaname(char* jnicls)
     }
     return jnicls;
 }
+#endif
 
 static char* next_sig(char* p)
 {
@@ -843,7 +846,7 @@ static jarray r2barray(JNIEnv* jenv, VALUE v, const char* cls)
     {
 	ary = (*jenv)->NewByteArray(jenv, RSTRING_LEN(v));
 	(*jenv)->SetByteArrayRegion(jenv, ary, 0, RSTRING_LEN(v),
-				    RSTRING_PTR(v));
+				    (const jbyte*)RSTRING_PTR(v));
     }
     else if (TYPE(v) == T_ARRAY)
     {
@@ -1347,7 +1350,6 @@ static void create_methodinfo(JNIEnv* jenv, st_table* tbl, jobject m, int static
 {
     struct cls_method* result;
     struct cls_method* pm;    
-    char* param = NULL;
     const char* jname;
     jstring nm;
     jobjectArray parama;
@@ -1423,7 +1425,6 @@ static void create_fieldinfo(JNIEnv* jenv, st_table* tbl, jobject f, int readonl
     jobject cls;
     char sigs[256];
     off_t iv = 0;
-    char sig = 0;
 
     result = ALLOC(struct cls_field);
     memset(result, 0, sizeof(struct cls_field));
@@ -1808,6 +1809,7 @@ static void free_constructor(struct cls_constructor* p)
     free(p->arg_convert);
     free(p->method_signature);
 }
+#if 0
 static int free_method_item(ID key, struct cls_method* pm, int dummy)
 {
     for (; pm; pm = pm->next)
@@ -1816,6 +1818,7 @@ static int free_method_item(ID key, struct cls_method* pm, int dummy)
     }
     return ST_CONTINUE;
 }
+#endif
 
 /*
  * finalize Object instance
