@@ -239,7 +239,7 @@ int rjb_create_jvm(JNIEnv** pjenv, JavaVMInitArgs* vm_args, char* userpath, VALU
 
     if (!RTEST(jvmdll))
     {
-	if (!load_jvm(JVM_TYPE) && !load_jvm(ALT_JVM_TYPE))
+	if (!(load_jvm(JVM_TYPE) || load_jvm(ALT_JVM_TYPE)))
 	{
 	    return -1;
 	}
