@@ -69,6 +69,7 @@ extern JNIEnv* rjb_attach_current_thread(void);
 extern jclass rjb_find_class(JNIEnv* jenv, VALUE name);
 extern void rjb_release_string(JNIEnv *jenv, jstring str, const char* chrs);
 extern VALUE rjb_load_vm_default();
+extern VALUE rjb_safe_funcall(VALUE args);
 
 /* in rjbexception.c */
 extern VALUE rjb_get_exception_class(JNIEnv* jenv, jstring str);

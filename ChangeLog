@@ -1,3 +1,7 @@
+Tue Aug 26 arton
+ *ext/load.c, rjb.c, rjb.h
+	export safe_funcall under the prefix 'rjb'.
+	calling DL with rb_protect for avoiding exception.
 Mon Aug 25 arton
  *ext/load.c
 	Fix checking the result for loading alternate_jvm_type.

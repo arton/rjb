@@ -90,6 +90,8 @@ static int load_jvm(char* jvmtype)
     char* libpath;
     char* java_home;
     char* jh;
+    int sstat;
+    VALUE* argv;
 
     jh = getenv("JAVA_HOME");
 #if defined(__APPLE__) && defined(__MACH__)
@@ -150,9 +152,16 @@ static int load_jvm(char* jvmtype)
 	rb_raise(rb_eRuntimeError, "Constants DL is not defined.");
 	return 0;
     }
-    
-    jvmdll = rb_funcall(rb_const_get(rb_cObject, rb_intern("DL")), rb_intern("dlopen"), 1, rb_str_new2(libpath));
-
+    argv = ALLOCA_N(VALUE, 4);
+    *argv = rb_const_get(rb_cObject, rb_intern("DL"));
+    *(argv + 1) = rb_intern("dlopen");
+    *(argv + 2) = 1;
+    *(argv + 3) = rb_str_new2(libpath);
+    jvmdll = rb_protect(rjb_safe_funcall, (VALUE)argv, &sstat);
+    if (sstat)
+    {
+        return 0;
+    }
     /* get function pointers of JNI */
 #if RJB_RUBY_VERSION_CODE < 190
     getdefaultjavavminitargsfunc = rb_funcall(rb_funcall(rb_funcall(jvmdll, rb_intern("[]"), 2, rb_str_new2("JNI_GetDefaultJavaVMInitArgs"), rb_str_new2("IP")), rb_intern("to_ptr"), 0), rb_intern("to_i"), 0); 

@@ -15,7 +15,7 @@
  * $Id$
  */
 
-#define RJB_VERSION "1.1.5"
+#define RJB_VERSION "1.1.6"
 
 #include "ruby.h"
 #include "extconf.h"
@@ -2779,7 +2779,7 @@ void Init_rjbcore()
     rb_gc_register_address(&rjbb);
 }
 
-static VALUE safe_funcall(VALUE args)
+VALUE rjb_safe_funcall(VALUE args)
 {
     VALUE* argp = (VALUE*)args;
     return rb_funcall2(*argp, *(argp + 1), *(argp + 2), argp + 3);
@@ -2829,7 +2829,7 @@ JNIEXPORT jobject JNICALL Java_jp_co_infoseek_hp_arton_rjb_RBridge_call
             *argv = ptr->wrapped;
             *(argv + 1) = id;
             *(argv + 2) = argc - 3;
-            result = rb_protect(safe_funcall, (VALUE)argv, &sstat);
+            result = rb_protect(rjb_safe_funcall, (VALUE)argv, &sstat);
 	    rv2jobject(jenv, result, &j, NULL, 0);
 	    /* I can't delete this object... */
             break;
