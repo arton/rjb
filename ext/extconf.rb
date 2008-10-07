@@ -29,7 +29,7 @@ class Path
 end
 
 javahome = ENV['JAVA_HOME']
-if !javahome.nil?
+unless javahome.nil?
   raise "JAVA_HOME is not directory." unless File.directory?(javahome)
   p = Path.new
   inc = p.include(javahome, 'include')
@@ -42,7 +42,7 @@ if !javahome.nil?
     end
   end
 else
-	raise "JAVA_HOME is not setted."
+	raise "JAVA_HOME is not set."
 end
 
 
