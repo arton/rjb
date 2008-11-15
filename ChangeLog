@@ -1,3 +1,6 @@
+Sun Nov 16 arton
+ *ext/load.c	
+	apply hpux patch, contributed by Ittay Dror. thanks
 Tue Aug 26 arton
  *ext/load.c, rjb.c, rjb.h
 	export safe_funcall under the prefix 'rjb'.

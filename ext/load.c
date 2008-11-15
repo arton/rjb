@@ -53,7 +53,15 @@
   #define DEFAULT_HOME "/System/Library/Frameworks/JavaVM.framework"
 #elif defined(_AIX)
   #define ARCH "ppc"
+  #undef JVM_TYPE
   #define JVM_TYPE "j9vm"
+#elif defined(__hpux)
+  #define JVMDLL "%s/jre/lib/%s/%s/libjvm.sl"
+  #define ARCH "PA_RISC"
+  #undef JVM_TYPE
+  #define JVM_TYPE "server"
+  #define DIRSEPARATOR '/'
+  #define CLASSPATH_SEP ':'
 #else /* defined(_WIN32) || defined(__CYGWIN__) */
  #if defined(__sparc_v9__)
    #define ARCH "sparcv9"
