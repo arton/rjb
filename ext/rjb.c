@@ -447,11 +447,9 @@ static VALUE call_conv(JNIEnv* jenv, jvalue val, size_t sz, void* p, CONV conv, 
     char* cp = (char*)p;
     jsize len = (*jenv)->GetArrayLength(jenv, val.l);
     VALUE v = rb_ary_new2(len);
-    VALUE* pv = RARRAY_PTR(v);
-    RARRAY_LEN(v) = len;
     for (i = 0; i < len; i++)
     {
-        *pv++ =conv(jenv, cp);
+        rb_ary_push(v, conv(jenv, cp));
 	cp += sz;
     }
     (*(RELEASEARRAY*)(((char*)*jenv) + fnc))(jenv, val.l, p, JNI_ABORT);

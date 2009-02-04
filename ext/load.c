@@ -290,7 +290,7 @@ int rjb_create_jvm(JNIEnv** pjenv, JavaVMInitArgs* vm_args, char* userpath, VALU
     optlen = 0;
     if (!NIL_P(argv))
     {
-        optlen += RARRAY(argv)->len;
+        optlen += RARRAY_LEN(argv);
     }
     optlen += COUNTOF(soptions);
     options = ALLOCA_N(JavaVMOption, optlen);

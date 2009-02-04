@@ -167,40 +167,62 @@ class TestRjb < Test::Unit::TestCase
       assert_equal(@jString.new("abcdef".force_encoding(Encoding::ASCII_8BIT)).toString(), "abcdef")
       assert_equal(@jString.new("abcdef".force_encoding(Encoding::find("us-ascii"))).toString(), "abcdef")
     else
-      $KCODE = 'euc'
-      euc_kj = "\xb4\xc1\xbb\xfa\xa5\xc6\xa5\xad\xa5\xb9\xa5\xc8"
-      s = @jString.new(euc_kj)
-      assert_equal(s.toString(), euc_kj)
-      $KCODE = 'sjis'
-      sjis_kj = "\x8a\xbf\x8e\x9a\x83\x65\x83\x4c\x83\x58\x83\x67"
-      s = @jString.new(sjis_kj)
-      assert_equal(s.toString(), sjis_kj)
-      $KCODE = 'utf8'
-      utf8_kj = "\xE6\xBC\xA2\xE5\xAD\x97\xE3\x83\x86\xE3\x82\xAD\xE3\x82\xB9\xE3\x83\x88"
-      s = @jString.new(utf8_kj)
-      assert_equal(s.toString(), utf8_kj)
-      $KCODE = 'none'
-      if /mswin(?!ce)|mingw|cygwin|bccwin/ =~ RUBY_PLATFORM
-	#expecting shift_jis on windows
-	none_kj = "\x8a\xbf\x8e\x9a\x83\x65\x83\x4c\x83\x58\x83\x67"
-      else
-	#expecting utf-8 unless windows
-	none_kj = "\xE6\xBC\xA2\xE5\xAD\x97\xE3\x83\x86\xE3\x82\xAD\xE3\x82\xB9\xE3\x83\x88"
+      default_kcode = $KCODE
+      begin
+	$KCODE = 'euc'
+	euc_kj = "\xb4\xc1\xbb\xfa\xa5\xc6\xa5\xad\xa5\xb9\xa5\xc8"
+	s = @jString.new(euc_kj)
+	assert_equal(s.toString(), euc_kj)
+	$KCODE = 'sjis'
+	sjis_kj = "\x8a\xbf\x8e\x9a\x83\x65\x83\x4c\x83\x58\x83\x67"
+	s = @jString.new(sjis_kj)
+	assert_equal(s.toString(), sjis_kj)
+	$KCODE = 'utf8'
+	utf8_kj = "\xE6\xBC\xA2\xE5\xAD\x97\xE3\x83\x86\xE3\x82\xAD\xE3\x82\xB9\xE3\x83\x88"
+	s = @jString.new(utf8_kj)
+	assert_equal(s.toString(), utf8_kj)
+	$KCODE = 'none'
+	if /mswin(?!ce)|mingw|cygwin|bccwin/ =~ RUBY_PLATFORM
+	  #expecting shift_jis on windows
+	  none_kj = "\x8a\xbf\x8e\x9a\x83\x65\x83\x4c\x83\x58\x83\x67"
+	else
+	  #expecting utf-8 unless windows
+	  none_kj = "\xE6\xBC\xA2\xE5\xAD\x97\xE3\x83\x86\xE3\x82\xAD\xE3\x82\xB9\xE3\x83\x88"
+	end
+	s = @jString.new(none_kj)
+	assert_equal(s.toString(), none_kj)
+	$KCODE = 'utf8'
+	utf8_kj = "\xE6\xBC\xA2\xE5\xAD\x97\xE3\x83\x86\xE3\x82\xAD\xE3\x82\xB9\xE3\x83\x88"
+	s = @jString.new(utf8_kj)
+	assert_equal(s.toString(), utf8_kj)
+	$KCODE = 'sjis'
+	sjis_kj = "\x8a\xbf\x8e\x9a\x83\x65\x83\x4c\x83\x58\x83\x67"
+	s = @jString.new(sjis_kj)
+	assert_equal(s.toString(), sjis_kj)
+	$KCODE = 'euc'
+	euc_kj = "\xb4\xc1\xbb\xfa\xa5\xc6\xa5\xad\xa5\xb9\xa5\xc8"
+	s = @jString.new(euc_kj)
+	assert_equal(s.toString(), euc_kj)
+      ensure
+	$KCODE = default_kcode
       end
-      s = @jString.new(none_kj)
-      assert_equal(s.toString(), none_kj)
-      $KCODE = 'utf8'
-      utf8_kj = "\xE6\xBC\xA2\xE5\xAD\x97\xE3\x83\x86\xE3\x82\xAD\xE3\x82\xB9\xE3\x83\x88"
-      s = @jString.new(utf8_kj)
-      assert_equal(s.toString(), utf8_kj)
-      $KCODE = 'sjis'
-      sjis_kj = "\x8a\xbf\x8e\x9a\x83\x65\x83\x4c\x83\x58\x83\x67"
-      s = @jString.new(sjis_kj)
-      assert_equal(s.toString(), sjis_kj)
-      $KCODE = 'euc'
-      euc_kj = "\xb4\xc1\xbb\xfa\xa5\xc6\xa5\xad\xa5\xb9\xa5\xc8"
-      s = @jString.new(euc_kj)
-      assert_equal(s.toString(), euc_kj)
+    end
+  end
+
+  def test_combination_charcters
+    teststr = "\xc7\x96\xc3\xbc\xcc\x84\x75\xcc\x88\xcc\x84\xed\xa1\xa9\xed\xba\xb2\xe3\x81\x8b\xe3\x82\x9a"
+    test = import('jp.co.infoseek.hp.arton.rjb.Test').new
+    s = test.getUmlaut()
+    if Object::const_defined?(:Encoding) #>=1.9
+      teststr = teststr.force_encoding(Encoding::UTF_8)
+    end
+
+    default_kcode = $KCODE
+    begin
+      $KCODE = "utf8"
+      assert_equal(s, teststr)
+    ensure
+      $KCODE = default_kcode
     end
   end
 

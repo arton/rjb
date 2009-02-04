@@ -114,5 +114,14 @@ public class Test {
 	return "漢字テキスト".equals(s);
     }
 
+    public String getUmlaut() {
+	return "\u01D6" + "\u00FC\u0304" + "\u0075\u0308\u0304" + "\ud869\udeb2" + "\u304b\u309a";
+    }
+
     public String helloData = "Hello World !!";
+
+    public static void main(String[] args) {
+	Test test = new Test();
+	System.out.println(test.getUmlaut());
+    }
 }
