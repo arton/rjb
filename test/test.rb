@@ -215,14 +215,15 @@ class TestRjb < Test::Unit::TestCase
     s = test.getUmlaut()
     if Object::const_defined?(:Encoding) #>=1.9
       teststr = teststr.force_encoding(Encoding::UTF_8)
-    end
-
-    default_kcode = $KCODE
-    begin
-      $KCODE = "utf8"
       assert_equal(s, teststr)
-    ensure
-      $KCODE = default_kcode
+    else
+      default_kcode = $KCODE
+      begin
+	$KCODE = "utf8"
+	assert_equal(s, teststr)
+      ensure
+	$KCODE = default_kcode
+      end
     end
   end
 
