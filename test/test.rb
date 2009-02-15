@@ -1,4 +1,5 @@
-#!/usr/local/env ruby
+#!/usr/local/env ruby -Ku
+# encoding: utf-8
 # $Id$
 
 begin
