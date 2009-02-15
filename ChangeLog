@@ -1,3 +1,8 @@
+Sun Feb 15 arton
+ *test/test/rb
+	add $KCODE and magic comment for iconv
+ *ext/rjb.c
+	RJB_VERSION -> 1.1.7
 Thu Feb 5 kuwa1
  *test/Test.java
  *test/test.rb
