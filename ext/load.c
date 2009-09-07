@@ -45,7 +45,7 @@
  #endif
  #define CLASSPATH_SEP  ';'
 #elif defined(__APPLE__) && defined(__MACH__)
-  #define JVMDLL "%s/Libraries/libjvm_compat.dylib"
+  static char* JVMDLL = "%s/Libraries/libjvm_compat.dylib";
   #define DIRSEPARATOR '/'
   #define CLASSPATH_SEP ':'
   #define HOME_NAME "/Home"
@@ -80,6 +80,14 @@
  #define JVMDLL "%s/jre/lib/%s/%s/libjvm.so"
  #define DIRSEPARATOR '/'
  #define CLASSPATH_SEP ':'
+#endif
+
+#if defined(__APPLE__) && defined(__MACH__)
+ static char* CREATEJVM = "JNI_CreateJavaVM";
+ static char* GETDEFAULTJVMINITARGS = "JNI_GetDefaultJavaVMInitArgs";
+#else
+ #define CREATEJVM "JNI_CreateJavaVM"
+ #define GETDEFAULTJVMINITARGS "JNI_GetDefaultJavaVMInitArgs"
 #endif
 
 typedef int (*GETDEFAULTJAVAVMINITARGS)(void*);
@@ -172,11 +180,11 @@ static int load_jvm(char* jvmtype)
     }
     /* get function pointers of JNI */
 #if RJB_RUBY_VERSION_CODE < 190
-    getdefaultjavavminitargsfunc = rb_funcall(rb_funcall(rb_funcall(jvmdll, rb_intern("[]"), 2, rb_str_new2("JNI_GetDefaultJavaVMInitArgs"), rb_str_new2("IP")), rb_intern("to_ptr"), 0), rb_intern("to_i"), 0); 
-    createjavavmfunc = rb_funcall(rb_funcall(rb_funcall(jvmdll, rb_intern("[]"), 2, rb_str_new2("JNI_CreateJavaVM"), rb_str_new2("IPPP")), rb_intern("to_ptr"), 0), rb_intern("to_i"), 0); 
+    getdefaultjavavminitargsfunc = rb_funcall(rb_funcall(rb_funcall(jvmdll, rb_intern("[]"), 2, rb_str_new2(GETDEFAULTJVMINITARGS), rb_str_new2("IP")), rb_intern("to_ptr"), 0), rb_intern("to_i"), 0); 
+    createjavavmfunc = rb_funcall(rb_funcall(rb_funcall(jvmdll, rb_intern("[]"), 2, rb_str_new2(CREATEJVM), rb_str_new2("IPPP")), rb_intern("to_ptr"), 0), rb_intern("to_i"), 0); 
 #else
-    getdefaultjavavminitargsfunc = rb_funcall(jvmdll, rb_intern("[]"), 1, rb_str_new2("JNI_GetDefaultJavaVMInitArgs"));
-    createjavavmfunc = rb_funcall(jvmdll, rb_intern("[]"), 1, rb_str_new2("JNI_CreateJavaVM"));
+    getdefaultjavavminitargsfunc = rb_funcall(jvmdll, rb_intern("[]"), 1, rb_str_new2(GETDEFAULTJVMINITARGS));
+    createjavavmfunc = rb_funcall(jvmdll, rb_intern("[]"), 1, rb_str_new2(CREATEJVM));
 #endif
     return 1;
 }
@@ -256,7 +264,15 @@ int rjb_create_jvm(JNIEnv** pjenv, JavaVMInitArgs* vm_args, char* userpath, VALU
 
     if (!RTEST(jvmdll))
     {
-	if (!(load_jvm(JVM_TYPE) || load_jvm(ALT_JVM_TYPE)))
+#if defined(__APPLE__) && defined(__MACH__)
+        if (!(load_jvm(JVM_TYPE) || load_jvm(ALT_JVM_TYPE)))
+        {
+            JVMDLL = "%s/Libraries/libjvm.dylib";
+            CREATEJVM = "JNI_CreateJavaVM_Impl";
+            GETDEFAULTJVMINITARGS = "JNI_GetDefaultJavaVMInitArgs_Impl";
+        }
+#endif
+        if (!(load_jvm(JVM_TYPE) || load_jvm(ALT_JVM_TYPE)))
 	{
 	    return -1;
 	}

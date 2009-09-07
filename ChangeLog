@@ -1,3 +1,8 @@
+Mon Sep 07 arton
+ *ext/load.c
+	Check no compat type dylib after loading was failed (for Snow Leopard)
+ *ext/rjb.c
+	RJB_VERSION -> 1.1.8
 Sun Feb 15 arton
  *test/test/rb
 	add $KCODE and magic comment for iconv
