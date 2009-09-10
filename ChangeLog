@@ -1,3 +1,9 @@
+Thu Sep 10 arton
+ *ext/load.c
+	Correct previous code (always reload jvm if OSX < Snow Leopard)
+	Clear DL's exception if success
+ *ext/rjb.c
+	RJB_VERSION -> 1.1.9
 Mon Sep 07 arton
  *ext/load.c
 	Check no compat type dylib after loading was failed (for Snow Leopard)

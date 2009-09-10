@@ -270,12 +270,15 @@ int rjb_create_jvm(JNIEnv** pjenv, JavaVMInitArgs* vm_args, char* userpath, VALU
             JVMDLL = "%s/Libraries/libjvm.dylib";
             CREATEJVM = "JNI_CreateJavaVM_Impl";
             GETDEFAULTJVMINITARGS = "JNI_GetDefaultJavaVMInitArgs_Impl";
-        }
 #endif
         if (!(load_jvm(JVM_TYPE) || load_jvm(ALT_JVM_TYPE)))
 	{
 	    return -1;
 	}
+#if defined(__APPLE__) && defined(__MACH__)
+        }
+#endif
+        rb_set_errinfo(Qnil);
     }
 
     if (NIL_P(getdefaultjavavminitargsfunc))
