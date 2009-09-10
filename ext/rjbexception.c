@@ -132,7 +132,7 @@ void rjb_check_exception(JNIEnv* jenv, int t)
 	    }
 	    else
 	    {
-		rb_raise(rexp, msg);
+                rb_raise(rexp, "%s", msg);
 	    }
         }
     }
