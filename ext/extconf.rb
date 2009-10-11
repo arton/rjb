@@ -17,8 +17,8 @@ class Path
 
   def include(parent, child)
     inc = joint(parent, child)
-    $INCFLAGS += " -I#{inc}"
-    $CFLAGS += " -I#{inc}"
+    $INCFLAGS += " -I\"#{inc}\""
+    $CFLAGS += " -I\"#{inc}\""
     inc
   end
 
@@ -30,6 +30,9 @@ end
 
 javahome = ENV['JAVA_HOME']
 unless javahome.nil?
+  if javahome[0] == ?" && javahome[-1] == ?"
+    javahome = javahome[1..-2]
+  end
   raise "JAVA_HOME is not directory." unless File.directory?(javahome)
   p = Path.new
   inc = p.include(javahome, 'include')

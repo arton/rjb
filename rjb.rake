@@ -18,7 +18,7 @@ task :default => [ :package ]
 spec = Gem::Specification.new do |s|
   s.authors = 'arton'
   s.email = 'artonx@gmail.com'
-  if /mswin32|mingw/ =~ RUBY_PLATFORM
+  if /mswin|mingw/ =~ RUBY_PLATFORM
     s.platform = Gem::Platform::CURRENT
   else
     s.platform = Gem::Platform::RUBY
@@ -35,10 +35,10 @@ spec = Gem::Specification.new do |s|
   files = FileList['ext/*.java', 'ext/*.c', 'ext/*.h', 'ext/depend',
                    'data/rjb/**/*.class', 'lib/*.rb', 'samples/**/*.rb', 
                    'test/*.rb', 'test/**/*.class', 'COPYING', 'ChangeLog', 'readme.*']
-  if /mswin32/ =~ RUBY_PLATFORM
+  if /mswin|mingw/ =~ RUBY_PLATFORM
     FileUtils.cp 'ext/rjbcore.so', 'lib/rjbcore.so'
     files << "lib/rjbcore.so"
-    s.requirements << ' VC6 version of Ruby' 
+    s.requirements << ' VC6 version of Ruby' if RUBY_PLATFORM =~ /mswin/
   end
   s.files = files
   s.test_file = 'test/test.rb'
