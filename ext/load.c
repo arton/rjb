@@ -1,6 +1,6 @@
 /*
  * Rjb - Ruby <-> Java Bridge
- * Copyright(c) 2004,2005,2006 arton
+ * Copyright(c) 2004,2005,2006,2009 arton
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * $Id$
+ * $Id: load.c 102 2009-11-01 14:01:41Z arton $
  */
 
 #include <stdlib.h>
@@ -98,6 +98,37 @@ static VALUE jvmdll = Qnil;
 static VALUE getdefaultjavavminitargsfunc;
 static VALUE createjavavmfunc;
 
+static int open_jvm(char* libpath)
+{
+    int sstat;
+    VALUE* argv;
+
+    rb_require("dl");
+    if (!rb_const_defined_at(rb_cObject, rb_intern("DL")))
+    {
+	rb_raise(rb_eRuntimeError, "Constants DL is not defined.");
+	return 0;
+    }
+    argv = ALLOCA_N(VALUE, 4);
+    *argv = rb_const_get(rb_cObject, rb_intern("DL"));
+    *(argv + 1) = rb_intern("dlopen");
+    *(argv + 2) = 1;
+    *(argv + 3) = rb_str_new2(libpath);
+    jvmdll = rb_protect(rjb_safe_funcall, (VALUE)argv, &sstat);
+    if (sstat)
+    {
+        return 0;
+    }
+    /* get function pointers of JNI */
+#if RJB_RUBY_VERSION_CODE < 190
+    getdefaultjavavminitargsfunc = rb_funcall(rb_funcall(rb_funcall(jvmdll, rb_intern("[]"), 2, rb_str_new2(GETDEFAULTJVMINITARGS), rb_str_new2("IP")), rb_intern("to_ptr"), 0), rb_intern("to_i"), 0); 
+    createjavavmfunc = rb_funcall(rb_funcall(rb_funcall(jvmdll, rb_intern("[]"), 2, rb_str_new2(CREATEJVM), rb_str_new2("IPPP")), rb_intern("to_ptr"), 0), rb_intern("to_i"), 0); 
+#else
+    getdefaultjavavminitargsfunc = rb_funcall(jvmdll, rb_intern("[]"), 1, rb_str_new2(GETDEFAULTJVMINITARGS));
+    createjavavmfunc = rb_funcall(jvmdll, rb_intern("[]"), 1, rb_str_new2(CREATEJVM));
+#endif
+    return 1;
+}
 /*
  * not completed, only valid under some circumstances.
  */
@@ -106,8 +137,6 @@ static int load_jvm(char* jvmtype)
     char* libpath;
     char* java_home;
     char* jh;
-    int sstat;
-    VALUE* argv;
 
     jh = getenv("JAVA_HOME");
 #if defined(__APPLE__) && defined(__MACH__)
@@ -161,32 +190,7 @@ static int load_jvm(char* jvmtype)
 		       + strlen(ARCH) + strlen(jvmtype) + 1);
     sprintf(libpath, JVMDLL, java_home, ARCH, jvmtype);
 #endif
-
-    rb_require("dl");
-    if (!rb_const_defined_at(rb_cObject, rb_intern("DL")))
-    {
-	rb_raise(rb_eRuntimeError, "Constants DL is not defined.");
-	return 0;
-    }
-    argv = ALLOCA_N(VALUE, 4);
-    *argv = rb_const_get(rb_cObject, rb_intern("DL"));
-    *(argv + 1) = rb_intern("dlopen");
-    *(argv + 2) = 1;
-    *(argv + 3) = rb_str_new2(libpath);
-    jvmdll = rb_protect(rjb_safe_funcall, (VALUE)argv, &sstat);
-    if (sstat)
-    {
-        return 0;
-    }
-    /* get function pointers of JNI */
-#if RJB_RUBY_VERSION_CODE < 190
-    getdefaultjavavminitargsfunc = rb_funcall(rb_funcall(rb_funcall(jvmdll, rb_intern("[]"), 2, rb_str_new2(GETDEFAULTJVMINITARGS), rb_str_new2("IP")), rb_intern("to_ptr"), 0), rb_intern("to_i"), 0); 
-    createjavavmfunc = rb_funcall(rb_funcall(rb_funcall(jvmdll, rb_intern("[]"), 2, rb_str_new2(CREATEJVM), rb_str_new2("IPPP")), rb_intern("to_ptr"), 0), rb_intern("to_i"), 0); 
-#else
-    getdefaultjavavminitargsfunc = rb_funcall(jvmdll, rb_intern("[]"), 1, rb_str_new2(GETDEFAULTJVMINITARGS));
-    createjavavmfunc = rb_funcall(jvmdll, rb_intern("[]"), 1, rb_str_new2(CREATEJVM));
-#endif
-    return 1;
+    return open_jvm(libpath);
 }
 
 static int load_bridge(JNIEnv* jenv)
@@ -264,20 +268,33 @@ int rjb_create_jvm(JNIEnv** pjenv, JavaVMInitArgs* vm_args, char* userpath, VALU
 
     if (!RTEST(jvmdll))
     {
-#if defined(__APPLE__) && defined(__MACH__)
-        if (!(load_jvm(JVM_TYPE) || load_jvm(ALT_JVM_TYPE)))
+        char* libjvm = getenv("JVM_LIB");
+#if defined(_WIN32)
+        if (libjvm && *libjvm == '"' && *(libjvm + strlen(libjvm) - 1) == '"')
         {
-            JVMDLL = "%s/Libraries/libjvm.dylib";
-            CREATEJVM = "JNI_CreateJavaVM_Impl";
-            GETDEFAULTJVMINITARGS = "JNI_GetDefaultJavaVMInitArgs_Impl";
-#endif
-        if (!(load_jvm(JVM_TYPE) || load_jvm(ALT_JVM_TYPE)))
-	{
-	    return -1;
-	}
-#if defined(__APPLE__) && defined(__MACH__)
+            char* p = ALLOCA_N(char, strlen(libjvm) + 1);
+            strcpy(p, libjvm + 1);
+            *(p + strlen(p) - 1) = '\0';
+            libjvm = p;
         }
+#endif    
+        if (libjvm == NULL || !open_jvm(libjvm))
+        {
+#if defined(__APPLE__) && defined(__MACH__)
+            if (!(load_jvm(JVM_TYPE) || load_jvm(ALT_JVM_TYPE)))
+            {
+                JVMDLL = "%s/Libraries/libjvm.dylib";
+                CREATEJVM = "JNI_CreateJavaVM_Impl";
+                GETDEFAULTJVMINITARGS = "JNI_GetDefaultJavaVMInitArgs_Impl";
 #endif
+	        if (!(load_jvm(JVM_TYPE) || load_jvm(ALT_JVM_TYPE)))
+                {
+                    return -1;
+                }
+#if defined(__APPLE__) && defined(__MACH__)
+            }
+#endif
+        }
 #if RJB_RUBY_VERSION_CODE < 190
         ruby_errinfo = Qnil;
 #else

@@ -1,3 +1,8 @@
+Sun Nov 1 arton
+ *ext/load.c
+	load jvm pointed by JVM_LIB environment variable first (suggested by Ittay Dror).
+ *ext/rjb.c
+	RJB_VERSION -> 1.2.0
 Sun Oct 11 arton
  *ext/extconf.rb
 	add double quotation around include path for mingw compiler, original patched by Roger Pack (thanks)

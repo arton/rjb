@@ -12,10 +12,10 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * $Id$
+ * $Id: rjb.c 102 2009-11-01 14:01:41Z arton $
  */
 
-#define RJB_VERSION "1.1.9"
+#define RJB_VERSION "1.2.0"
 
 #include "ruby.h"
 #include "extconf.h"
