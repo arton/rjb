@@ -650,5 +650,18 @@ class TestRjb < Test::Unit::TestCase
       assert_equal "can't create Java VM", $!.message
     end
   end
+
+  module TestMixin
+    def test_hello(s)
+      'hello ' + s
+    end
+  end
+  def test_extend
+    @jString.class_eval do
+      include TestMixin
+    end
+    s = @jString.new
+    assert_equal('hello world', s.test_hello('world'))
+  end
 end
 
