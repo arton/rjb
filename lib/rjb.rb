@@ -29,7 +29,7 @@ module Rjb
       @org_new ||= method(:new)
       @org_new_with_sig ||= method(:new_with_sig)
       def new_with_sig(*args)
-        prepare_proxy(@org_new_with_sig(*args))
+        prepare_proxy(@org_new_with_sig.call(*args))
       end
       def new(*args)
         prepare_proxy(@org_new.call(*args))
