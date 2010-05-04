@@ -1,3 +1,13 @@
+Tue May	4 arton
+ *ext/load.c
+	corrected wrong function signature (BUG#28088), pointed and fixed by Romulo A. Ceccon (thanks)
+ *ext/rjb.c
+	using inheritance check while inspecting a object is RJB's instance (for extending it).
+Tue Mar 16 arton
+ *ext/riconv.c
+	change locale setting "" to "C", fixed by Fabien Sartor (rjb-Bugs-27968)
+ *ext/rjb.c
+	RJB_VERSION -> 1.2.1	
 Sun Nov 1 arton
  *ext/load.c
 	load jvm pointed by JVM_LIB environment variable first (suggested by Ittay Dror).
