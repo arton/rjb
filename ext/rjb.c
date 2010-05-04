@@ -12,10 +12,10 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * $Id: rjb.c 102 2009-11-01 14:01:41Z arton $
+ * $Id: rjb.c 106 2010-05-04 15:17:51Z arton $
  */
 
-#define RJB_VERSION "1.2.0"
+#define RJB_VERSION "1.2.1"
 
 #include "ruby.h"
 #include "extconf.h"
@@ -55,6 +55,7 @@
 #define RJB_LOAD_STATIC_METHOD(var, obj, name, sig) \
     var = (*jenv)->GetStaticMethodID(jenv, obj, name, sig); \
     rjb_check_exception(jenv, 1)
+#define IS_RJB_OBJECT(v) (rb_class_inherited(rjbi, RBASIC(v)->klass) || RBASIC(v)->klass == rjb)
 
 static void register_class(VALUE, VALUE);
 static VALUE import_class(JNIEnv* jenv, jclass, VALUE);
@@ -673,8 +674,7 @@ static void rv2jstring(JNIEnv* jenv, VALUE val, jvalue* jv, const char* psig, in
 {
     if (!release)
     {
-	if (TYPE(val) == T_DATA
-	    && (RBASIC(val)->klass == rjbi || RBASIC(val)->klass == rjb))
+	if (TYPE(val) == T_DATA && IS_RJB_OBJECT(val))
 	{
 	    struct jvi_data* ptr;
 	    Data_Get_Struct(val, struct jvi_data, ptr);
@@ -710,7 +710,7 @@ static void rv2jstring(JNIEnv* jenv, VALUE val, jvalue* jv, const char* psig, in
     {
 	if (TYPE(val) == T_DATA)
 	{
-	    if (RBASIC(val)->klass == rjbi || RBASIC(val)->klass == rjb)
+            if (IS_RJB_OBJECT(val))
 	    {
 		struct jvi_data* ptr;
 		Data_Get_Struct(val, struct jvi_data, ptr);
@@ -764,9 +764,9 @@ static void rv2jobject(JNIEnv* jenv, VALUE val, jvalue* jv, const char* psig, in
 	    switch (TYPE(val))
 	    {
 	    case T_DATA:
-	        if (RBASIC(val)->klass == rjbi || RBASIC(val)->klass == rjb)
+                if (IS_RJB_OBJECT(val))
 		{
-		    /* TODO: check instanceof (class (in psig) ) */
+                    /* TODO: check instanceof (class (in psig) ) */
 		    struct jvi_data* ptr;
 		    Data_Get_Struct(val, struct jvi_data, ptr);
 		    jv->l = ptr->obj;
@@ -1729,6 +1729,7 @@ static VALUE rjb_s_load(int argc, VALUE* argv, VALUE self)
 
     jklass = import_class(jenv, j_class, rb_str_new2("java.lang.Class"));
     rb_define_method(RBASIC(jklass)->klass, "forName", rjb_class_forname, -1);
+    rb_define_method(RBASIC(jklass)->klass, "for_name", rjb_class_forname, -1);    
     rb_gc_register_address(&jklass);
     
     return Qnil;
@@ -1990,7 +1991,7 @@ static int check_rtype(JNIEnv* jenv, VALUE v, char* p)
     case T_ARRAY:
         return *p == '[';
     case T_DATA:
-        if (RBASIC(v)->klass == rjbi && pcls)
+        if (IS_RJB_OBJECT(v) && pcls)
 	{
 	    /* imported object */
 	    jclass cls;
