@@ -90,8 +90,8 @@
  #define GETDEFAULTJVMINITARGS "JNI_GetDefaultJavaVMInitArgs"
 #endif
 
-typedef int (*GETDEFAULTJAVAVMINITARGS)(void*);
-typedef int (*CREATEJAVAVM)(JavaVM**, JNIEnv**, void*);
+typedef int (JNICALL *GETDEFAULTJAVAVMINITARGS)(void*);
+typedef int (JNICALL *CREATEJAVAVM)(JavaVM**, JNIEnv**, void*);
 
 
 static VALUE jvmdll = Qnil;
