@@ -1,3 +1,14 @@
+Wed May 12 arton
+ *test/test.rb
+	add Class name for TestMixin module because ruby 1.9 doesn't handle the constant.
+Tue May 11 arton
+ *ext/rjb.c
+	fix duplicate method registering while no alias.
+	add class methods for inspecting method signatures.
+	add class_eval method for extending Java class
+ *test/test.rb
+	add class methods test for inspecting method signatures.
+	add mixin tests
 Tue May	4 arton
  *ext/load.c
 	corrected wrong function signature (BUG#28088), pointed and fixed by Romulo A. Ceccon (thanks)
