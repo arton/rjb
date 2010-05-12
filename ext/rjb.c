@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * $Id: rjb.c 106 2010-05-04 15:17:51Z arton $
+ * $Id: rjb.c 109 2010-05-11 13:04:25Z arton $
  */
 
 #define RJB_VERSION "1.2.1"
@@ -56,10 +56,11 @@
     var = (*jenv)->GetStaticMethodID(jenv, obj, name, sig); \
     rjb_check_exception(jenv, 1)
 #define IS_RJB_OBJECT(v) (rb_class_inherited(rjbi, RBASIC(v)->klass) || RBASIC(v)->klass == rjb)
+#define USER_INITIALIZE "@user_initialize"
 
 static void register_class(VALUE, VALUE);
 static VALUE import_class(JNIEnv* jenv, jclass, VALUE);
-static VALUE register_instance(JNIEnv* jenv, struct jvi_data*, jobject);
+static VALUE register_instance(JNIEnv* jenv, VALUE klass, struct jv_data*, jobject);
 static VALUE rjb_s_free(struct jv_data*);
 static VALUE rjb_class_forname(int argc, VALUE* argv, VALUE self);
 static void setup_metadata(JNIEnv* jenv, VALUE self, struct jv_data*, VALUE classname);
@@ -73,6 +74,8 @@ static VALUE jklass;
 static VALUE rjbc;
 static VALUE rjbi;
 static VALUE rjbb;
+
+static ID user_initialize;
 
 VALUE rjb_loaded_classes;
 static VALUE proxies;
@@ -287,7 +290,7 @@ static VALUE jv2rv_r(JNIEnv* jenv, jvalue val)
         v = import_class(jenv, klass, clsname);
     }
     Data_Get_Struct(v, struct jv_data, ptr);
-    v = register_instance(jenv, (struct jvi_data*)ptr, val.l);
+    v = register_instance(jenv, v, (struct jv_data*)ptr, val.l);
     (*jenv)->DeleteLocalRef(jenv, klass);
     (*jenv)->DeleteLocalRef(jenv, val.l);    
     return v;
@@ -1327,14 +1330,16 @@ static struct cls_method* clone_methodinfo(struct cls_method* pm)
     return result;
 }
 
-static void make_alias(const char* jname, char* rname)
+static int make_alias(const char* jname, char* rname)
 {
+    int ret = 0;
     while (*jname)
     {
         if (isupper(*jname))
         {
             *rname++ = '_';
             *rname++ = tolower(*jname++);
+            ret = 1;
         }
         else
         {
@@ -1342,6 +1347,7 @@ static void make_alias(const char* jname, char* rname)
         }
     }
     *rname = '\0';
+    return ret;
 }
 
 static void create_methodinfo(JNIEnv* jenv, st_table* tbl, jobject m, int static_method)
@@ -1349,6 +1355,7 @@ static void create_methodinfo(JNIEnv* jenv, st_table* tbl, jobject m, int static
     struct cls_method* result;
     struct cls_method* pm;    
     const char* jname;
+    int alias;
     jstring nm;
     jobjectArray parama;
     jobject cls;
@@ -1365,7 +1372,7 @@ static void create_methodinfo(JNIEnv* jenv, st_table* tbl, jobject m, int static
     rjb_check_exception(jenv, 0);	    
     jname = (*jenv)->GetStringUTFChars(jenv, nm, NULL);
     rname = ALLOCA_N(char, strlen(jname) * 2 + 8);
-    make_alias(jname, rname);
+    alias = make_alias(jname, rname);
     result->name = rb_intern(jname);
     rjb_release_string(jenv, nm, jname);    
     result->basic.id = (*jenv)->FromReflectedMethod(jenv, m);
@@ -1404,7 +1411,7 @@ static void create_methodinfo(JNIEnv* jenv, st_table* tbl, jobject m, int static
         if (*rname == '_') rname++;
         strcat(rname, "?");
     }
-    else
+    else if (alias)
     {
         pm = clone_methodinfo(result);
     }
@@ -1747,6 +1754,18 @@ VALUE rjb_load_vm_default()
 }
 
 /*
+ * common prelude
+ */
+JNIEnv* rjb_prelude()
+{
+    JNIEnv* jenv = NULL;
+    rjb_load_vm_default();
+    jenv = rjb_attach_current_thread();
+    (*jenv)->ExceptionClear(jenv);
+    return jenv;
+}
+
+/*
  * unload Java Virtual Machine
  *
  * def unload()
@@ -1884,14 +1903,19 @@ static VALUE rjb_s_free(struct jv_data* ptr)
  * create new instance of this class
  */
 static VALUE createinstance(JNIEnv* jenv, int argc, VALUE* argv,
-	    struct jvi_data* org, struct cls_constructor* pc)
+	    VALUE self, struct cls_constructor* pc)
 {
     int i;
     char* psig = pc->method_signature;
     jobject obj = NULL;
     VALUE result;
-
+    struct jv_data* jklass;
+    struct jvi_data* org;
     jvalue* args = (argc) ? ALLOCA_N(jvalue, argc) : NULL;
+    
+    Data_Get_Struct(self, struct jv_data, jklass);
+    org = &jklass->idata;
+
     for (i = 0; i < argc; i++)
     {
 	R2J pr2j = *(pc->arg_convert + i);
@@ -1912,7 +1936,7 @@ static VALUE createinstance(JNIEnv* jenv, int argc, VALUE* argv,
 	psig = next_sig(psig);
     }
 
-    result = register_instance(jenv, org, obj);
+    result = register_instance(jenv, self, jklass, obj);
     (*jenv)->DeleteLocalRef(jenv, obj);
     return result;
 }
@@ -1942,16 +1966,29 @@ static VALUE import_class(JNIEnv* jenv, jclass jcls, VALUE clsname)
     return v;
 }
 
-static VALUE register_instance(JNIEnv* jenv, struct jvi_data* org, jobject obj)
+static VALUE rjb_i_prepare_proxy(VALUE self)
+{
+    return rb_funcall(self, rb_intern("instance_eval"), 1, 
+               rb_str_new2("instance_eval &" USER_INITIALIZE));
+}
+
+static VALUE register_instance(JNIEnv* jenv, VALUE klass, struct jv_data* org, jobject obj)
 {
     VALUE v;
+    VALUE iproc;
     struct jvi_data* ptr = ALLOC(struct jvi_data);
     memset(ptr, 0, sizeof(struct jvi_data));
     v = Data_Wrap_Struct(rjbi, NULL, rjb_delete_ref, ptr);
-    ptr->klass = org->obj;
+    ptr->klass = org->idata.obj;
     ptr->obj = (*jenv)->NewGlobalRef(jenv, obj);
-    ptr->methods = org->methods;
-    ptr->fields = org->fields;
+    ptr->methods = org->idata.methods;
+    ptr->fields = org->idata.fields;
+    iproc = rb_ivar_get(klass, user_initialize);
+    if (iproc != Qnil)
+    {
+        rb_ivar_set(v, user_initialize, iproc);
+        rb_funcall(v, rb_intern("_prepare_proxy"), 0, 0);
+    }
     return v;
 }
 
@@ -2029,11 +2066,7 @@ static VALUE rjb_newinstance_s(int argc, VALUE* argv, VALUE self)
     VALUE ret = Qnil;
     struct jv_data* ptr;
     int found = 0;
-    JNIEnv* jenv = NULL;
-
-    rjb_load_vm_default();
-    jenv = rjb_attach_current_thread();
-    (*jenv)->ExceptionClear(jenv);
+    JNIEnv* jenv = rjb_prelude();
 
     rb_scan_args(argc, argv, "1*", &vsig, &rest);
     sig = StringValueCStr(vsig);
@@ -2047,7 +2080,7 @@ static VALUE rjb_newinstance_s(int argc, VALUE* argv, VALUE self)
 		&& !strcmp(sig, (*pc)->method_signature))
 	    {
 	        found = 1;
-		ret = createinstance(jenv, argc - 1, argv + 1, &ptr->idata, *pc);
+		ret = createinstance(jenv, argc - 1, argv + 1, self, *pc);
 		break;
 	    }
 	}
@@ -2064,12 +2097,8 @@ static VALUE rjb_newinstance(int argc, VALUE* argv, VALUE self)
     struct jv_data* ptr;
     struct cls_constructor** pc;
     int found = 0;
-    JNIEnv* jenv = NULL;
+    JNIEnv* jenv = rjb_prelude();
     
-    rjb_load_vm_default();
-    jenv = rjb_attach_current_thread();
-    (*jenv)->ExceptionClear(jenv);
-
     Data_Get_Struct(self, struct jv_data, ptr);
 
     if (ptr->constructors)
@@ -2093,7 +2122,7 @@ static VALUE rjb_newinstance(int argc, VALUE* argv, VALUE self)
 		}
 		if (found)
 		{
-		    ret = createinstance(jenv, argc, argv, &ptr->idata, *pc);
+		    ret = createinstance(jenv, argc, argv, self, *pc);
 		    break;
 		}
 	    }
@@ -2120,17 +2149,70 @@ jclass rjb_find_class(JNIEnv* jenv, VALUE name)
 }
 
 /*
+ * get specified method signature
+ */
+static VALUE get_signatures(VALUE mname, st_table* st)
+{
+    VALUE ret;
+    struct cls_method* pm;
+    ID rmid = rb_to_id(mname);
+
+    if (!st_lookup(st, rmid, (st_data_t*)&pm))
+    {
+        const char* tname = rb_id2name(rmid);
+        rb_raise(rb_eRuntimeError, "Fail: unknown method name `%s'", tname);
+    }
+    ret = rb_ary_new();
+    for (; pm; pm = pm->next)
+    {
+        rb_ary_push(ret, rb_str_new2(pm->basic.method_signature));
+    }
+    return ret;
+}
+
+static VALUE rjb_get_signatures(VALUE self, VALUE mname)
+{
+    struct jv_data* ptr;
+
+    Data_Get_Struct(self, struct jv_data, ptr);
+    return get_signatures(mname, ptr->idata.methods);
+}
+
+static VALUE rjb_get_static_signatures(VALUE self, VALUE mname)
+{
+    struct jv_data* ptr;
+
+    Data_Get_Struct(self, struct jv_data, ptr);
+    return get_signatures(mname, ptr->static_methods);
+}
+
+static VALUE rjb_get_ctor_signatures(VALUE self)
+{
+    VALUE ret;
+    struct jv_data* ptr;
+    struct cls_constructor** pc;
+
+    Data_Get_Struct(self, struct jv_data, ptr);
+    ret = rb_ary_new();
+    if (ptr->constructors)
+    {
+        for (pc = ptr->constructors; *pc; pc++)
+        {
+            rb_ary_push(ret, rb_str_new2((*pc)->method_signature));
+        }
+    }
+    return ret;
+}
+
+/*
  * jclass Rjb::bind(rbobj, interface_name)
  */
 static VALUE rjb_s_bind(VALUE self, VALUE rbobj, VALUE itfname)
 {
     VALUE result = Qnil;
-    JNIEnv* jenv = NULL;
     jclass itf;
+    JNIEnv* jenv = rjb_prelude();
     
-    rjb_load_vm_default();
-    jenv = rjb_attach_current_thread();
-    (*jenv)->ExceptionClear(jenv);
     itf = rjb_find_class(jenv, itfname); 
     rjb_check_exception(jenv, 1);
     if (itf)
@@ -2156,14 +2238,23 @@ static VALUE rjb_s_bind(VALUE self, VALUE rbobj, VALUE itfname)
 }
 
 /*
+ * Rjb's class is not Class but Object, so add class_eval for the Java class.
+ */
+static VALUE rjb_class_eval(int argc, VALUE* argv, VALUE self)
+{
+    if (rb_block_given_p())
+    {
+        rb_ivar_set(self, user_initialize, rb_block_proc());
+    }
+    return self;
+}
+
+/*
  * jclass Rjb::bind(rbobj, interface_name)
  */
 static VALUE rjb_s_unbind(VALUE self, VALUE rbobj)
 {
-    JNIEnv* jenv;
-    rjb_load_vm_default();
-    jenv = rjb_attach_current_thread();
-    (*jenv)->ExceptionClear(jenv);
+    JNIEnv* jenv = rjb_prelude();
     return rb_ary_delete(proxies, rbobj);
 }
 
@@ -2180,9 +2271,7 @@ static VALUE rjb_s_import(VALUE self, VALUE clsname)
 	return v;
     }
 
-    rjb_load_vm_default();
-    jenv = rjb_attach_current_thread();
-    (*jenv)->ExceptionClear(jenv);
+    jenv = rjb_prelude();
     jcls = rjb_find_class(jenv, clsname);
     if (!jcls)
     {
@@ -2197,6 +2286,10 @@ static void register_class(VALUE self, VALUE clsname)
 {
     rb_define_singleton_method(self, "new", rjb_newinstance, -1);
     rb_define_singleton_method(self, "new_with_sig", rjb_newinstance_s, -1);
+    rb_define_singleton_method(self, "class_eval", rjb_class_eval, -1);
+    rb_define_singleton_method(self, "sigs", rjb_get_signatures, 1);
+    rb_define_singleton_method(self, "static_sigs", rjb_get_static_signatures, 1);
+    rb_define_singleton_method(self, "ctor_sigs", rjb_get_ctor_signatures, 0);
     /*
      * the hash was frozen, so it need to call st_ func directly.
      */
@@ -2746,6 +2839,7 @@ void Init_rjbcore()
     rb_global_variable(&rjb_loaded_classes);
     proxies = rb_ary_new();
     rb_global_variable(&proxies);
+    user_initialize = rb_intern(USER_INITIALIZE);
     
     rjb = rb_define_module("Rjb");
     rb_define_module_function(rjb, "load", rjb_s_load, -1);
@@ -2764,7 +2858,7 @@ void Init_rjbcore()
     rb_gc_register_address(&rjbc);
     rb_define_method(rjbc, "method_missing", rjb_missing, -1);
     rb_define_method(rjbc, "_invoke", rjb_invoke, -1);
-    rb_define_method(rjbc, "_classname", rjb_i_class, 0);    
+    rb_define_method(rjbc, "_classname", rjb_i_class, 0);
 
     /* Java instance object */
     rjbi = rb_class_new(rb_cObject);
@@ -2772,6 +2866,8 @@ void Init_rjbcore()
     rb_define_method(rjbi, "method_missing", rjb_i_missing, -1);    
     rb_define_method(rjbi, "_invoke", rjb_i_invoke, -1);
     rb_define_method(rjbi, "_classname", rjb_i_class, 0);
+    rb_define_method(rjbi, "_prepare_proxy", rjb_i_prepare_proxy, 0);
+    rb_define_alias(rjbi, "include", "extend");
 
     /* Ruby-Java Bridge object */
     rjbb = rb_class_new(rb_cObject);
