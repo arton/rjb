@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * $Id: load.c 102 2009-11-01 14:01:41Z arton $
+ * $Id: load.c 105 2010-05-04 00:01:26Z arton $
  */
 
 #include <stdlib.h>
