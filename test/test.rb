@@ -663,5 +663,35 @@ class TestRjb < Test::Unit::TestCase
     s = @jString.new
     assert_equal('hello world', s.test_hello('world'))
   end
+  def test_extend_with_factory
+    point = import('java.awt.Point')
+    point.class_eval do
+      include TestRjb::TestMixin
+    end
+    p = point.new(11, 12)
+    assert_equal(11, p.x)
+    assert_equal(12, p.y)    
+    assert_equal('hello world', p.test_hello('world'))
+    p = p.location
+    assert_equal(11, p.x)
+    assert_equal(12, p.y)    
+    assert_equal('hello world', p.test_hello('world'))
+  end
+  def test_fetch_method_signature
+    expected = ['I', 'II', 'Ljava.lang.String;', 'Ljava.lang.String;I']
+    sig = @jString.sigs('indexOf').sort
+    assert_equal(expected, sig)
+  end
+  def test_fetch_static_method_signature
+    expected = ['Ljava.lang.String;[Ljava.lang.Object;', 
+                'Ljava.util.Locale;Ljava.lang.String;[Ljava.lang.Object;']
+    sig = @jString.static_sigs('format').sort
+    assert_equal(expected, sig)
+  end
+  def test_fetch_ctor_signature
+    expected = ['I', 'Ljava.lang.String;']
+    sig = @jInteger.ctor_sigs.sort
+    assert_equal(expected, sig)
+  end
 end
 
