@@ -658,7 +658,7 @@ class TestRjb < Test::Unit::TestCase
   end
   def test_extend
     @jString.class_eval do
-      include TestMixin
+      include TestRjb::TestMixin
     end
     s = @jString.new
     assert_equal('hello world', s.test_hello('world'))
