@@ -1,6 +1,6 @@
 /*
  * Rjb - Ruby <-> Java Bridge
- * Copyright(c) 2004,2005,2006 arton
+ * Copyright(c) 2004,2005,2006,2010 arton
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -54,7 +54,16 @@ VALUE rjb_get_exception_class(JNIEnv* jenv, jstring str)
     if (rexp == Qnil)
     {
 	rexp = rb_define_class(pcls, rb_eStandardError);
-	st_insert(RHASH_TBL(rjb_loaded_classes), cname, rexp);
+#ifdef HAVE_RB_HASH_ASET
+	rb_hash_aset(rjb_loaded_classes, cname, rexp);
+#else
+#ifdef RHASH_TBL
+    st_insert(RHASH_TBL(rjb_loaded_classes), cname, rexp);
+#else
+    st_insert(RHASH(rjb_loaded_classes)->tbl, cname, rexp);
+#endif
+#endif
+	
     }
     return rexp;
 }
@@ -137,4 +146,3 @@ void rjb_check_exception(JNIEnv* jenv, int t)
         }
     }
 }
-
