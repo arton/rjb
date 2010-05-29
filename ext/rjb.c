@@ -1,6 +1,6 @@
 /*
  * Rjb - Ruby <-> Java Bridge
- * Copyright(c) 2004,2005,2006,2007,2008,2009 arton
+ * Copyright(c) 2004,2005,2006,2007,2008,2009,2010 arton
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -12,10 +12,10 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * $Id: rjb.c 109 2010-05-11 13:04:25Z arton $
+ * $Id: rjb.c 112 2010-05-29 03:09:11Z arton $
  */
 
-#define RJB_VERSION "1.2.1"
+#define RJB_VERSION "1.2.2"
 
 #include "ruby.h"
 #include "extconf.h"
@@ -55,7 +55,7 @@
 #define RJB_LOAD_STATIC_METHOD(var, obj, name, sig) \
     var = (*jenv)->GetStaticMethodID(jenv, obj, name, sig); \
     rjb_check_exception(jenv, 1)
-#define IS_RJB_OBJECT(v) (rb_class_inherited(rjbi, RBASIC(v)->klass) || RBASIC(v)->klass == rjb)
+#define IS_RJB_OBJECT(v) (rb_class_inherited(rjbi, rb_obj_class(v)) || rb_obj_class(v) == rjb)
 #define USER_INITIALIZE "@user_initialize"
 
 static void register_class(VALUE, VALUE);
@@ -774,13 +774,13 @@ static void rv2jobject(JNIEnv* jenv, VALUE val, jvalue* jv, const char* psig, in
 		    Data_Get_Struct(val, struct jvi_data, ptr);
 		    jv->l = ptr->obj;
 		}
-		else if (RBASIC(val)->klass == rjbb)
+		else if (rb_obj_class(val) == rjbb)
 		{
 		    struct rj_bridge* ptr;
 		    Data_Get_Struct(val, struct rj_bridge, ptr);
 		    jv->l = ptr->proxy;
 		}
-		else if (rb_class_inherited(rjbc, RBASIC(val)->klass)) 
+		else if (rb_class_inherited(rjbc, rb_obj_class(val))) 
 		{
 		    struct jv_data* ptr;
 		    Data_Get_Struct(val, struct jv_data, ptr);
@@ -1596,14 +1596,14 @@ static void load_constants(JNIEnv* jenv, jclass klass, VALUE self, jobjectArray 
 		strcpy(pname, cname);
 		*pname = toupper(*pname);
 		if (!isupper(*pname) 
-                    || rb_const_defined(RBASIC(self)->klass, rb_intern(pname))) 
+                    || rb_const_defined(rb_obj_class(self), rb_intern(pname))) 
 		{
 	            pname = NULL;
 		}
 	    }
 	    if (pname)
 	    {
-	        rb_define_const(RBASIC(self)->klass, pname, j2r(jenv, jv));
+	        rb_define_const(rb_obj_class(self), pname, j2r(jenv, jv));
 	    }
 	    rjb_release_string(jenv, nm, cname);
 	}
@@ -1735,8 +1735,8 @@ static VALUE rjb_s_load(int argc, VALUE* argv, VALUE self)
     }
 
     jklass = import_class(jenv, j_class, rb_str_new2("java.lang.Class"));
-    rb_define_method(RBASIC(jklass)->klass, "forName", rjb_class_forname, -1);
-    rb_define_method(RBASIC(jklass)->klass, "for_name", rjb_class_forname, -1);    
+    rb_define_method(rb_singleton_class(jklass), "forName", rjb_class_forname, -1);
+    rb_define_method(rb_singleton_class(jklass), "for_name", rjb_class_forname, -1);    
     rb_gc_register_address(&jklass);
     
     return Qnil;
@@ -1780,7 +1780,16 @@ static int clear_classes(VALUE key, VALUE val, VALUE dummy)
 static VALUE rjb_s_unload(int argc, VALUE* argv, VALUE self)
 {
     int result = 0;
+#ifdef HAVE_RB_HASH_FOREACH
+	rb_hash_foreach(rjb_loaded_classes, clear_classes, 0);
+#else
+#ifdef RHASH_TBL
     st_foreach(RHASH_TBL(rjb_loaded_classes), clear_classes, 0);
+#else
+    st_foreach(RHASH(rjb_loaded_classes)->tbl, clear_classes, 0);
+#endif
+#endif
+    
     if (rjb_jvm)
     {
         JNIEnv* jenv = rjb_attach_current_thread();
@@ -2293,7 +2302,16 @@ static void register_class(VALUE self, VALUE clsname)
     /*
      * the hash was frozen, so it need to call st_ func directly.
      */
+
+#ifdef HAVE_RB_HASH_ASET
+	rb_hash_aset(rjb_loaded_classes, clsname, self);
+#else
+#ifdef RHASH_TBL
     st_insert(RHASH_TBL(rjb_loaded_classes), clsname, self);
+#else
+    st_insert(RHASH(rjb_loaded_classes)->tbl, clsname, self);
+#endif
+#endif
 }
 
 /*
@@ -2796,7 +2814,7 @@ static VALUE rjb_missing(int argc, VALUE* argv, VALUE self)
     {
         VALUE r, args[2];
         int state = 0;
-	args[0] = RBASIC(self)->klass;
+	args[0] = rb_obj_class(self);
 	args[1] = rmid;
         r = rb_protect(find_const, (VALUE)args, &state);
 	if (!state)
@@ -2835,7 +2853,9 @@ void Init_rjbcore()
     rb_protect((VALUE(*)(VALUE))rb_require, (VALUE)"iconv", NULL);
 
     rjb_loaded_classes = rb_hash_new();
+#ifndef RUBINIUS
     OBJ_FREEZE(rjb_loaded_classes);
+#endif
     rb_global_variable(&rjb_loaded_classes);
     proxies = rb_ary_new();
     rb_global_variable(&proxies);
