@@ -1,3 +1,9 @@
+Sat May 29 arton on behalf of atoulme
+ *ext/rjb.c	
+ *ext/load.c	
+ *ext/rjbexception.c
+	to accomodate with rubinius
+	thanks atoulme !
 Wed May 12 arton
  *test/test.rb
 	add Class name for TestMixin module because ruby 1.9 doesn't handle the constant.
