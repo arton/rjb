@@ -1,6 +1,6 @@
 /*
  * Rjb - Ruby <-> Java Bridge
- * Copyright(c) 2004,2005,2006,2009 arton
+ * Copyright(c) 2004,2005,2006,2009,2010 arton
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -295,7 +295,8 @@ int rjb_create_jvm(JNIEnv** pjenv, JavaVMInitArgs* vm_args, char* userpath, VALU
             }
 #endif
         }
-#if RJB_RUBY_VERSION_CODE < 190
+ 
+#if RJB_RUBY_VERSION_CODE < 190 && !defined(RUBINIUS)
         ruby_errinfo = Qnil;
 #else
         rb_set_errinfo(Qnil);
@@ -366,4 +367,3 @@ int rjb_create_jvm(JNIEnv** pjenv, JavaVMInitArgs* vm_args, char* userpath, VALU
     }
     return result;
 }
-
