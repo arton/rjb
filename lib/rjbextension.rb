@@ -11,7 +11,7 @@ Copyright(c) 2010 arton
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  Lesser General Public License for more details.
 
-$Id:$
+$Id: rjbextension.rb 116 2010-05-30 14:23:07Z arton $
 
  This file is from Andreas Ronge project neo4j
    http://github.com/andreasronge/neo4j/blob/rjb/lib/rjb_ext.rb
