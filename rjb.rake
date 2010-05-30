@@ -34,7 +34,7 @@ spec = Gem::Specification.new do |s|
   s.requirements << 'JDK 5.0'
   files = FileList['ext/*.java', 'ext/*.c', 'ext/*.h', 'ext/depend',
                    'data/rjb/**/*.class', 'lib/*.rb', 'samples/**/*.rb', 
-                   'test/*.rb', 'test/**/*.class', 'COPYING', 'ChangeLog', 'readme.*']
+                   'test/*.rb', 'test/**/*.class', 'test/*.jar', 'COPYING', 'ChangeLog', 'readme.*']
   if /mswin|mingw/ =~ RUBY_PLATFORM
     FileUtils.cp 'ext/rjbcore.so', 'lib/rjbcore.so'
     files << "lib/rjbcore.so"
