@@ -1,3 +1,12 @@
+Sun May 30 arton
+ *lib/rjbextension.rb
+	Rjb extension from Andreas Ronge's neo4j
+	- directly import jar by require method
+	- Rjb::import without quotations (Java class as Ruby object)
+ *test/exttest.rb
+	test for rjbextension.rb
+ *test/rjbtest.jar
+	test file for rjbextension.rb
 Sat May 29 arton on behalf of atoulme
  *ext/rjb.c	
  *ext/load.c	
