@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * $Id: rjbexception.c 112 2010-05-29 03:09:11Z arton $
+ * $Id: rjbexception.c 119 2010-06-04 12:51:34Z arton $
  */
 
 #include "ruby.h"
@@ -54,7 +54,7 @@ VALUE rjb_get_exception_class(JNIEnv* jenv, jstring str)
     if (rexp == Qnil)
     {
 	rexp = rb_define_class(pcls, rb_eStandardError);
-#ifdef HAVE_RB_HASH_ASET
+#if defined(HAVE_RB_HASH_ASET) || defined(RUBINIUS)
 	rb_hash_aset(rjb_loaded_classes, cname, rexp);
 #else
 #ifdef RHASH_TBL

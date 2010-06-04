@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * $Id: load.c 112 2010-05-29 03:09:11Z arton $
+ * $Id: load.c 119 2010-06-04 12:51:34Z arton $
  */
 
 #include <stdlib.h>
@@ -104,11 +104,13 @@ static int open_jvm(char* libpath)
     VALUE* argv;
 
     rb_require("dl");
+#if !defined(RUBINIUS)
     if (!rb_const_defined_at(rb_cObject, rb_intern("DL")))
     {
 	rb_raise(rb_eRuntimeError, "Constants DL is not defined.");
 	return 0;
     }
+#endif
     argv = ALLOCA_N(VALUE, 4);
     *argv = rb_const_get(rb_cObject, rb_intern("DL"));
     *(argv + 1) = rb_intern("dlopen");
@@ -204,8 +206,13 @@ static int load_bridge(JNIEnv* jenv)
     jmethodID getSysLoader = (*jenv)->GetStaticMethodID(jenv, loader,
 		   "getSystemClassLoader", "()Ljava/lang/ClassLoader;");
     jobject iloader = (*jenv)->CallStaticObjectMethod(jenv, loader, getSysLoader);
+#if defined(RUBINIUS)
+    VALUE v = rb_const_get(rb_cObject, rb_intern("RjbConf"));
+    v = rb_const_get(v, rb_intern("BRIDGE_FILE"));
+#else
     VALUE v = rb_const_get_at(rb_const_get(rb_cObject, rb_intern("RjbConf")), 
 			      rb_intern("BRIDGE_FILE"));
+#endif
     bridge = StringValuePtr(v);
 #if defined(DOSISH)
     bridge = ALLOCA_N(char, strlen(bridge) + 8);

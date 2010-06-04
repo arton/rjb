@@ -12,10 +12,10 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * $Id: rjb.c 112 2010-05-29 03:09:11Z arton $
+ * $Id: rjb.c 119 2010-06-04 12:51:34Z arton $
  */
 
-#define RJB_VERSION "1.2.2"
+#define RJB_VERSION "1.2.3"
 
 #include "ruby.h"
 #include "extconf.h"
@@ -55,7 +55,14 @@
 #define RJB_LOAD_STATIC_METHOD(var, obj, name, sig) \
     var = (*jenv)->GetStaticMethodID(jenv, obj, name, sig); \
     rjb_check_exception(jenv, 1)
-#define IS_RJB_OBJECT(v) (rb_class_inherited(rjbi, rb_obj_class(v)) || rb_obj_class(v) == rjb)
+#if defined(RUBINIUS)
+#define CLASS_NEW(obj, name) rb_define_class(name, obj)
+#define CLASS_INHERITED(spr, kls) rb_funcall(spr, rb_intern("inherited"), 1, kls)
+#else
+#define CLASS_NEW(obj, name) rb_class_new(obj)
+#define CLASS_INHERITED(spr, kls) rb_class_inherited(spr, kls)
+#endif
+#define IS_RJB_OBJECT(v) (CLASS_INHERITED(rjbi, rb_obj_class(v)) || rb_obj_class(v) == rjb)
 #define USER_INITIALIZE "@user_initialize"
 
 static void register_class(VALUE, VALUE);
@@ -780,7 +787,7 @@ static void rv2jobject(JNIEnv* jenv, VALUE val, jvalue* jv, const char* psig, in
 		    Data_Get_Struct(val, struct rj_bridge, ptr);
 		    jv->l = ptr->proxy;
 		}
-		else if (rb_class_inherited(rjbc, rb_obj_class(val))) 
+		else if (CLASS_INHERITED(rjbc, rb_obj_class(val))) 
 		{
 		    struct jv_data* ptr;
 		    Data_Get_Struct(val, struct jv_data, ptr);
@@ -1780,10 +1787,10 @@ static int clear_classes(VALUE key, VALUE val, VALUE dummy)
 static VALUE rjb_s_unload(int argc, VALUE* argv, VALUE self)
 {
     int result = 0;
-#ifdef HAVE_RB_HASH_FOREACH
+#if defined(HAVE_RB_HASH_FOREACH) || defined(RUBINIUS)
 	rb_hash_foreach(rjb_loaded_classes, clear_classes, 0);
 #else
-#ifdef RHASH_TBL
+#if defined(RHASH_TBL)
     st_foreach(RHASH_TBL(rjb_loaded_classes), clear_classes, 0);
 #else
     st_foreach(RHASH(rjb_loaded_classes)->tbl, clear_classes, 0);
@@ -2264,7 +2271,11 @@ static VALUE rjb_class_eval(int argc, VALUE* argv, VALUE self)
 static VALUE rjb_s_unbind(VALUE self, VALUE rbobj)
 {
     JNIEnv* jenv = rjb_prelude();
+#if defined(RUBINIUS)
+    return rb_funcall(proxies, rb_intern("delete"), 1, rbobj);
+#else
     return rb_ary_delete(proxies, rbobj);
+#endif
 }
 
 /*
@@ -2303,7 +2314,7 @@ static void register_class(VALUE self, VALUE clsname)
      * the hash was frozen, so it need to call st_ func directly.
      */
 
-#ifdef HAVE_RB_HASH_ASET
+#if defined(HAVE_RB_HASH_ASET) || defined(RUBINIUS)
 	rb_hash_aset(rjb_loaded_classes, clsname, self);
 #else
 #ifdef RHASH_TBL
@@ -2850,8 +2861,11 @@ static VALUE rjb_class_forname(int argc, VALUE* argv, VALUE self)
  */
 void Init_rjbcore()
 {
+#if defined(RUBINIUS)
+    rb_require("iconv");
+#else
     rb_protect((VALUE(*)(VALUE))rb_require, (VALUE)"iconv", NULL);
-
+#endif
     rjb_loaded_classes = rb_hash_new();
 #ifndef RUBINIUS
     OBJ_FREEZE(rjb_loaded_classes);
@@ -2860,7 +2874,7 @@ void Init_rjbcore()
     proxies = rb_ary_new();
     rb_global_variable(&proxies);
     user_initialize = rb_intern(USER_INITIALIZE);
-    
+
     rjb = rb_define_module("Rjb");
     rb_define_module_function(rjb, "load", rjb_s_load, -1);
     rb_define_module_function(rjb, "unload", rjb_s_unload, -1);
@@ -2874,14 +2888,14 @@ void Init_rjbcore()
     rb_define_const(rjb, "VERSION", rb_str_new2(RJB_VERSION));
 
     /* Java class object */    
-    rjbc = rb_class_new(rb_cObject);
+    rjbc = CLASS_NEW(rb_cObject, "Rjb_JavaClass");
     rb_gc_register_address(&rjbc);
     rb_define_method(rjbc, "method_missing", rjb_missing, -1);
     rb_define_method(rjbc, "_invoke", rjb_invoke, -1);
     rb_define_method(rjbc, "_classname", rjb_i_class, 0);
 
     /* Java instance object */
-    rjbi = rb_class_new(rb_cObject);
+    rjbi = CLASS_NEW(rb_cObject, "Rjb_JavaProxy");
     rb_gc_register_address(&rjbi);
     rb_define_method(rjbi, "method_missing", rjb_i_missing, -1);    
     rb_define_method(rjbi, "_invoke", rjb_i_invoke, -1);
@@ -2890,7 +2904,7 @@ void Init_rjbcore()
     rb_define_alias(rjbi, "include", "extend");
 
     /* Ruby-Java Bridge object */
-    rjbb = rb_class_new(rb_cObject);
+    rjbb = CLASS_NEW(rb_cObject, "Rjb_JavaBridge");
     rb_gc_register_address(&rjbb);
 }
 

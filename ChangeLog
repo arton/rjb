@@ -1,3 +1,13 @@
+Fri Jun 4 arton
+ *ext/riconv.c
+	remove unused function if build with Ruby 1.9
+ *ext/rjb.c
+	RJB_VERSION -> 1.2.3	
+	to accomodate with rubinius	
+ *ext/load.c	
+	to accomodate with rubinius	
+ *ext/rjbexception.c
+	to accomodate with rubinius	
 Sun May 30 arton
  *lib/rjbextension.rb
 	Rjb extension from Andreas Ronge's neo4j

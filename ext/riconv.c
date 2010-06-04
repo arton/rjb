@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * $Id$
+ * $Id: riconv.c 117 2010-06-04 12:16:25Z arton $
  */
 
 #include "ruby.h"
@@ -43,6 +43,7 @@ static const char* const CS_SJIS = "SHIFT_JIS";
 static const char* const CS_UTF8 = "UTF-8";
 
 
+#if RJB_RUBY_VERSION_CODE < 190
 static VALUE objIconvJ2R;
 static VALUE objIconvR2J;
 static const char* charcode; //is this necessary?
@@ -58,7 +59,9 @@ static int find_table(const char* const str, const char* const table[])
     }
     return 0;
 }
+#endif
 
+#if RJB_RUBY_VERSION_CODE < 190
 static const char* get_charcode_name_by_locale(const char* const name)
 {
     if (find_table(name, LOCALE_UTF8_TABLE))
@@ -98,14 +101,14 @@ static const char* get_charcode_name()
 #if defined _WIN32 || defined __CYGWIN__
         if (932 == GetACP()) result = CS_CP932;
 #elif defined HAVE_NL_LANGINFO
-        setlocale(LC_ALL, ""); //initialize
+        setlocale(LC_ALL, "C"); //initialize
         lang = nl_langinfo(CODESET);
         if (find_table(lang, NL_EUC_TABLE))
                 result =  CS_EUCJP;
         else if (find_table(lang, NL_SJIS_TABLE))
                 result = CS_SJIS;
 #elif defined HAVE_SETLOCALE
-        setlocale(LC_ALL, ""); //initialize
+        setlocale(LC_ALL, "C"); //initialize
         result = get_charcode_name_by_locale(setlocale(LC_ALL, NULL));
 #elif defined HAVE_GETENV
         if (result = get_charcode_name_by_locale(getenv("LC_ALL")))
@@ -119,8 +122,9 @@ static const char* get_charcode_name()
     }
     return result;
 }
+#endif
 
-
+#if RJB_RUBY_VERSION_CODE < 190
 static void reinit()
 {
     charcode = get_charcode_name();
@@ -142,7 +146,9 @@ static void reinit()
         objIconvR2J = objIconvJ2R = Qnil;
     }
 }
+#endif
 
+#if RJB_RUBY_VERSION_CODE < 190
 static void check_kcode()
 {
     VALUE rb_iconv_klass = rb_const_get(rb_cObject, rb_intern("Iconv"));
@@ -161,6 +167,7 @@ static void check_kcode()
         objIconvR2J = objIconvJ2R = Qnil;
     }
 }
+#endif
 
 VALUE exticonv_local_to_utf8(VALUE local_string)
 {
