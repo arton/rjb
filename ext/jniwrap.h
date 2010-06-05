@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * $Id:$
+ * $Id: jniwrap.h 4 2006-09-11 15:21:38Z arton $
  */
 #ifndef _Included_jniwrap
 #define _Included_jniwrap

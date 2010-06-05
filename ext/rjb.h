@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * $Id$
+ * $Id: rjb.h 120 2010-06-05 03:02:06Z arton $
  * $Log: rjb.h,v $
  * Revision 1.1  2005/01/16 17:36:10  arton
  * Initial revision
@@ -53,6 +53,9 @@
 #define _I64_MAX      9223372036854775807i64
 #endif
 
+#if !defined(HAVE_LONG_LONG) && defined(__LP64__)
+#define HAVE_LONG_LONG 1
+#endif
 
 /* in load.c */
 extern int rjb_create_jvm(JNIEnv** pjenv, JavaVMInitArgs*, char*, VALUE);

@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * $Id$
+ * $Id: riconv.h 43 2007-12-26 18:55:04Z kuwa1 $
  */
 #ifndef _RICONV_H
 #define _RICONV_H

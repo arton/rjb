@@ -12,10 +12,10 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * $Id: rjb.c 119 2010-06-04 12:51:34Z arton $
+ * $Id: rjb.c 122 2010-06-05 03:08:29Z arton $
  */
 
-#define RJB_VERSION "1.2.3"
+#define RJB_VERSION "1.2.4"
 
 #include "ruby.h"
 #include "extconf.h"
@@ -2270,7 +2270,6 @@ static VALUE rjb_class_eval(int argc, VALUE* argv, VALUE self)
  */
 static VALUE rjb_s_unbind(VALUE self, VALUE rbobj)
 {
-    JNIEnv* jenv = rjb_prelude();
 #if defined(RUBINIUS)
     return rb_funcall(proxies, rb_intern("delete"), 1, rbobj);
 #else

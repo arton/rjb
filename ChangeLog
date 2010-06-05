@@ -1,3 +1,9 @@
+Fri Jun 5 arton	
+ *ext/rjb.h
+	defin HAVE_LONG_LONG if no HAVE_LONG_LONG but LP64
+ *ext/rjb.c
+	remove unused variables
+	RJB_VERSION -> 1.2.4	
 Fri Jun 4 arton
  *ext/riconv.c
 	remove unused function if build with Ruby 1.9
