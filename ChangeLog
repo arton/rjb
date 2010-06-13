@@ -1,3 +1,8 @@
+Wed Jun 9 arton
+ *ext/load.c
+	accept JAVA_HOME having an extra slash at the end
+ *ext/rjb.c
+	RJB_VERSION -> 1.2.5
 Fri Jun 5 arton	
  *ext/rjb.h
 	defin HAVE_LONG_LONG if no HAVE_LONG_LONG but LP64
