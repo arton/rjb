@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * $Id: load.c 119 2010-06-04 12:51:34Z arton $
+ * $Id: load.c 124 2010-06-08 18:24:45Z arton $
  */
 
 #include <stdlib.h>
@@ -148,12 +148,20 @@ static int load_jvm(char* jvmtype)
     }
     else
     {
-        if (strlen(jh) > HOME_NAME_LEN 
-            && strcasecmp(jh + strlen(jh) - HOME_NAME_LEN, HOME_NAME) == 0)
+        if (strlen(jh) > HOME_NAME_LEN)
         {
-            char* p = ALLOCA_N(char, strlen(jh) + 8);
-            sprintf(p, "%s/..", jh);
-            jh = p;
+            int len = strlen(jh);
+            char* p = ALLOCA_N(char, len + 8);
+            jh = strcpy(p, jh);
+            if (*(jh + len - 1) == '/')
+            {
+                --len;
+                *(jh + len) = '\0';
+            }
+            if (strcasecmp(jh + len - HOME_NAME_LEN, HOME_NAME) == 0)
+            {
+                strcpy(p + len, "/..");
+            }
         }
     }
 #endif
