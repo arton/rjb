@@ -1,3 +1,13 @@
+Thu Jul 22 arton
+ *ext/rjb.c
+	RJB_VERSION -> 1.2.6
+	export jv2rv for rjbexception.c
+ *ext/rjb.h
+	export jv2rv for rjbexception.c
+ *ext/rjbexception.c
+	create and keep java exception object for its properties.
+ *test/test.rb
+	add Exception#cause test
 Wed Jun 9 arton
  *ext/load.c
 	accept JAVA_HOME having an extra slash at the end

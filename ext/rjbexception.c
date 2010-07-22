@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * $Id: rjbexception.c 119 2010-06-04 12:51:34Z arton $
+ * $Id: rjbexception.c 126 2010-07-22 13:58:15Z arton $
  */
 
 #include "ruby.h"
@@ -25,6 +25,12 @@
 #include "jniwrap.h"
 #include "riconv.h"
 #include "rjb.h"
+
+static VALUE missing_delegate(int argc, VALUE* argv, VALUE self)
+{
+    ID rmid = rb_to_id(argv[0]);
+    return rb_funcall(rb_ivar_get(self, rb_intern("@cause")), rmid, argc - 1, argv + 1);
+}
 
 /*
  * handle Java exception
@@ -54,6 +60,7 @@ VALUE rjb_get_exception_class(JNIEnv* jenv, jstring str)
     if (rexp == Qnil)
     {
 	rexp = rb_define_class(pcls, rb_eStandardError);
+        rb_define_method(rexp, "method_missing", missing_delegate, -1);
 #if defined(HAVE_RB_HASH_ASET) || defined(RUBINIUS)
 	rb_hash_aset(rjb_loaded_classes, cname, rexp);
 #else
@@ -137,11 +144,16 @@ void rjb_check_exception(JNIEnv* jenv, int t)
 	    }
 	    if (rexp == Qnil)
 	    {
+                (*jenv)->DeleteLocalRef(jenv, exp);
 		rb_raise(rb_eRuntimeError, "%s", msg);
 	    }
 	    else
 	    {
-                rb_raise(rexp, "%s", msg);
+                VALUE rexpi = rb_funcall(rexp, rb_intern("new"), 1, rb_str_new2(msg));
+                jvalue val;
+                val.l = exp;
+                rb_ivar_set(rexpi, rb_intern("@cause"), jv2rv(jenv, val));
+                rb_exc_raise(rexpi);
 	    }
         }
     }

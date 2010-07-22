@@ -1,6 +1,6 @@
 #!/usr/local/env ruby -Ku
 # encoding: utf-8
-# $Id$
+# $Id: test.rb 126 2010-07-22 13:58:15Z arton $
 
 begin
   require 'rjb'
@@ -18,14 +18,14 @@ class TestRjb < Test::Unit::TestCase
     Rjb::primitive_conversion = false
 
     @jString = import('java.lang.String')
-    @jInteger = Rjb::import('java.lang.Integer')
-    @jShort = Rjb::import('java.lang.Short')
-    @jDouble = Rjb::import('java.lang.Double')
-    @jFloat = Rjb::import('java.lang.Float')
-    @jBoolean = Rjb::import('java.lang.Boolean')
-    @jByte = Rjb::import('java.lang.Byte')
-    @jLong = Rjb::import('java.lang.Long')
-    @jChar = Rjb::import('java.lang.Character')
+    @jInteger = import('java.lang.Integer')
+    @jShort = import('java.lang.Short')
+    @jDouble = import('java.lang.Double')
+    @jFloat = import('java.lang.Float')
+    @jBoolean = import('java.lang.Boolean')
+    @jByte = import('java.lang.Byte')
+    @jLong = import('java.lang.Long')
+    @jChar = import('java.lang.Character')
   end
 
   def teardown
@@ -286,6 +286,7 @@ class TestRjb < Test::Unit::TestCase
       @jInteger.parseInt('blabla')
       flunk('no exception')
     rescue NumberFormatException => e
+      assert_nil(e.cause)
       # OK
     end
   end
@@ -650,7 +651,7 @@ class TestRjb < Test::Unit::TestCase
       assert_equal "can't create Java VM", $!.message
     end
   end
-
+  
   module TestMixin
     def test_hello(s)
       'hello ' + s

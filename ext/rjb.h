@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * $Id: rjb.h 120 2010-06-05 03:02:06Z arton $
+ * $Id: rjb.h 126 2010-07-22 13:58:15Z arton $
  * $Log: rjb.h,v $
  * Revision 1.1  2005/01/16 17:36:10  arton
  * Initial revision
@@ -73,6 +73,7 @@ extern jclass rjb_find_class(JNIEnv* jenv, VALUE name);
 extern void rjb_release_string(JNIEnv *jenv, jstring str, const char* chrs);
 extern VALUE rjb_load_vm_default();
 extern VALUE rjb_safe_funcall(VALUE args);
+extern VALUE jv2rv(JNIEnv* jenv, jvalue val);
 
 /* in rjbexception.c */
 extern VALUE rjb_get_exception_class(JNIEnv* jenv, jstring str);

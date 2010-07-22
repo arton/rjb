@@ -12,10 +12,10 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * $Id: rjb.c 124 2010-06-08 18:24:45Z arton $
+ * $Id: rjb.c 126 2010-07-22 13:58:15Z arton $
  */
 
-#define RJB_VERSION "1.2.5"
+#define RJB_VERSION "1.2.6"
 
 #include "ruby.h"
 #include "extconf.h"
@@ -303,7 +303,7 @@ static VALUE jv2rv_r(JNIEnv* jenv, jvalue val)
     return v;
 }
 
-static VALUE jv2rv(JNIEnv* jenv, jvalue val)
+VALUE jv2rv(JNIEnv* jenv, jvalue val)
 {
     if (RTEST(primitive_conversion))
     {
