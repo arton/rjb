@@ -1,6 +1,6 @@
 #!/usr/local/env ruby -Ku
 # encoding: utf-8
-# $Id: test.rb 126 2010-07-22 13:58:15Z arton $
+# $Id: test.rb 129 2010-08-29 02:28:18Z arton $
 
 begin
   require 'rjb'
@@ -683,6 +683,10 @@ class TestRjb < Test::Unit::TestCase
     sig = @jString.sigs('indexOf').sort
     assert_equal(expected, sig)
   end
+  def test_fetch_method_without_signature
+    sig = 
+    assert_equal([nil], @jString.sigs('toString'))
+  end
   def test_fetch_static_method_signature
     expected = ['Ljava.lang.String;[Ljava.lang.Object;', 
                 'Ljava.util.Locale;Ljava.lang.String;[Ljava.lang.Object;']
@@ -693,6 +697,30 @@ class TestRjb < Test::Unit::TestCase
     expected = ['I', 'Ljava.lang.String;']
     sig = @jInteger.ctor_sigs.sort
     assert_equal(expected, sig)
+  end
+  def test_methods_extension
+    m = @jString.new('').methods
+    assert m.include?('indexOf')
+  end
+  def test_class_methods_extension
+    m = @jString.methods
+    assert m.include?('format')
+  end
+  def test_pmethods_extension
+    m = @jString.new('').public_methods
+    assert m.include?('indexOf')
+  end
+  def test_class_pmethods_extension
+    m = @jString.public_methods
+    assert m.include?('format')
+  end
+  def test_java_methods
+    m = @jString.new('').java_methods
+    assert m.include?('indexOf([Ljava.lang.String;I, II, I, Ljava.lang.String;])')
+  end
+  def test_java_class_methods
+    m = @jString.java_methods
+    assert m.include?('format([Ljava.lang.String;[Ljava.lang.Object;, Ljava.util.Locale;Ljava.lang.String;[Ljava.lang.Object;])')
   end
 end
 
