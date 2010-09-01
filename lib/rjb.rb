@@ -1,5 +1,5 @@
 =begin
-  Copyright(c) 2006 arton
+  Copyright(c) 2006-2010 arton
 =end
 
 require 'rbconfig'
@@ -19,3 +19,73 @@ module RjbConf
 end
 
 require 'rjbcore'
+
+module Rjb
+  MODIFIER = import('java.lang.reflect.Modifier')
+
+  module JMethod
+    def instance_method?(m)
+      m.modifiers & MODIFIER.STATIC == 0
+    end
+    def public_method?(m)
+      (m.modifiers & MODIFIER.PUBLIC) == MODIFIER.PUBLIC
+    end
+    def jmethods(org, klass, &blk)
+      (org + klass.getMethods.select do |m|
+         blk.call(m)
+      end.map do |m|
+        m.name
+      end).uniq
+    end
+    def format_sigs(s)
+      if s.size < 0
+        ''
+      elsif s.size == 1
+        s[0]
+      else
+        "[#{s.map{|m|m.nil? ? 'void' : m}.join(', ')}]"
+      end
+    end
+  end
+
+  class Rjb_JavaClass
+    include JMethod
+    def public_methods(inh = true)
+      jmethods(super(inh), self) do |m|
+        !instance_method?(m) && public_method?(m)
+      end
+    end
+    def methods(inh = true)
+      jmethods(super(inh), self) do |m|
+        !instance_method?(m) && public_method?(m)
+      end
+    end
+    def java_methods
+      jmethods([], self) do |m|
+        !instance_method?(m) && public_method?(m)
+      end.map do |m|
+        "#{m}(#{format_sigs(self.static_sigs(m))})"
+      end
+    end
+  end
+  class Rjb_JavaProxy
+    include JMethod
+    def public_methods(inh = true)
+      jmethods(super(inh), getClass) do |m|
+        instance_method?(m) && public_method?(m)
+      end
+    end
+    def methods(inh = true)
+      jmethods(super(inh), getClass) do |m|
+        instance_method?(m) && public_method?(m)
+      end
+    end
+    def java_methods
+      jmethods([], getClass) do |m|
+        instance_method?(m) && public_method?(m)
+      end.map do |m|
+        "#{m}(#{format_sigs(getClass.sigs(m))})"
+      end
+    end
+  end
+end
