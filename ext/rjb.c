@@ -12,10 +12,10 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * $Id: rjb.c 126 2010-07-22 13:58:15Z arton $
+ * $Id: rjb.c 129 2010-08-29 02:28:18Z arton $
  */
 
-#define RJB_VERSION "1.2.6"
+#define RJB_VERSION "1.2.7"
 
 #include "ruby.h"
 #include "extconf.h"
@@ -56,10 +56,10 @@
     var = (*jenv)->GetStaticMethodID(jenv, obj, name, sig); \
     rjb_check_exception(jenv, 1)
 #if defined(RUBINIUS)
-#define CLASS_NEW(obj, name) rb_define_class(name, obj)
+#define CLASS_NEW(obj, name) rb_define_class_under(rjb, name, obj)
 #define CLASS_INHERITED(spr, kls) rb_funcall(spr, rb_intern("inherited"), 1, kls)
 #else
-#define CLASS_NEW(obj, name) rb_class_new(obj)
+#define CLASS_NEW(obj, name) rb_define_class_under(rjb, name, obj)
 #define CLASS_INHERITED(spr, kls) rb_class_inherited(spr, kls)
 #endif
 #define IS_RJB_OBJECT(v) (CLASS_INHERITED(rjbi, rb_obj_class(v)) || rb_obj_class(v) == rjb)
@@ -2181,7 +2181,11 @@ static VALUE get_signatures(VALUE mname, st_table* st)
     ret = rb_ary_new();
     for (; pm; pm = pm->next)
     {
-        rb_ary_push(ret, rb_str_new2(pm->basic.method_signature));
+        if (pm->basic.method_signature) {
+            rb_ary_push(ret, rb_str_new2(pm->basic.method_signature));
+        } else {
+            rb_ary_push(ret, Qnil);
+        }
     }
     return ret;
 }
