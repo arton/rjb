@@ -1,3 +1,12 @@
+Sun Aug 29 arton
+ *ext/rjb.c
+	ignore no arguments method signature.
+	name base classes under Rjb module.
+ *lib/rjb.rb
+	implements public_methods and methods
+ *test/test.rb
+	add non arguments method sig test
+	add methods, public_methods, java_methods test
 Thu Jul 22 arton
  *ext/rjb.c
 	RJB_VERSION -> 1.2.6
