@@ -12,10 +12,10 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * $Id: rjb.c 129 2010-08-29 02:28:18Z arton $
+ * $Id: rjb.c 131 2010-09-16 15:53:33Z arton $
  */
 
-#define RJB_VERSION "1.2.7"
+#define RJB_VERSION "1.2.8"
 
 #include "ruby.h"
 #include "extconf.h"
@@ -659,7 +659,7 @@ static void rv2jlong(JNIEnv* jenv, VALUE val, jvalue* jv, const char* psig, int 
     switch (TYPE(val))
     {
     case T_FIXNUM:
-	jv->j = NUM2INT(val);
+	jv->j = FIX2LONG(val);
 	break;
     default:
 #if HAVE_LONG_LONG
@@ -672,8 +672,17 @@ static void rv2jlong(JNIEnv* jenv, VALUE val, jvalue* jv, const char* psig, int 
 }
 static void rv2jshort(JNIEnv* jenv, VALUE val, jvalue* jv, const char* psig, int release)
 {
-    if (!release)
-	jv->s = (short)NUM2INT(val);    
+    if (release) return;
+    if (TYPE(val) == T_FIXNUM)
+    {
+        int n = FIX2INT(val);    
+        if (abs(n) < 0x7fff)
+        {
+            jv->s = (short)n;
+            return;
+        }
+    }
+    rb_raise(rb_eRuntimeError, "can't change to short");
 }
 static void rv2jboolean(JNIEnv* jenv, VALUE val, jvalue* jv, const char* psig, int release)
 {

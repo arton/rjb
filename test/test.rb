@@ -1,6 +1,6 @@
 #!/usr/local/env ruby -Ku
 # encoding: utf-8
-# $Id: test.rb 129 2010-08-29 02:28:18Z arton $
+# $Id: test.rb 133 2010-09-16 16:01:02Z arton $
 
 begin
   require 'rjb'
@@ -257,7 +257,7 @@ class TestRjb < Test::Unit::TestCase
   def test_unbind()
     it = TestIter.new
     it = bind(it, 'java.util.Iterator')
-    assert(it, unbind(it))
+    assert_equal(it, unbind(it))
   end
 
   class TestComparator
@@ -274,9 +274,9 @@ class TestRjb < Test::Unit::TestCase
     cp = bind(cp, 'java.util.Comparator')
     test = import('jp.co.infoseek.hp.arton.rjb.Test')
     a = test.new
-    assert(0, a.check(cp, 123, 123))
-    assert(5, a.check(cp, 81, 76))
-    assert(-5, a.check(cp, 76, 81))
+    assert_equal(0, a.check(cp, 123, 123))
+    assert_equal(5, a.check(cp, 81, 76))
+    assert_equal(-5, a.check(cp, 76, 81))
   end
 
   # assert_raise is useless in this test, because NumberFormatException may be defined in
@@ -715,12 +715,20 @@ class TestRjb < Test::Unit::TestCase
     assert m.include?('format')
   end
   def test_java_methods
-    m = @jString.new('').java_methods
-    assert m.include?('indexOf([Ljava.lang.String;I, II, I, Ljava.lang.String;])')
+    indexof = @jString.new('').java_methods.find do |m|
+      m =~ /^indexOf/
+    end
+    args = indexof.match(/\[([^\]]+)\]/)[1]
+    assert_equal('Ljava.lang.String;I, II, I, Ljava.lang.String;'.split(/,\s*/).sort, 
+                 args.split(/,\s*/).sort)
   end
   def test_java_class_methods
     m = @jString.java_methods
     assert m.include?('format([Ljava.lang.String;[Ljava.lang.Object;, Ljava.util.Locale;Ljava.lang.String;[Ljava.lang.Object;])')
+  end
+  def test_64fixnum
+    big = @jLong.new_with_sig('J', 1230918239495)
+    assert_equal 1230918239495, big.long_value
   end
 end
 

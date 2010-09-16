@@ -1,3 +1,10 @@
+Fri Sep 17 arton
+ *test/test.rb
+	sort arguments order for test_java_methods (the order is implement dependent)
+	add fixnum conversion test for 64bit platform (test_64fixnum)
+ *ext/rjb.c
+	RJV_VERSION -> 1.2.8
+	fix rv2jlong bug, the solution was suggested by Ary Borenszweig
 Sun Aug 29 arton
  *ext/rjb.c
 	ignore no arguments method signature.
