@@ -1,6 +1,6 @@
 #!/usr/local/env ruby -Ku
 # encoding: utf-8
-# $Id: test.rb 133 2010-09-16 16:01:02Z arton $
+# $Id: test.rb 142 2010-09-21 17:59:30Z arton $
 
 begin
   require 'rjb'
@@ -526,9 +526,9 @@ class TestRjb < Test::Unit::TestCase
     assert_equal('Hello World !!', a[1][1].toString)
   end
 
-  def test_CallByNullForArraies()
+  def test_CallByNullForArrays()
     test = import('jp.co.infoseek.hp.arton.rjb.Test').new
-    assert_equal(nil, test.callWithArraies(nil, nil, nil, nil, nil, nil,
+    assert_equal(nil, test.callWithArrays(nil, nil, nil, nil, nil, nil,
                                            nil, nil))
   end
 
@@ -723,12 +723,21 @@ class TestRjb < Test::Unit::TestCase
                  args.split(/,\s*/).sort)
   end
   def test_java_class_methods
-    m = @jString.java_methods
-    assert m.include?('format([Ljava.lang.String;[Ljava.lang.Object;, Ljava.util.Locale;Ljava.lang.String;[Ljava.lang.Object;])')
+    format = @jString.java_methods.find do |m|
+      m =~ /^format/
+    end
+    args = format.match(/\[([^\]]+)\]/)[1]
+    assert_equal('Ljava.lang.String;[Ljava.lang.Object;, Ljava.util.Locale;Ljava.lang.String;[Ljava.lang.Object;'.split(/,\s*/).sort, args.split(/,\s*/).sort)
   end
   def test_64fixnum
     big = @jLong.new_with_sig('J', 1230918239495)
     assert_equal 1230918239495, big.long_value
+  end
+  def test_add_jar
+    add_jar(File.expand_path('./jartest.jar'))
+    jt = import('jp.co.infoseek.hp.arton.rjb.JarTest')
+    assert jt
+    assert_equal 'abcd', jt.new.add('ab', 'cd')
   end
 end
 

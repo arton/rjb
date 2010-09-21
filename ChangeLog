@@ -1,3 +1,20 @@
+Tue Sep 21 arton
+ *ext/rjb.h
+	export ClassLoader methods
+ *ext/load.c
+	move ClassLoader interaction codes into rjb.c
+ *ext/rjb.c
+	RJV_VERSION -> 1.2.9
+	add add_jar method.
+	loading classes throgh URLClassLoader if the user add Jars
+ *lib/rjb.rb
+	change MODIFIER module into a constant. Because it implys Rjb::import.
+	change Config -> RbConfig for 1.9
+ *test/test.rb
+	add Rjb::add_jar test
+ *test/JarTest.java
+ *test/jartest.jar
+	add for Rjb::add_jar test
 Fri Sep 17 arton
  *test/test.rb
 	sort arguments order for test_java_methods (the order is implement dependent)

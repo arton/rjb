@@ -12,10 +12,10 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * $Id: rjb.c 131 2010-09-16 15:53:33Z arton $
+ * $Id: rjb.c 139 2010-09-21 17:32:57Z arton $
  */
 
-#define RJB_VERSION "1.2.8"
+#define RJB_VERSION "1.2.9"
 
 #include "ruby.h"
 #include "extconf.h"
@@ -43,10 +43,10 @@
 #define ACC_TRANSIENT  0x0080
 
 #define RJB_FIND_CLASS(var, name)              \
-    var = (*jenv)->FindClass(jenv, name); \
+    var = rjb_find_class_by_name(jenv, name); \
     rjb_check_exception(jenv, 1)
 #define RJB_HOLD_CLASS(var, name)              \
-    var = (*jenv)->FindClass(jenv, name); \
+    var = rjb_find_class_by_name(jenv, name); \
     rjb_check_exception(jenv, 1);               \
     var = (*jenv)->NewGlobalRef(jenv, var)
 #define RJB_LOAD_METHOD(var, obj, name, sig) \
@@ -89,6 +89,7 @@ static VALUE proxies;
 JavaVM* rjb_jvm;
 jclass rjb_rbridge;
 jmethodID rjb_register_bridge;
+jmethodID rjb_load_class;
 static JNIEnv* main_jenv;
 static VALUE primitive_conversion = Qfalse;
 
@@ -117,6 +118,16 @@ static jclass j_string;
 static jmethodID str_tostring;
 /* Object global reference */
 static jclass j_object;
+/* ClassLoader */
+static jclass j_classloader;
+static jmethodID get_system_classloader;
+/* URLClassLoader */
+static jclass j_url_loader;
+static jobject url_loader;
+static jmethodID url_loader_new;
+/* URL global reference */
+static jclass j_url;
+static jmethodID url_new;
 
 enum PrimitiveType {
     PRM_INT = 0,
@@ -171,20 +182,18 @@ static char* java2jniname(char* jnicls)
     return jnicls;
 }
 
-#if 0
-static char* jni2javaname(char* jnicls)
+static char* jniname2java(char* jniname)
 {
     char* p;
-    for (p = jnicls; *p; p++)
+    for (p = jniname; *p; p++)
     {
 	if (*p == '/')
 	{
 	    *p = '.';
 	}
     }
-    return jnicls;
+    return jniname;
 }
-#endif
 
 static char* next_sig(char* p)
 {
@@ -1716,26 +1725,37 @@ static VALUE rjb_s_load(int argc, VALUE* argv, VALUE self)
     RJB_LOAD_METHOD(method_getName, jmethod, "getName", "()Ljava/lang/String;");
     RJB_LOAD_METHOD(getParameterTypes, jmethod, "getParameterTypes", "()[Ljava/lang/Class;");
     RJB_LOAD_METHOD(getReturnType, jmethod, "getReturnType", "()Ljava/lang/Class;");
-
+    rjb_check_exception(jenv, 1);
+    
     RJB_FIND_CLASS(jfield, "java/lang/reflect/Field");
     RJB_LOAD_METHOD(field_getModifiers, jfield, "getModifiers", "()I");
     RJB_LOAD_METHOD(field_getName, jfield, "getName", "()Ljava/lang/String;");
     RJB_LOAD_METHOD(field_getType, jfield, "getType", "()Ljava/lang/Class;");
-
+    rjb_check_exception(jenv, 1);
+    
     RJB_HOLD_CLASS(j_class, "java/lang/Class");
     RJB_LOAD_METHOD(rjb_class_getName, j_class, "getName", "()Ljava/lang/String;");
-
+    rjb_check_exception(jenv, 1);
+    
     RJB_HOLD_CLASS(rjb_j_throwable, "java/lang/Throwable");
     RJB_LOAD_METHOD(rjb_throwable_getMessage, rjb_j_throwable, "getMessage", "()Ljava/lang/String;");
+    rjb_check_exception(jenv, 1);    
 
     RJB_HOLD_CLASS(j_string, "java/lang/String");
     RJB_LOAD_METHOD(str_tostring, j_string, "toString", "()Ljava/lang/String;");
+    rjb_check_exception(jenv, 1);    
 
     RJB_HOLD_CLASS(j_object, "java/lang/Object");
+    rjb_check_exception(jenv, 1);    
+
+    RJB_HOLD_CLASS(j_url, "java/net/URL");
+    RJB_LOAD_METHOD(url_new, j_url, "<init>", "(Ljava/lang/String;)V");
+    rjb_check_exception(jenv, 1);    
 
     for (i = PRM_INT; i < PRM_LAST; i++)
     {
-	jclass klass = (*jenv)->FindClass(jenv, jpcvt[i].classname);
+	jclass klass;
+        RJB_FIND_CLASS(klass, jpcvt[i].classname);
 	if (i == PRM_BOOLEAN)
 	{
             RJB_LOAD_STATIC_METHOD(jpcvt[i].ctr_id, klass, "valueOf", jpcvt[i].ctrsig);
@@ -1779,6 +1799,18 @@ JNIEnv* rjb_prelude()
     jenv = rjb_attach_current_thread();
     (*jenv)->ExceptionClear(jenv);
     return jenv;
+}
+
+jobject get_systemloader(JNIEnv* jenv)
+{
+    if (!j_classloader)
+    {
+        RJB_HOLD_CLASS(j_classloader, "java/lang/ClassLoader");
+        RJB_LOAD_STATIC_METHOD(get_system_classloader, j_classloader,
+                           "getSystemClassLoader", "()Ljava/lang/ClassLoader;");
+        rjb_check_exception(jenv, 1);    
+    }
+    return (*jenv)->CallStaticObjectMethod(jenv, j_classloader, get_system_classloader);
 }
 
 /*
@@ -2061,7 +2093,7 @@ static int check_rtype(JNIEnv* jenv, VALUE v, char* p)
 	    int result = 0;
             if (!strcmp("java.lang.String", pcls)) return 1;
 	    Data_Get_Struct(v, struct jvi_data, ptr);
-	    cls = (*jenv)->FindClass(jenv, java2jniname(pcls));
+            RJB_FIND_CLASS(cls, java2jniname(pcls));
 	    if (cls)
 	    {
 	        result = (cls && (*jenv)->IsInstanceOf(jenv, ptr->obj, cls));
@@ -2160,6 +2192,27 @@ static VALUE rjb_newinstance(int argc, VALUE* argv, VALUE self)
 }
 
 /*
+ * find java class using added classloader
+ */
+jclass rjb_find_class_by_name(JNIEnv* jenv, const char* name)
+{
+    jclass cls;
+    if (url_loader)
+    {
+        jvalue v;
+        char* binname = ALLOCA_N(char, strlen(name) + 32);
+        strcpy(binname, name);
+        v.l = (*jenv)->NewStringUTF(jenv, jniname2java(binname));
+        cls = (*jenv)->CallObjectMethod(jenv, url_loader, rjb_load_class, v);
+    }
+    else
+    {
+        cls = (*jenv)->FindClass(jenv, name);
+    }
+    return cls;
+}
+
+/*
  * find java class from classname
  */
 jclass rjb_find_class(JNIEnv* jenv, VALUE name)
@@ -2167,10 +2220,11 @@ jclass rjb_find_class(JNIEnv* jenv, VALUE name)
     char* cname;
     char* jnicls;
     
+    Check_Type(name, T_STRING);
     cname = StringValueCStr(name);
     jnicls = ALLOCA_N(char, strlen(cname) + 1);
     strcpy(jnicls, cname);
-    return (*jenv)->FindClass(jenv, java2jniname(jnicls));
+    return rjb_find_class_by_name(jenv, java2jniname(jnicls));
 }
 
 /*
@@ -2335,6 +2389,77 @@ static void register_class(VALUE self, VALUE clsname)
     st_insert(RHASH(rjb_loaded_classes)->tbl, clsname, self);
 #endif
 #endif
+}
+
+/*
+ * Rjb::add_jar(jarname)
+ */
+static VALUE rjb_s_add_jar(VALUE self, VALUE jarname)
+{
+    JNIEnv* jenv;
+    char* jarp;
+    char* urlp;
+    size_t len;
+    jvalue urlarg;
+    jvalue args[2];
+    jobject url;
+    
+    SafeStringValue(jarname);
+    jenv = rjb_prelude();
+    if (!j_url_loader)
+    {
+        j_url_loader = (*jenv)->NewGlobalRef(jenv,
+                                             (*jenv)->FindClass(jenv, "java/net/URLClassLoader"));
+        RJB_LOAD_METHOD(rjb_load_class, j_url_loader, "loadClass",
+                        "(Ljava/lang/String;)Ljava/lang/Class;");
+        RJB_LOAD_METHOD(url_loader_new, j_url_loader, "<init>",
+                        "([Ljava/net/URL;Ljava/lang/ClassLoader;)V");
+    }
+    jarp = StringValueCStr(jarname);
+    urlp = ALLOCA_N(char, strlen(jarp) + 32);
+    if (strncmp(jarp, "http:", 5) && strncmp(jarp, "https:", 6))
+    {
+#if defined(DOSISH)
+        if (strlen(jarp) > 1 && jarp[1] == ':')
+        {
+            sprintf(urlp, "file:///%s", jarp);            
+        }
+        else
+#endif
+        {
+            sprintf(urlp, "file://%s", jarp);
+        }
+    }
+    else
+    {
+        strcpy(urlp, jarp);
+    }
+#if defined(DOSISH)
+    for (len = 0; len < strlen(urlp); len++)
+    {
+        if (urlp[len] == '\\')
+        {
+            urlp[len] = '/';
+        }
+    }
+#endif
+    urlarg.l = (*jenv)->NewStringUTF(jenv, urlp);
+    rjb_check_exception(jenv, 0);        
+    url = (*jenv)->NewObject(jenv, j_url, url_new, urlarg);
+    rjb_check_exception(jenv, 0);        
+    args[0].l = (*jenv)->NewObjectArray(jenv, 1, j_url, url);
+    rjb_check_exception(jenv, 0);    
+    if (url_loader)
+    {
+        args[1].l = url_loader;
+    }
+    else
+    {
+        args[1].l = get_systemloader(jenv);
+    }
+    url_loader = (*jenv)->NewObjectA(jenv, j_url_loader, url_loader_new, args);
+    rjb_check_exception(jenv, 0);
+    return Qtrue;
 }
 
 /*
@@ -2897,6 +3022,7 @@ void Init_rjbcore()
     rb_define_module_function(rjb, "throw", rjb_s_throw, -1);
     rb_define_module_function(rjb, "primitive_conversion=", rjb_s_set_pconversion, 1);
     rb_define_module_function(rjb, "primitive_conversion", rjb_s_get_pconversion, 0);
+    rb_define_module_function(rjb, "add_jar", rjb_s_add_jar, 1);    
     rb_define_const(rjb, "VERSION", rb_str_new2(RJB_VERSION));
 
     /* Java class object */    

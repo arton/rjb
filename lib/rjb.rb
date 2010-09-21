@@ -9,7 +9,7 @@ module RjbConf
   if File.exist?(dir)
     datadir = dir
   else
-    datadir = Config::CONFIG['datadir']
+    datadir = RbConfig::CONFIG['datadir']
   end
   BRIDGE_FILE = File.join(datadir, 'rjb', 'jp', 'co', 'infoseek', 'hp',
                           'arton', 'rjb', 'RBridge.class')
@@ -21,7 +21,14 @@ end
 require 'rjbcore'
 
 module Rjb
-  MODIFIER = import('java.lang.reflect.Modifier')
+  module MODIFIER
+    def self.STATIC
+      8
+    end
+    def self.PUBLIC
+      1
+    end
+  end
 
   module JMethod
     def instance_method?(m)

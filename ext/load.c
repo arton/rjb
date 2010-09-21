@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * $Id: load.c 124 2010-06-08 18:24:45Z arton $
+ * $Id: load.c 139 2010-09-21 17:32:57Z arton $
  */
 
 #include <stdlib.h>
@@ -210,10 +210,6 @@ static int load_bridge(JNIEnv* jenv)
     char* bridge;
     int len;
     FILE* f;
-    jclass loader = (*jenv)->FindClass(jenv, "java/lang/ClassLoader");
-    jmethodID getSysLoader = (*jenv)->GetStaticMethodID(jenv, loader,
-		   "getSystemClassLoader", "()Ljava/lang/ClassLoader;");
-    jobject iloader = (*jenv)->CallStaticObjectMethod(jenv, loader, getSysLoader);
 #if defined(RUBINIUS)
     VALUE v = rb_const_get(rb_cObject, rb_intern("RjbConf"));
     v = rb_const_get(v, rb_intern("BRIDGE_FILE"));
@@ -241,7 +237,7 @@ static int load_bridge(JNIEnv* jenv)
     len = fread(buff, 1, sizeof(buff), f);
     fclose(f);
     rjb_rbridge = (*jenv)->DefineClass(jenv,
-		   "jp/co/infoseek/hp/arton/rjb/RBridge", iloader, buff, len);
+            "jp/co/infoseek/hp/arton/rjb/RBridge", get_systemloader(jenv), buff, len);
     if (rjb_rbridge == NULL)
     {
 	rjb_check_exception(jenv, 1);
