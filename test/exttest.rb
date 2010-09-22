@@ -25,6 +25,7 @@ class ExtTestRjb < Test::Unit::TestCase
   end
   
   def test_require_extension
+    $LOAD_PATH << '.'
     require 'rjbtest.jar'
     load_jvm
     

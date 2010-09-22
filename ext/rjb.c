@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * $Id: rjb.c 139 2010-09-21 17:32:57Z arton $
+ * $Id: rjb.c 145 2010-09-22 14:20:50Z arton $
  */
 
 #define RJB_VERSION "1.2.9"
@@ -1772,7 +1772,7 @@ static VALUE rjb_s_load(int argc, VALUE* argv, VALUE self)
 
     jklass = import_class(jenv, j_class, rb_str_new2("java.lang.Class"));
     rb_define_method(rb_singleton_class(jklass), "forName", rjb_class_forname, -1);
-    rb_define_method(rb_singleton_class(jklass), "for_name", rjb_class_forname, -1);    
+    rb_define_alias(rb_singleton_class(jklass), "for_name", "forName");
     rb_gc_register_address(&jklass);
     
     return Qnil;
@@ -2204,6 +2204,7 @@ jclass rjb_find_class_by_name(JNIEnv* jenv, const char* name)
         strcpy(binname, name);
         v.l = (*jenv)->NewStringUTF(jenv, jniname2java(binname));
         cls = (*jenv)->CallObjectMethod(jenv, url_loader, rjb_load_class, v);
+        (*jenv)->DeleteLocalRef(jenv, v.l);
     }
     else
     {
@@ -2391,30 +2392,15 @@ static void register_class(VALUE self, VALUE clsname)
 #endif
 }
 
-/*
- * Rjb::add_jar(jarname)
- */
-static VALUE rjb_s_add_jar(VALUE self, VALUE jarname)
+static jobject conv_jarname_to_url(JNIEnv* jenv, VALUE jarname)
 {
-    JNIEnv* jenv;
+    jvalue arg;
+    jobject url;
+    size_t len;
     char* jarp;
     char* urlp;
-    size_t len;
-    jvalue urlarg;
-    jvalue args[2];
-    jobject url;
-    
+
     SafeStringValue(jarname);
-    jenv = rjb_prelude();
-    if (!j_url_loader)
-    {
-        j_url_loader = (*jenv)->NewGlobalRef(jenv,
-                                             (*jenv)->FindClass(jenv, "java/net/URLClassLoader"));
-        RJB_LOAD_METHOD(rjb_load_class, j_url_loader, "loadClass",
-                        "(Ljava/lang/String;)Ljava/lang/Class;");
-        RJB_LOAD_METHOD(url_loader_new, j_url_loader, "<init>",
-                        "([Ljava/net/URL;Ljava/lang/ClassLoader;)V");
-    }
     jarp = StringValueCStr(jarname);
     urlp = ALLOCA_N(char, strlen(jarp) + 32);
     if (strncmp(jarp, "http:", 5) && strncmp(jarp, "https:", 6))
@@ -2443,12 +2429,57 @@ static VALUE rjb_s_add_jar(VALUE self, VALUE jarname)
         }
     }
 #endif
-    urlarg.l = (*jenv)->NewStringUTF(jenv, urlp);
+    arg.l = (*jenv)->NewStringUTF(jenv, urlp);
     rjb_check_exception(jenv, 0);        
-    url = (*jenv)->NewObject(jenv, j_url, url_new, urlarg);
-    rjb_check_exception(jenv, 0);        
-    args[0].l = (*jenv)->NewObjectArray(jenv, 1, j_url, url);
+    url = (*jenv)->NewObject(jenv, j_url, url_new, arg);
+    rjb_check_exception(jenv, 0);
+    return url;
+}
+
+/*
+ * Rjb::add_jar(jarname)
+ */
+static VALUE rjb_s_add_jar(VALUE self, VALUE jarname)
+{
+    size_t i;
+    JNIEnv* jenv;
+    size_t count;
+    jvalue args[2];
+
+    if (rb_type(jarname) != T_ARRAY)
+    {
+        SafeStringValue(jarname);
+        count = 0;
+    }
+    else
+    {
+        count = RARRAY_LEN(jarname);
+    }
+    jenv = rjb_prelude();
+    if (!j_url_loader)
+    {
+        j_url_loader = (*jenv)->NewGlobalRef(jenv,
+                                             (*jenv)->FindClass(jenv, "java/net/URLClassLoader"));
+        RJB_LOAD_METHOD(rjb_load_class, j_url_loader, "loadClass",
+                        "(Ljava/lang/String;)Ljava/lang/Class;");
+        RJB_LOAD_METHOD(url_loader_new, j_url_loader, "<init>",
+                        "([Ljava/net/URL;Ljava/lang/ClassLoader;)V");
+    }
+    args[0].l = (*jenv)->NewObjectArray(jenv, (count == 0) ? 1 : count, j_url, NULL);
     rjb_check_exception(jenv, 0);    
+    if (!count)
+    {
+        (*jenv)->SetObjectArrayElement(jenv, args[0].l, 0,
+                                       conv_jarname_to_url(jenv, jarname));
+    }
+    else
+    {
+        for (i = 0; i < count; i++) {
+            (*jenv)->SetObjectArrayElement(jenv, args[0].l, i,
+                                       conv_jarname_to_url(jenv, rb_ary_entry(jarname, i)));
+        }
+    }
+    rjb_check_exception(jenv, 0);        
     if (url_loader)
     {
         args[1].l = url_loader;
@@ -2459,6 +2490,8 @@ static VALUE rjb_s_add_jar(VALUE self, VALUE jarname)
     }
     url_loader = (*jenv)->NewObjectA(jenv, j_url_loader, url_loader_new, args);
     rjb_check_exception(jenv, 0);
+    (*jenv)->NewGlobalRef(jenv, url_loader);
+    (*jenv)->DeleteLocalRef(jenv, args[0].l);
     return Qtrue;
 }
 
@@ -3022,7 +3055,8 @@ void Init_rjbcore()
     rb_define_module_function(rjb, "throw", rjb_s_throw, -1);
     rb_define_module_function(rjb, "primitive_conversion=", rjb_s_set_pconversion, 1);
     rb_define_module_function(rjb, "primitive_conversion", rjb_s_get_pconversion, 0);
-    rb_define_module_function(rjb, "add_jar", rjb_s_add_jar, 1);    
+    rb_define_module_function(rjb, "add_jar", rjb_s_add_jar, 1);
+    rb_define_alias(rjb, "add_jars", "add_jar");
     rb_define_const(rjb, "VERSION", rb_str_new2(RJB_VERSION));
 
     /* Java class object */    

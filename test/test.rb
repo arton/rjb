@@ -1,6 +1,6 @@
 #!/usr/local/env ruby -Ku
 # encoding: utf-8
-# $Id: test.rb 142 2010-09-21 17:59:30Z arton $
+# $Id: test.rb 146 2010-09-22 14:24:48Z arton $
 
 begin
   require 'rjb'
@@ -737,6 +737,14 @@ class TestRjb < Test::Unit::TestCase
     add_jar(File.expand_path('./jartest.jar'))
     jt = import('jp.co.infoseek.hp.arton.rjb.JarTest')
     assert jt
+    assert_equal 'abcd', jt.new.add('ab', 'cd')
+  end
+  def test_add_jars
+    arg = ['./jartest.jar', './jartest.jar'].map do |e|
+      File.expand_path(e)
+    end
+    add_jar(arg)
+    jt = import('jp.co.infoseek.hp.arton.rjb.JarTest')
     assert_equal 'abcd', jt.new.add('ab', 'cd')
   end
 end

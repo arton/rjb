@@ -1,3 +1,9 @@
+Tue Sep 22 arton
+ *ext/rjb.c
+	RJV_VERSION -> 1.2.10
+	add add_jars method. add_jar and add_jars can take an array of jars.
+ *test/test.rb
+	add calling add_jar with an array test.
 Tue Sep 21 arton
  *ext/rjb.h
 	export ClassLoader methods
