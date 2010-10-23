@@ -4,7 +4,7 @@ Sat Oct 23 arton
 	add loaded? class method.
 	add add_classpath method (add jars without invoking load method)
  *ext/load.c
-	OSX default jvm name changes to "JavaVM"
+	OSX default jvm name changes to "JavaVM" (bug#28667 reported by Jeff Adams, thanks Jeff !)
  *ext/extconf.rb
 	OSX javahome set to /System/Library/Frameworks/JavaVM.framework/Versions/CurrentJDK
  *lib/rjbextension.rb
