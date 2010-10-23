@@ -1,6 +1,6 @@
 #!/usr/local/env ruby -Ku
 # encoding: utf-8
-# $Id: test.rb 146 2010-09-22 14:24:48Z arton $
+# $Id: test.rb 147 2010-10-23 05:10:33Z arton $
 
 begin
   require 'rjb'
@@ -9,12 +9,17 @@ rescue LoadError
   require 'rjb'
 end
 require 'test/unit'
+require 'fileutils'
+
+FileUtils.rm_f 'jp/co/infoseek/hp/arton/rjb/Base.class'
+FileUtils.rm_f 'jp/co/infoseek/hp/arton/rjb/ExtBase.class'
 
 puts "start RJB(#{Rjb::VERSION}) test"
 class TestRjb < Test::Unit::TestCase
   include Rjb
   def setup
-    load('.')
+    Rjb::load('.')
+    Rjb::add_jar(File.expand_path('rjbtest.jar'))
     Rjb::primitive_conversion = false
 
     @jString = import('java.lang.String')
@@ -463,10 +468,8 @@ class TestRjb < Test::Unit::TestCase
     bs = import('jp.co.infoseek.hp.arton.rjb.Base')
     b = cls.forName('jp.co.infoseek.hp.arton.rjb.Base')
     assert_equal(bs, b)
-    # class java's Class#forName and convert result to imported class
+    # check class that was loaded from classpath
     loader = Rjb::import('java.lang.ClassLoader')
-    b = cls.forName('jp.co.infoseek.hp.arton.rjb.Base', true, loader.getSystemClassLoader)
-    assert_equal(bs, b)
     b = cls.forName('jp.co.infoseek.hp.arton.rjb.IBase', true, loader.getSystemClassLoader)
     assert(b.isInterface)
   end

@@ -29,18 +29,22 @@ class Path
 end
 
 javahome = ENV['JAVA_HOME']
+if javahome.nil? && RUBY_PLATFORM =~ /darwin/
+  javahome = '/System/Library/Frameworks/JavaVM.framework/Versions/CurrentJDK'
+end
 unless javahome.nil?
   if javahome[0] == ?" && javahome[-1] == ?"
     javahome = javahome[1..-2]
   end
   raise "JAVA_HOME is not directory." unless File.directory?(javahome)
-  p = Path.new
-  inc = p.include(javahome, 'include')
-  inc = p.include(javahome, 'Home/include') unless File.exists?(inc)
+  pt = Path.new
+  inc = pt.include(javahome, 'include')
+  inc = pt.include(javahome, 'Home/include') unless File.exists?(inc)
+  inc = pt.include(javahome, 'Headers') unless File.exists?(inc)
   Dir.open(inc).each do |d|
     next if d[0] == ?.
-    if File.directory?(p.joint(inc, d))
-      p.include(inc, d)
+    if File.directory?(pt.joint(inc, d))
+      pt.include(inc, d)
       break
     end
   end

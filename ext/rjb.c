@@ -12,10 +12,10 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * $Id: rjb.c 145 2010-09-22 14:20:50Z arton $
+ * $Id: rjb.c 147 2010-10-23 05:10:33Z arton $
  */
 
-#define RJB_VERSION "1.2.9"
+#define RJB_VERSION "1.3.0"
 
 #include "ruby.h"
 #include "extconf.h"
@@ -83,6 +83,7 @@ static VALUE rjbi;
 static VALUE rjbb;
 
 static ID user_initialize;
+static ID cvar_classpath;
 
 VALUE rjb_loaded_classes;
 static VALUE proxies;
@@ -1679,9 +1680,12 @@ static VALUE rjb_s_load(int argc, VALUE* argv, VALUE self)
     JNIEnv* jenv;
     JavaVMInitArgs vm_args;
     jint res;
+    VALUE classpath;
     VALUE user_path;
     VALUE vm_argv;
     char* userpath;
+    ID stradd = rb_intern("<<");
+    ID pathsep = rb_intern("PATH_SEPARATOR");
     int i;
     jclass jmethod;
     jclass jfield;
@@ -1698,12 +1702,19 @@ static VALUE rjb_s_load(int argc, VALUE* argv, VALUE self)
     if (!NIL_P(user_path))
     {
         Check_Type(user_path, T_STRING);
-	userpath = StringValueCStr(user_path);
     }
     else
     {
-	userpath = ".";
+	user_path = rb_str_new2(".");
     }
+    classpath = rb_cvar_get(rjb, cvar_classpath);
+    for (i = 0; i < RARRAY_LEN(classpath); i++)
+    {
+        rb_funcall(user_path, stradd, 1, rb_const_get(rb_cFile, pathsep));
+        rb_funcall(user_path, stradd, 1, rb_ary_entry(classpath, 0));
+    }
+    userpath = StringValueCStr(user_path);
+    
     if (!NIL_P(vm_argv))
     {
         Check_Type(vm_argv, T_ARRAY);
@@ -1813,6 +1824,11 @@ jobject get_systemloader(JNIEnv* jenv)
     return (*jenv)->CallStaticObjectMethod(jenv, j_classloader, get_system_classloader);
 }
 
+static jobject get_class_loader(JNIEnv* jenv)
+{
+    return (url_loader) ? url_loader : get_systemloader(jenv);
+}
+
 /*
  * unload Java Virtual Machine
  *
@@ -1848,6 +1864,11 @@ static VALUE rjb_s_unload(int argc, VALUE* argv, VALUE self)
     return INT2NUM(result);
 }
 
+static VALUE rjb_s_loaded(VALUE self)
+{
+    return (rjb_jvm) ? Qtrue : Qfalse;
+}
+
 /*
  * return all classes that were already loaded.
  * this method simply returns the global hash,
@@ -1859,7 +1880,7 @@ static VALUE rjb_s_classes(VALUE self)
 }
 
 /**
- * For JRuby conpatible optsion
+ * For JRuby conpatible option
  */
 static VALUE rjb_s_set_pconversion(VALUE self, VALUE val)
 {
@@ -1868,7 +1889,7 @@ static VALUE rjb_s_set_pconversion(VALUE self, VALUE val)
 }
 
 /**
- * For JRuby conpatible optsion
+ * For JRuby conpatible option
  */
 static VALUE rjb_s_get_pconversion(VALUE self)
 {
@@ -2026,7 +2047,7 @@ static VALUE import_class(JNIEnv* jenv, jclass jcls, VALUE clsname)
 static VALUE rjb_i_prepare_proxy(VALUE self)
 {
     return rb_funcall(self, rb_intern("instance_eval"), 1, 
-               rb_str_new2("instance_eval &" USER_INITIALIZE));
+                      rb_str_new2("instance_eval(&" USER_INITIALIZE ")"));
 }
 
 static VALUE register_instance(JNIEnv* jenv, VALUE klass, struct jv_data* org, jobject obj)
@@ -2377,6 +2398,7 @@ static void register_class(VALUE self, VALUE clsname)
     rb_define_singleton_method(self, "sigs", rjb_get_signatures, 1);
     rb_define_singleton_method(self, "static_sigs", rjb_get_static_signatures, 1);
     rb_define_singleton_method(self, "ctor_sigs", rjb_get_ctor_signatures, 0);
+    rb_ivar_set(self, user_initialize, Qnil);
     /*
      * the hash was frozen, so it need to call st_ func directly.
      */
@@ -2437,6 +2459,17 @@ static jobject conv_jarname_to_url(JNIEnv* jenv, VALUE jarname)
 }
 
 /*
+ * Rjb::add_classpath(jarname)
+ */
+static VALUE rjb_s_add_classpath(VALUE self, VALUE jarname)
+{
+    VALUE cpath = rb_cvar_get(self, cvar_classpath);
+    SafeStringValue(jarname);
+    rb_ary_push(cpath, jarname);
+    return cpath;
+}
+
+/*
  * Rjb::add_jar(jarname)
  */
 static VALUE rjb_s_add_jar(VALUE self, VALUE jarname)
@@ -2479,15 +2512,8 @@ static VALUE rjb_s_add_jar(VALUE self, VALUE jarname)
                                        conv_jarname_to_url(jenv, rb_ary_entry(jarname, i)));
         }
     }
-    rjb_check_exception(jenv, 0);        
-    if (url_loader)
-    {
-        args[1].l = url_loader;
-    }
-    else
-    {
-        args[1].l = get_systemloader(jenv);
-    }
+    rjb_check_exception(jenv, 0);
+    args[1].l = get_class_loader(jenv);
     url_loader = (*jenv)->NewObjectA(jenv, j_url_loader, url_loader_new, args);
     rjb_check_exception(jenv, 0);
     (*jenv)->NewGlobalRef(jenv, url_loader);
@@ -3048,6 +3074,7 @@ void Init_rjbcore()
     rjb = rb_define_module("Rjb");
     rb_define_module_function(rjb, "load", rjb_s_load, -1);
     rb_define_module_function(rjb, "unload", rjb_s_unload, -1);
+    rb_define_module_function(rjb, "loaded?", rjb_s_loaded, 0);
     rb_define_module_function(rjb, "import", rjb_s_import, 1);
     rb_define_module_function(rjb, "bind", rjb_s_bind, 2);
     rb_define_module_function(rjb, "unbind", rjb_s_unbind, 1);
@@ -3055,9 +3082,12 @@ void Init_rjbcore()
     rb_define_module_function(rjb, "throw", rjb_s_throw, -1);
     rb_define_module_function(rjb, "primitive_conversion=", rjb_s_set_pconversion, 1);
     rb_define_module_function(rjb, "primitive_conversion", rjb_s_get_pconversion, 0);
+    rb_define_module_function(rjb, "add_classpath", rjb_s_add_classpath, 1);
     rb_define_module_function(rjb, "add_jar", rjb_s_add_jar, 1);
     rb_define_alias(rjb, "add_jars", "add_jar");
     rb_define_const(rjb, "VERSION", rb_str_new2(RJB_VERSION));
+    rb_define_class_variable(rjb, "@@classpath", rb_ary_new());
+    cvar_classpath = rb_intern("@@classpath");
 
     /* Java class object */    
     rjbc = CLASS_NEW(rb_cObject, "Rjb_JavaClass");

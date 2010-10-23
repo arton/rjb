@@ -11,7 +11,7 @@ Copyright(c) 2010 arton
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  Lesser General Public License for more details.
 
-$Id: rjbextension.rb 116 2010-05-30 14:23:07Z arton $
+$Id: rjbextension.rb 147 2010-10-23 05:10:33Z arton $
 
  This file is from Andreas Ronge project neo4j
    http://github.com/andreasronge/neo4j/blob/rjb/lib/rjb_ext.rb
@@ -59,23 +59,16 @@ module Kernel
     raise unless  File.exist?(abs_path)
 
     # try to load it using RJB
-    @@rjb_jars ||= []
-    @@rjb_jars << abs_path unless @@rjb_jars.include?(abs_path)
-    # TODO
+    if Rjb::loaded?
+      Rjb::add_jar abs_path
+    else
+      Rjb::add_classpath abs_path
+    end
   end
 
-  @@jvm_loaded = false
-
   def load_jvm(jargs = [])
-    # avoid starting the JVM twice
-    return if @@jvm_loaded
-    
-    @@jvm_loaded = true
+    return if Rjb::loaded?
     classpath = ENV['CLASSPATH'] ||= ''
-    @@rjb_jars.each do |jar|
-      classpath += File::PATH_SEPARATOR unless classpath.empty?
-      classpath += jar
-    end
     Rjb::load(classpath, jargs)
   end
 end

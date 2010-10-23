@@ -1,3 +1,16 @@
+Sat Oct 23 arton	
+ *ext/rjb.c
+	RJV_VERSION -> 1.3.0
+	add loaded? class method.
+	add add_classpath method (add jars without invoking load method)
+ *ext/load.c
+	OSX default jvm name changes to "JavaVM"
+ *ext/extconf.rb
+	OSX javahome set to /System/Library/Frameworks/JavaVM.framework/Versions/CurrentJDK
+ *lib/rjbextension.rb
+	use Rjb::add_classpath method instead of Kernel's class vars.
+ *test/test.rb, test/exttest.rb
+	fix add_jar test, previous version load them from jp directory.
 Tue Sep 22 arton
  *ext/rjb.c
 	RJV_VERSION -> 1.2.10

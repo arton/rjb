@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * $Id: load.c 139 2010-09-21 17:32:57Z arton $
+ * $Id: load.c 148 2010-10-23 08:38:44Z arton $
  */
 
 #include <stdlib.h>
@@ -45,7 +45,7 @@
  #endif
  #define CLASSPATH_SEP  ';'
 #elif defined(__APPLE__) && defined(__MACH__)
-  static char* JVMDLL = "%s/Libraries/libjvm_compat.dylib";
+  static char* JVMDLL = "%s/JavaVM";
   #define DIRSEPARATOR '/'
   #define CLASSPATH_SEP ':'
   #define HOME_NAME "/Home"
