@@ -18,7 +18,7 @@ task :default => [ :package ]
 spec = Gem::Specification.new do |s|
   s.authors = 'arton'
   s.email = 'artonx@gmail.com'
-  if /mswin|mingw|x86_64-darwin/ =~ RUBY_PLATFORM
+  if /mswin|mingw|darwin/ =~ RUBY_PLATFORM
     s.platform = Gem::Platform::CURRENT
   else
     s.platform = Gem::Platform::RUBY
@@ -40,7 +40,7 @@ spec = Gem::Specification.new do |s|
     FileUtils.cp 'ext/rjbcore.so', 'lib/rjbcore.so'
     files << "lib/rjbcore.so"
     s.requirements << ' VC6 version of Ruby' if RUBY_PLATFORM =~ /mswin/
-  elsif /x86_64-darwin/ =~ RUBY_PLATFORM
+  elsif /darwin/ =~ RUBY_PLATFORM
     FileUtils.cp 'ext/rjbcore.bundle', 'lib/rjbcore.bundle'
     files << "lib/rjbcore.bundle"
   end
