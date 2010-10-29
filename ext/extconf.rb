@@ -30,7 +30,7 @@ end
 
 javahome = ENV['JAVA_HOME']
 if javahome.nil? && RUBY_PLATFORM =~ /darwin/
-  javahome = '/System/Library/Frameworks/JavaVM.framework/Versions/CurrentJDK'
+  javahome = `/usr/libexec/java_home`.strip
 end
 unless javahome.nil?
   if javahome[0] == ?" && javahome[-1] == ?"
@@ -39,8 +39,9 @@ unless javahome.nil?
   raise "JAVA_HOME is not directory." unless File.directory?(javahome)
   pt = Path.new
   inc = pt.include(javahome, 'include')
-  inc = pt.include(javahome, 'Home/include') unless File.exists?(inc)
-  inc = pt.include(javahome, 'Headers') unless File.exists?(inc)
+  if !File.exists?(inc) && RUBY_PLATFORM =~ /darwin/
+    inc = pt.include('/System/Library/Frameworks/JavaVM.framework', 'Headers')
+  end
   Dir.open(inc).each do |d|
     next if d[0] == ?.
     if File.directory?(pt.joint(inc, d))
@@ -49,7 +50,7 @@ unless javahome.nil?
     end
   end
 else
-	raise "JAVA_HOME is not set."
+  raise "JAVA_HOME is not set."
 end
 
 
@@ -62,6 +63,8 @@ def create_rjb_makefile
     $defs << "-DRJB_RUBY_VERSION_CODE="+RUBY_VERSION.gsub(/\./, '')
     create_header
     create_makefile("rjbcore")
+  else
+    raise "no jni.h in " + $INCFLAGS
   end
 end
 
