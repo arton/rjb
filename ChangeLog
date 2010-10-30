@@ -1,3 +1,8 @@
+Sat Oct 30 arton
+ *ext/rjb.c
+	RJB_VERSION -> 1.3.2
+ *extconf.rb
+	Change OSX's include path detecting
 Tue Oct 26 arton
  *ext/rjb.c
 	RJB_VERSION -> 1.3.1
