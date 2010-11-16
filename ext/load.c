@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * $Id: load.c 148 2010-10-23 08:38:44Z arton $
+ * $Id: load.c 159 2010-11-16 16:35:49Z arton $
  */
 
 #include <stdlib.h>
@@ -131,10 +131,21 @@ static int open_jvm(char* libpath)
 #endif
     return 1;
 }
+
+#if defined(__APPLE__) && defined(__MACH__)
+static int file_exist(const char* dir, const char* file)
+{
+    VALUE path = rb_funcall(rb_cFile, rb_intern("join"), 2,
+                            rb_str_new2(dir), rb_str_new2(file));
+    VALUE ret = rb_funcall(rb_cFile, rb_intern("exist?"), 1, path);
+    return RTEST(ret);
+}
+#endif
+
 /*
  * not completed, only valid under some circumstances.
  */
-static int load_jvm(char* jvmtype)
+static int load_jvm(const char* jvmtype)
 {
     char* libpath;
     char* java_home;
@@ -150,7 +161,7 @@ static int load_jvm(char* jvmtype)
     {
         if (strlen(jh) > HOME_NAME_LEN)
         {
-            int len = strlen(jh);
+            size_t len = strlen(jh);
             char* p = ALLOCA_N(char, len + 8);
             jh = strcpy(p, jh);
             if (*(jh + len - 1) == '/')
@@ -162,6 +173,10 @@ static int load_jvm(char* jvmtype)
             {
                 strcpy(p + len, "/..");
             }
+        }
+        if (!jvmtype && !file_exist(jh, "JavaVM"))
+        {
+            jh = DEFAULT_HOME;
         }
     }
 #endif
@@ -208,7 +223,7 @@ static int load_bridge(JNIEnv* jenv)
     JNINativeMethod nmethod[1];
     jbyte buff[8192];
     char* bridge;
-    int len;
+    size_t len;
     FILE* f;
 #if defined(RUBINIUS)
     VALUE v = rb_const_get(rb_cObject, rb_intern("RjbConf"));
@@ -268,12 +283,12 @@ int rjb_create_jvm(JNIEnv** pjenv, JavaVMInitArgs* vm_args, char* userpath, VALU
       { "DUMMY", NULL },   /* for classpath count */
     };
     char* newpath;
-    int len;
+    size_t len;
     int result;
     GETDEFAULTJAVAVMINITARGS initargs;
     CREATEJAVAVM createjavavm;
     JavaVMOption* options;
-    int optlen;
+    size_t optlen;
     int i;
     VALUE optval;
 
@@ -292,7 +307,7 @@ int rjb_create_jvm(JNIEnv** pjenv, JavaVMInitArgs* vm_args, char* userpath, VALU
         if (libjvm == NULL || !open_jvm(libjvm))
         {
 #if defined(__APPLE__) && defined(__MACH__)
-            if (!(load_jvm(JVM_TYPE) || load_jvm(ALT_JVM_TYPE)))
+            if (!(load_jvm(NULL)))
             {
                 JVMDLL = "%s/Libraries/libjvm.dylib";
                 CREATEJVM = "JNI_CreateJavaVM_Impl";
@@ -359,7 +374,7 @@ int rjb_create_jvm(JNIEnv** pjenv, JavaVMInitArgs* vm_args, char* userpath, VALU
 	(options + i)->optionString = StringValueCStr(optval);
 	(options + i)->extraInfo = NULL;
     }
-    vm_args->nOptions = optlen;
+    vm_args->nOptions = (int)optlen;
     vm_args->options = options;
     vm_args->ignoreUnrecognized = JNI_TRUE;
     if (NIL_P(createjavavmfunc))
