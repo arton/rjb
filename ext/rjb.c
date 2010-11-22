@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * $Id: rjb.c 161 2010-11-22 07:18:00Z arton $
+ * $Id: rjb.c 163 2010-11-22 07:31:27Z arton $
  */
 
 #define RJB_VERSION "1.3.4"
@@ -1125,11 +1125,7 @@ static void rv2jarray(JNIEnv* jenv, VALUE val, jvalue* jv, const char* psig, int
             // copy array's contents into arg string
             jsize len = (*jenv)->GetArrayLength(jenv, jv->l);
             jbyte* p = (*jenv)->GetByteArrayElements(jenv, jv->l, NULL);
-#if defined(RUBINIUS)
-            if (len <= rb_str_len(val))
-#else
-            if (len <= rb_str_length(val))
-#endif                
+            if (len <= RSTRING_LEN(val))
             {
                 memcpy(StringValuePtr(val), p, len);
             }
