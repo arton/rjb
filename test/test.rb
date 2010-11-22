@@ -1,6 +1,6 @@
 #!/usr/local/env ruby -Ku
 # encoding: utf-8
-# $Id: test.rb 147 2010-10-23 05:10:33Z arton $
+# $Id: test.rb 161 2010-11-22 07:18:00Z arton $
 
 begin
   require 'rjb'
@@ -749,6 +749,16 @@ class TestRjb < Test::Unit::TestCase
     add_jar(arg)
     jt = import('jp.co.infoseek.hp.arton.rjb.JarTest')
     assert_equal 'abcd', jt.new.add('ab', 'cd')
+  end
+  def test_bothdirection_buffer
+    org = "abcdefghijklmn"
+    baip = import('java.io.ByteArrayInputStream')
+    ba = baip.new(org)
+    buff = "\0" * org.size
+    assert_equal org.size, ba.read(buff)
+    assert_equal -1, ba.read(buff)
+    ba.close
+    assert_equal org, buff
   end
 end
 

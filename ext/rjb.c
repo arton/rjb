@@ -12,10 +12,10 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * $Id: rjb.c 159 2010-11-16 16:35:49Z arton $
+ * $Id: rjb.c 161 2010-11-22 07:18:00Z arton $
  */
 
-#define RJB_VERSION "1.3.3"
+#define RJB_VERSION "1.3.4"
 
 #include "ruby.h"
 #include "extconf.h"
@@ -75,6 +75,7 @@ static VALUE jarray2rv(JNIEnv* jenv, jvalue val);
 static jarray r2objarray(JNIEnv* jenv, VALUE v, const char* cls);
 static VALUE jv2rv_withprim(JNIEnv* jenv, jobject o);
 static J2R get_arrayconv(const char* cname, char* depth);
+static jarray r2barray(JNIEnv* jenv, VALUE v, const char* cls);
 
 static VALUE rjb;
 static VALUE jklass;
@@ -748,7 +749,7 @@ static void rv2jstring(JNIEnv* jenv, VALUE val, jvalue* jv, const char* psig, in
 		    return; /* never delete at this time */
 		}
 	    }
-	}
+        }
 	(*jenv)->DeleteLocalRef(jenv, jv->l);
     }
 }
@@ -814,7 +815,11 @@ static void rv2jobject(JNIEnv* jenv, VALUE val, jvalue* jv, const char* psig, in
 		}
 		break;
 	    case T_STRING:
-		rv2jstring(jenv, val, jv, NULL, 0);
+                if (psig && *psig == '[' && *(psig + 1) == 'B') {
+                    jv->l = r2barray(jenv, val, NULL);
+                } else {
+                    rv2jstring(jenv, val, jv, NULL, 0);
+                }
 		break;
 	    case T_FLOAT:
 		arg.d = NUM2DBL(val);
@@ -1115,6 +1120,26 @@ static void rv2jarray(JNIEnv* jenv, VALUE val, jvalue* jv, const char* psig, int
     }
     if (release)
     {
+        if (TYPE(val) == T_STRING && *(psig + 1) == 'B')
+        {
+            // copy array's contents into arg string
+            jsize len = (*jenv)->GetArrayLength(jenv, jv->l);
+            jbyte* p = (*jenv)->GetByteArrayElements(jenv, jv->l, NULL);
+#if defined(RUBINIUS)
+            if (len <= rb_str_len(val))
+#else
+            if (len <= rb_str_length(val))
+#endif                
+            {
+                memcpy(StringValuePtr(val), p, len);
+            }
+            else
+            {
+                VALUE src = rb_str_new(p, len);
+                rb_str_set_len(val, 0);
+                rb_str_append(val, src);
+            }
+        }
 	(*jenv)->DeleteLocalRef(jenv, jv->l);
     }
     else
@@ -2099,7 +2124,7 @@ static int check_rtype(JNIEnv* jenv, VALUE v, char* p)
     case T_FLOAT:
 	return strchr("DF", *p) != NULL;
     case T_STRING:
-      return pcls && !strcmp("java.lang.String", pcls);
+        return pcls && !strcmp("java.lang.String", pcls) || *p == '[' && *(p + 1) == 'B';
     case T_TRUE:
     case T_FALSE:
         return *p == 'Z';
@@ -3057,11 +3082,13 @@ static VALUE rjb_class_forname(int argc, VALUE* argv, VALUE self)
  */
 void Init_rjbcore()
 {
-#if defined(RUBINIUS)
+#if RJB_RUBY_VERSION_CODE < 190
+  #if defined(RUBINIUS)
     rb_require("iconv");
-#else
+  #else
     rb_protect((VALUE(*)(VALUE))rb_require, (VALUE)"iconv", NULL);
-#endif
+  #endif
+#endif    
     rjb_loaded_classes = rb_hash_new();
 #ifndef RUBINIUS
     OBJ_FREEZE(rjb_loaded_classes);
