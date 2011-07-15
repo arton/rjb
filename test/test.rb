@@ -1,6 +1,6 @@
 #!/usr/local/env ruby -Ku
 # encoding: utf-8
-# $Id: test.rb 161 2010-11-22 07:18:00Z arton $
+# $Id: test.rb 168 2011-07-15 18:57:04Z arton $
 
 begin
   require 'rjb'
@@ -638,10 +638,22 @@ class TestRjb < Test::Unit::TestCase
 
   #rjb-bugs-15430 rebported by Bryan Duxbury
   def test_generics_map
-    test = import('jp.co.infoseek.hp.arton.rjb.Test').new
+    
+    ctest = import('jp.co.infoseek.hp.arton.rjb.Test')
+    test = ctest.new
     map = test.sorted_map
     assert_equal "\0\x1\x2\x3\x4", map.get('abc')
     assert_equal "\x5\x6\x7\x8\x9", map.get('def')
+
+    cmap = import('java.util.TreeMap')
+    map = cmap.new
+    map.put('abc', @jString.new('abc').bytes)
+    map.put('012', @jString.new('012').bytes)
+
+    Rjb::primitive_conversion = true    
+    map2 = test.throughSortedMap(map)
+    assert_equal '012', map2.get('012')
+    assert_equal 'abc', map2.get('abc')
   end
 
   def x_test_zzunload

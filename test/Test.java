@@ -1,5 +1,5 @@
 //
-// $Id$
+// $Id: Test.java 168 2011-07-15 18:57:04Z arton $
 //
 package jp.co.infoseek.hp.arton.rjb;
 import java.util.ArrayList;
@@ -79,7 +79,7 @@ public class Test {
 	    { new Integer(2), "Hello World !!", },
 	};
     }
-    public void callWithArraies(byte[] ab, short[] as, int[] ai,
+    public void callWithArrays(byte[] ab, short[] as, int[] ai,
 				long[] al, double[] ad, float[] af,
 				String[] ax, Object[] ao)
     {
@@ -102,8 +102,9 @@ public class Test {
         return map;
     }
 
-    public void setSortedMap(SortedMap<String, byte[]> map) {
+    public SortedMap<String, byte[]> throughSortedMap(SortedMap<String, byte[]> map) {
         SortedMap<String, byte[]> value = map;
+        return value;
     }
 
     public static void setSortedMapS(SortedMap<String, byte[]> map) {
