@@ -1,3 +1,6 @@
+Sat Jul 16 arton
+ *ext/laod.c
+	load server JVM if _WIN64
 Mon Nov 22 arton
  *ext/rjb.c
 	RJB_VERSION -> 1.3.4

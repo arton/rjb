@@ -1,6 +1,6 @@
 /*
  * Rjb - Ruby <-> Java Bridge
- * Copyright(c) 2004,2005,2006,2009,2010 arton
+ * Copyright(c) 2004,2005,2006,2009,2010,2011 arton
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -42,6 +42,10 @@
  #else
   #define JVMDLL "%s\\jre\\bin\\%s\\jvm.dll"
   #define DIRSEPARATOR '\\'
+  #if defined(_WIN64)
+    #undef JVM_TYPE
+    #define JVM_TYPE "server"
+  #endif
  #endif
  #define CLASSPATH_SEP  ';'
 #elif defined(__APPLE__) && defined(__MACH__)
