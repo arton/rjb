@@ -25,4 +25,11 @@ in Unix
 see test/readme.unix 
 you must set LD_LIBRARY_PATH environmental variable to run rjb.
 
+-- Notice for opening non-ASCII 7bit filename
+If you'll plan to open the non-ascii character named file by Java class through Rjb, it may require to set LC_ALL environment variable in you sciprt.
+For example in Rails, set above line in production.rb as your environment.
+ENV['LC_ALL'] = 'en_us.utf8' # or ja_JP.utf8 etc.
+ cf: http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4733494  
+   (Thanks Paul for this information).
+
 artonx@yahoo.co.jp
