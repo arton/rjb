@@ -1,6 +1,6 @@
 #!/usr/local/env ruby -Ku
 # encoding: utf-8
-# $Id: test.rb 168 2011-07-15 18:57:04Z arton $
+# $Id: test.rb 170 2011-07-18 12:45:13Z arton $
 
 begin
   require 'rjb'
@@ -771,6 +771,26 @@ class TestRjb < Test::Unit::TestCase
     assert_equal -1, ba.read(buff)
     ba.close
     assert_equal org, buff
+  end
+  def test_anoninterface
+    arrays = import('java.util.Arrays')
+    a = [3, -4, 5, -6, 8, -10, -14]
+    index = arrays.binary_search(a, 6) do |m, o1, o2|
+      o1.abs - o2.abs
+    end
+    assert_equal 3, index
+    index = arrays.binary_search(a, 7) do |m, o1, o2|
+      o1.abs - o2.abs
+    end
+    assert_equal -5, index
+  end
+  def test_impl
+    two = import('Two')
+    t = two.impl { |m| m.to_s }
+    a = import('TwoCaller').new
+    ret = a.foo(t)
+    assert_equal 'method1', ret[0]
+    assert_equal 'method2', ret[1]
   end
 end
 

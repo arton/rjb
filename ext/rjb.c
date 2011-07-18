@@ -1,6 +1,6 @@
 /*
  * Rjb - Ruby <-> Java Bridge
- * Copyright(c) 2004,2005,2006,2007,2008,2009,2010 arton
+ * Copyright(c) 2004,2005,2006,2007,2008,2009,2010,2011 arton
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * $Id: rjb.c 163 2010-11-22 07:31:27Z arton $
+ * $Id: rjb.c 170 2011-07-18 12:45:13Z arton $
  */
 
 #define RJB_VERSION "1.3.5"
@@ -57,12 +57,12 @@
     rjb_check_exception(jenv, 1)
 #if defined(RUBINIUS)
 #define CLASS_NEW(obj, name) rb_define_class_under(rjb, name, obj)
-#define CLASS_INHERITED(spr, kls) rb_funcall(spr, rb_intern("inherited"), 1, kls)
+#define CLASS_INHERITED(spr, kls) RTEST(rb_funcall(spr, rb_intern(">="), 1, kls))
 #else
 #define CLASS_NEW(obj, name) rb_define_class_under(rjb, name, obj)
-#define CLASS_INHERITED(spr, kls) rb_class_inherited(spr, kls)
+#define CLASS_INHERITED(spr, kls) RTEST(rb_funcall(spr, rb_intern(">="), 1, kls))
 #endif
-#define IS_RJB_OBJECT(v) (CLASS_INHERITED(rjbi, rb_obj_class(v)) || rb_obj_class(v) == rjb)
+#define IS_RJB_OBJECT(v) (CLASS_INHERITED(rjbi, rb_obj_class(v)) || rb_obj_class(v) == rjb || CLASS_INHERITED(rjbb, rb_obj_class(v)))
 #define USER_INITIALIZE "@user_initialize"
 
 static void register_class(VALUE, VALUE);
@@ -76,15 +76,19 @@ static jarray r2objarray(JNIEnv* jenv, VALUE v, const char* cls);
 static VALUE jv2rv_withprim(JNIEnv* jenv, jobject o);
 static J2R get_arrayconv(const char* cname, char* depth);
 static jarray r2barray(JNIEnv* jenv, VALUE v, const char* cls);
+static VALUE rjb_s_bind(VALUE self, VALUE rbobj, VALUE itfname);
 
 static VALUE rjb;
 static VALUE jklass;
 static VALUE rjbc;
 static VALUE rjbi;
 static VALUE rjbb;
+static VALUE rjba;
 
 static ID user_initialize;
 static ID cvar_classpath;
+static ID anonymousblock;
+static ID id_call;
 
 VALUE rjb_loaded_classes;
 static VALUE proxies;
@@ -836,7 +840,12 @@ static void rv2jobject(JNIEnv* jenv, VALUE val, jvalue* jv, const char* psig, in
 				       jpcvt[PRM_LONG].ctr_id, arg);
                 break;
 #endif                
+            case T_OBJECT:
             default:
+#if DEBUG
+                fprintf(stderr, "rtype:%d, sig=%s\n", TYPE(val), psig);
+                fflush(stderr);
+#endif
                 rb_raise(rb_eRuntimeError, "can't convert to java type");
                 break;
 	    }
@@ -858,8 +867,8 @@ static void rv2jobject(JNIEnv* jenv, VALUE val, jvalue* jv, const char* psig, in
 
 static void check_fixnumarray(VALUE v)
 {
-    int i;
-    int len = RARRAY_LEN(v);
+    size_t i;
+    size_t len = RARRAY_LEN(v);
     VALUE* p = RARRAY_PTR(v);
     /* check all fixnum (overflow is permit) */
     for (i = 0; i < len; i++)
@@ -1140,7 +1149,7 @@ static void rv2jarray(JNIEnv* jenv, VALUE val, jvalue* jv, const char* psig, int
     }
     else
     {
-        int i;
+        size_t i;
         jarray ja = NULL;
 	if (NIL_P(val))
 	{
@@ -1181,7 +1190,7 @@ static void rv2jarray(JNIEnv* jenv, VALUE val, jvalue* jv, const char* psig, int
  */
 static R2J get_r2j(JNIEnv* jenv, jobject o, int* siglen,  char* sigp)
 {
-    int len, i;
+    size_t len, i;
     const char* cname;
     R2J result = NULL;
     jstring nm = (*jenv)->CallObjectMethod(jenv, o, rjb_class_getName);
@@ -1227,8 +1236,8 @@ static R2J get_r2j(JNIEnv* jenv, jobject o, int* siglen,  char* sigp)
 
 static J2R get_arrayconv(const char* cname, char* pdepth)
 {
-    int i;
-    int start;
+    size_t i;
+    size_t start;
     for (start = 1; *(cname + start) == '['; start++);
     *pdepth = (char)start;
     for (i = 0; i < COUNTOF(jcvt); i++)
@@ -1248,7 +1257,7 @@ static J2R get_arrayconv(const char* cname, char* pdepth)
 
 static J2R get_j2r(JNIEnv* jenv, jobject cls, char* psig, char* pdepth, char* ppsig, off_t* piv, int static_method)
 {
-    int i;
+    size_t i;
     J2R result = NULL;
     const char* cname;
     const char* jname = NULL;
@@ -2065,6 +2074,17 @@ static VALUE import_class(JNIEnv* jenv, jclass jcls, VALUE clsname)
     return v;
 }
 
+static VALUE rjb_a_initialize(VALUE self, VALUE proc)
+{
+    rb_ivar_set(self, anonymousblock, proc);
+}
+
+static VALUE rjb_a_missing(int argc, VALUE* argv, VALUE self)
+{
+    VALUE proc = rb_ivar_get(self, anonymousblock);
+    return rb_funcall2(proc, id_call, argc, argv);
+}
+
 static VALUE rjb_i_prepare_proxy(VALUE self)
 {
     return rb_funcall(self, rb_intern("instance_eval"), 1, 
@@ -2095,15 +2115,14 @@ static VALUE register_instance(JNIEnv* jenv, VALUE klass, struct jv_data* org, j
  * temporary signature check
  * return !0 if found
  */
-static int check_rtype(JNIEnv* jenv, VALUE v, char* p)
+static int check_rtype(JNIEnv* jenv, VALUE* pv, char* p)
 {
     char* pcls = NULL;
     if (*p == 'L')
     {
         char* pt = strchr(p, ';');
-	if (pt)
-	{
-	    int len = pt - p - 1;
+	if (pt) {
+	    size_t len = pt - p - 1;
 	    pcls = ALLOCA_N(char, len + 1);
             strncpy(pcls, p + 1, len);
 	    *(pcls + len) = '\0';
@@ -2113,7 +2132,7 @@ static int check_rtype(JNIEnv* jenv, VALUE v, char* p)
     {
         return 1;
     }
-    switch (TYPE(v))
+    switch (TYPE(*pv))
     {
     case T_FIXNUM:
         return strchr("BCDFIJS", *p) != NULL;
@@ -2127,22 +2146,25 @@ static int check_rtype(JNIEnv* jenv, VALUE v, char* p)
     case T_ARRAY:
         return *p == '[';
     case T_DATA:
-        if (IS_RJB_OBJECT(v) && pcls)
+        if (IS_RJB_OBJECT(*pv) && pcls)
 	{
 	    /* imported object */
 	    jclass cls;
             struct jvi_data* ptr;
 	    int result = 0;
             if (!strcmp("java.lang.String", pcls)) return 1;
-	    Data_Get_Struct(v, struct jvi_data, ptr);
+	    Data_Get_Struct(*pv, struct jvi_data, ptr);
             RJB_FIND_CLASS(cls, java2jniname(pcls));
 	    if (cls)
-	    {
+        	    {
 	        result = (cls && (*jenv)->IsInstanceOf(jenv, ptr->obj, cls));
 	        (*jenv)->DeleteLocalRef(jenv, cls);
 	    }
 	    return result;
-	}
+	} else if (pcls) {
+            VALUE blockobj = rb_class_new_instance(1, pv, rjba);
+            *pv = rjb_s_bind(rjbb, blockobj, rb_str_new2(pcls));
+        }
 	/* fall down to the next case */
     case T_OBJECT:
 	/* fall down to the next case */
@@ -2212,7 +2234,7 @@ static VALUE rjb_newinstance(int argc, VALUE* argv, VALUE self)
 		psig = (*pc)->method_signature;
 		for (i = 0; i < argc; i++)
 		{
-		    if (!check_rtype(jenv, *(argv + i), psig))
+		    if (!check_rtype(jenv, argv + i, psig))
                     {
 		        found = 0;
 			break;
@@ -2374,6 +2396,17 @@ static VALUE rjb_class_eval(int argc, VALUE* argv, VALUE self)
     }
     return self;
 }
+
+static VALUE rjb_s_impl(VALUE self)
+{
+    VALUE obj;
+    VALUE proc;
+    rb_need_block();
+    proc = rb_block_proc();
+    obj = rb_class_new_instance(1, &proc, rjba);
+    return rjb_s_bind(rjbb, obj, rb_funcall(self, rb_intern("name"), 0));
+}
+
 
 /*
  * jclass Rjb::bind(rbobj, interface_name)
@@ -2774,6 +2807,15 @@ static VALUE invoke(JNIEnv* jenv, struct cls_method* pm, struct jvi_data* ptr,
     char* psig;
     struct cls_method* orgpm = pm;
 
+    if (rb_block_given_p())
+    {
+        VALUE* pargs = ALLOCA_N(VALUE, argc + 1);
+        memcpy(pargs, argv, argc * sizeof(VALUE));
+        *(pargs + argc) = rb_block_proc();
+        ++argc;
+        argv = pargs;
+    }
+
     for (found = 0; pm; pm = pm->next)
     {
         if (argc == pm->basic.arg_count)
@@ -2792,7 +2834,7 @@ static VALUE invoke(JNIEnv* jenv, struct cls_method* pm, struct jvi_data* ptr,
                 found = 1;
                 for (i = 0; i < argc; i++)
                 {
-		    if (!check_rtype(jenv, *(argv + i), psig))
+		    if (!check_rtype(jenv, argv + i, psig))
                     {
                         found = 0;
                         break;
@@ -2895,7 +2937,6 @@ static VALUE invoke_by_instance(ID rmid, int argc, VALUE* argv,
     struct cls_field* pf;
     struct cls_method* pm;
     const char* tname = rb_id2name(rmid);
-    
     if (argc == 0 && st_lookup(ptr->fields, rmid, (st_data_t*)&pf))
     {
         ret = getter(jenv, pf, ptr);
@@ -2944,7 +2985,7 @@ static VALUE rjb_i_missing(int argc, VALUE* argv, VALUE self)
 {
     struct jvi_data* ptr;
     ID rmid = rb_to_id(argv[0]);
-    
+
     Data_Get_Struct(self, struct jvi_data, ptr);
     
     return invoke_by_instance(rmid, argc -1, argv + 1, ptr, NULL);
@@ -3033,11 +3074,17 @@ static VALUE find_const(VALUE pv)
     return rb_const_get(*p, (ID)*(p + 1));
 }
 
+static VALUE call_blcock(int argc, VALUE* argv)
+{
+    return rb_yield_values2(argc, argv);
+}
+
 static VALUE rjb_missing(int argc, VALUE* argv, VALUE self)
 {
     struct jv_data* ptr;
     ID rmid = rb_to_id(argv[0]);
     const char* rmname = rb_id2name(rmid);
+
     if (isupper(*rmname))
     {
         VALUE r, args[2];
@@ -3116,6 +3163,7 @@ void Init_rjbcore()
     rjbc = CLASS_NEW(rb_cObject, "Rjb_JavaClass");
     rb_gc_register_address(&rjbc);
     rb_define_method(rjbc, "method_missing", rjb_missing, -1);
+    rb_define_method(rjbc, "impl", rjb_s_impl, 0);
     rb_define_method(rjbc, "_invoke", rjb_invoke, -1);
     rb_define_method(rjbc, "_classname", rjb_i_class, 0);
 
@@ -3131,12 +3179,20 @@ void Init_rjbcore()
     /* Ruby-Java Bridge object */
     rjbb = CLASS_NEW(rb_cObject, "Rjb_JavaBridge");
     rb_gc_register_address(&rjbb);
+
+    /* anonymous interface object */
+    rjba = CLASS_NEW(rb_cObject, "Rjb_AnonymousClass");
+    rb_gc_register_address(&rjba);
+    rb_define_method(rjba, "initialize", rjb_a_initialize, 1);
+    rb_define_method(rjba, "method_missing", rjb_a_missing, -1);
+    anonymousblock = rb_intern("@anon_block");
+    id_call = rb_intern("call");
 }
 
 VALUE rjb_safe_funcall(VALUE args)
 {
     VALUE* argp = (VALUE*)args;
-    return rb_funcall2(*argp, *(argp + 1), *(argp + 2), argp + 3);
+    return rb_funcall2(*argp, *(argp + 1), (int)*(argp + 2), argp + 3);
 }
 
 /**
@@ -3148,7 +3204,6 @@ JNIEXPORT jobject JNICALL Java_jp_co_infoseek_hp_arton_rjb_RBridge_call
     int i;
     jvalue j;
     memset(&j, 0, sizeof(j));
-
     for (i = 0; i < RARRAY_LEN(proxies); i++)
     {
 	struct rj_bridge* ptr;
