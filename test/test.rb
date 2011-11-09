@@ -1,6 +1,6 @@
 #!/usr/local/env ruby -Ku
 # encoding: utf-8
-# $Id: test.rb 170 2011-07-18 12:45:13Z arton $
+# $Id: test.rb 174 2011-11-09 13:47:43Z arton $
 
 begin
   require 'rjb'
@@ -792,5 +792,22 @@ class TestRjb < Test::Unit::TestCase
     assert_equal 'method1', ret[0]
     assert_equal 'method2', ret[1]
   end
+
+  def cause_exception
+    begin
+      @jInteger.parseInt('blabla')
+    rescue NumberFormatException => e
+      raise
+    end
+  end
+
+  def test_reraise_exception()
+    begin
+      cause_exception
+    rescue
+      assert($!.to_s =~ /NumberFormatException/)
+    end
+  end
+  
 end
 

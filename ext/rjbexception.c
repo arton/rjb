@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * $Id: rjbexception.c 126 2010-07-22 13:58:15Z arton $
+ * $Id: rjbexception.c 174 2011-11-09 13:47:43Z arton $
  */
 
 #include "ruby.h"
@@ -30,6 +30,12 @@ static VALUE missing_delegate(int argc, VALUE* argv, VALUE self)
 {
     ID rmid = rb_to_id(argv[0]);
     return rb_funcall(rb_ivar_get(self, rb_intern("@cause")), rmid, argc - 1, argv + 1);
+}
+
+static VALUE exception_to_s(VALUE self)
+{
+    return rb_funcall(rb_ivar_get(self, rb_intern("@cause")),
+                      rb_intern("toString"), 0);
 }
 
 /*
@@ -61,6 +67,7 @@ VALUE rjb_get_exception_class(JNIEnv* jenv, jstring str)
     {
 	rexp = rb_define_class(pcls, rb_eStandardError);
         rb_define_method(rexp, "method_missing", missing_delegate, -1);
+        rb_define_method(rexp, "to_str", exception_to_s, 0);
 #if defined(HAVE_RB_HASH_ASET) || defined(RUBINIUS)
 	rb_hash_aset(rjb_loaded_classes, cname, rexp);
 #else

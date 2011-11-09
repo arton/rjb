@@ -1,3 +1,11 @@
+Wed Nov 09 arton
+ *ext/rjb.c
+	RJB_VERSION -> 1.3.6
+ *ext/rjbexception.c
+	add to_str method into the exception class.
+	ruby internally calls the method when reraising the exception.
+ *test/test.rb (test_reraise_exception)
+	add reraise test
 Mon Jul 18 arton
  *ext/rjb.c
 	fix inhiritance test.

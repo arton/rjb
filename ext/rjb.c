@@ -12,10 +12,10 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * $Id: rjb.c 170 2011-07-18 12:45:13Z arton $
+ * $Id: rjb.c 173 2011-11-09 13:46:04Z arton $
  */
 
-#define RJB_VERSION "1.3.5"
+#define RJB_VERSION "1.3.6"
 
 #include "ruby.h"
 #include "extconf.h"
@@ -131,6 +131,7 @@ static jmethodID get_system_classloader;
 static jclass j_url_loader;
 static jobject url_loader;
 static jmethodID url_loader_new;
+static jmethodID url_geturls;
 /* URL global reference */
 static jclass j_url;
 static jmethodID url_new;
@@ -2551,6 +2552,8 @@ static VALUE rjb_s_add_jar(VALUE self, VALUE jarname)
                         "(Ljava/lang/String;)Ljava/lang/Class;");
         RJB_LOAD_METHOD(url_loader_new, j_url_loader, "<init>",
                         "([Ljava/net/URL;Ljava/lang/ClassLoader;)V");
+        RJB_LOAD_METHOD(url_geturls, j_url_loader, "getURLs",
+                        "()[Ljava/net/URL;");
     }
     args[0].l = (*jenv)->NewObjectArray(jenv, (count == 0) ? 1 : count, j_url, NULL);
     rjb_check_exception(jenv, 0);    
@@ -2574,6 +2577,17 @@ static VALUE rjb_s_add_jar(VALUE self, VALUE jarname)
     (*jenv)->DeleteLocalRef(jenv, args[0].l);
     return Qtrue;
 }
+
+static VALUE rjb_s_urls(VALUE self)
+{
+    JNIEnv* jenv;
+    jvalue ret;
+    if (!url_loader) return Qnil;
+    jenv = rjb_prelude();
+    ret.l = (*jenv)->CallObjectMethod(jenv, url_loader, url_geturls);
+    return jarray2rv(jenv, ret);
+}
+
 
 /*
  * return class name
@@ -3155,6 +3169,7 @@ void Init_rjbcore()
     rb_define_module_function(rjb, "add_classpath", rjb_s_add_classpath, 1);
     rb_define_module_function(rjb, "add_jar", rjb_s_add_jar, 1);
     rb_define_alias(rjb, "add_jars", "add_jar");
+    rb_define_module_function(rjb, "urls", rjb_s_urls, 0);
     rb_define_const(rjb, "VERSION", rb_str_new2(RJB_VERSION));
     rb_define_class_variable(rjb, "@@classpath", rb_ary_new());
     cvar_classpath = rb_intern("@@classpath");
