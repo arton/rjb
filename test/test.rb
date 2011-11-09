@@ -1,6 +1,6 @@
 #!/usr/local/env ruby -Ku
 # encoding: utf-8
-# $Id: test.rb 174 2011-11-09 13:47:43Z arton $
+# $Id: test.rb 176 2011-11-09 14:27:28Z arton $
 
 begin
   require 'rjb'
@@ -802,11 +802,13 @@ class TestRjb < Test::Unit::TestCase
   end
 
   def test_reraise_exception()
-    begin
-      cause_exception
-    rescue
-      assert($!.to_s =~ /NumberFormatException/)
-    end
+   unless /^1\.8/ =~ RUBY_VERSION
+      begin
+        cause_exception
+      rescue
+        assert($!.to_s =~ /NumberFormatException/)
+      end
+   end
   end
   
 end
