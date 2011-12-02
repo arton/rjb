@@ -15,7 +15,7 @@
  * $Id: rjb.c 176 2011-11-09 14:27:28Z arton $
  */
 
-#define RJB_VERSION "1.3.7"
+#define RJB_VERSION "1.3.8"
 
 #include "ruby.h"
 #include "extconf.h"
@@ -166,6 +166,7 @@ typedef struct jobject_ruby_table {
 JNIEnv* rjb_attach_current_thread(void)
 {
   JNIEnv* env;
+  if (!rjb_jvm) return NULL;
   (*rjb_jvm)->AttachCurrentThread(rjb_jvm, (void**)&env, '\0');
   return env;
 }
@@ -1966,8 +1967,11 @@ static VALUE rjb_delete_ref(struct jvi_data* ptr)
 static VALUE rj_bridge_free(struct rj_bridge* ptr)
 {
     JNIEnv* jenv = rjb_attach_current_thread();    
-    (*jenv)->DeleteLocalRef(jenv, ptr->proxy);    
-    (*jenv)->DeleteLocalRef(jenv, ptr->bridge);
+    if (jenv)
+    {
+    	(*jenv)->DeleteLocalRef(jenv, ptr->proxy);    
+    	(*jenv)->DeleteLocalRef(jenv, ptr->bridge);
+    }
     return Qnil;
 }
 
