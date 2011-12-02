@@ -1,3 +1,9 @@
+Sat Dec 03 arton
+ *ext/rjb.c
+	RJB_VERSION -> 1.3.8
+	ignore attach_jvm after rjb was unloaded. (Bug #29451)
+ *test/test_unload.rb
+	add test for unload. if Rjb run after unloading then it causes crush.
 Wed Nov 09 arton
  *ext/rjb.c
 	RJB_VERSION -> 1.3.7
