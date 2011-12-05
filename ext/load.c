@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * $Id: load.c 159 2010-11-16 16:35:49Z arton $
+ * $Id: load.c 180 2011-12-05 16:34:29Z arton $
  */
 
 #include <stdlib.h>
@@ -269,6 +269,15 @@ static int load_bridge(JNIEnv* jenv)
     (*jenv)->RegisterNatives(jenv, rjb_rbridge, nmethod, 1);
     rjb_rbridge = (*jenv)->NewGlobalRef(jenv, rjb_rbridge);
     return 0;
+}
+
+void rjb_unload_vm()
+{
+    if (RTEST(jvmdll))
+    {
+        rb_funcall(jvmdll, rb_intern("close"), 0);
+        jvmdll = Qnil;
+    }
 }
 
 int rjb_create_jvm(JNIEnv** pjenv, JavaVMInitArgs* vm_args, char* userpath, VALUE argv)
