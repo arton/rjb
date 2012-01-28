@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * $Id: jniwrap.h 4 2006-09-11 15:21:38Z arton $
+ * $Id: jniwrap.h 181 2012-01-28 05:28:41Z arton $
  */
 #ifndef _Included_jniwrap
 #define _Included_jniwrap
@@ -21,7 +21,9 @@ extern "C" {
 #endif
 
 #if defined(__GNUC__) && (defined(__CYGWIN32__) || defined(__MINGW32__))
-typedef long long __int64;
+ #if !defined(__int64)
+  typedef long long __int64;
+ #endif
 #endif
 
 #include <jni.h>
