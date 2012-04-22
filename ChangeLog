@@ -1,3 +1,15 @@
+Sun Apr 22 arton
+ *ext/rjb.c
+	use URLClassLoader#addJar for Rjb::add_jar method.
+	It accepts unhierarchic load order.
+ *test/jartest2.jar
+	for test Rjb::add_jar. this jar contains a class that extends class in jartest.jar
+ *test/jartest.rb
+	testing Rjb::add_jar, first jartest2.jar then jartest.jar
+ *test/jartest2.rb
+	testing Rjb::add_jar for an array.
+ *test/jartest3.rb
+	testing Rjb::add_jar in NoClassDefError condition.
 Sat Jan 28 arton
  *ext/rjb.c
 	RJB_VERSION -> 1.3.9
