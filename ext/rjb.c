@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * $Id: rjb.c 181 2012-01-28 05:28:41Z arton $
+ * $Id: rjb.c 183 2012-04-22 03:37:31Z arton $
  */
 
 #define RJB_VERSION "1.3.9"
@@ -132,6 +132,7 @@ static jclass j_url_loader;
 static jobject url_loader;
 static jmethodID url_loader_new;
 static jmethodID url_geturls;
+static jmethodID url_add_url;
 /* URL global reference */
 static jclass j_url;
 static jmethodID url_new;
@@ -2559,27 +2560,53 @@ static VALUE rjb_s_add_jar(VALUE self, VALUE jarname)
                         "([Ljava/net/URL;Ljava/lang/ClassLoader;)V");
         RJB_LOAD_METHOD(url_geturls, j_url_loader, "getURLs",
                         "()[Ljava/net/URL;");
+        RJB_LOAD_METHOD(url_add_url, j_url_loader, "addURL",
+                        "(Ljava/net/URL;)V");
     }
-    args[0].l = (*jenv)->NewObjectArray(jenv, (count == 0) ? 1 : count, j_url, NULL);
-    rjb_check_exception(jenv, 0);    
-    if (!count)
+    if (!url_loader)
     {
-        (*jenv)->SetObjectArrayElement(jenv, args[0].l, 0,
+        args[0].l = (*jenv)->NewObjectArray(jenv, (count == 0) ? 1 : count, j_url, NULL);
+        rjb_check_exception(jenv, 0);    
+        if (!count)
+        {
+            (*jenv)->SetObjectArrayElement(jenv, args[0].l, 0,
                                        conv_jarname_to_url(jenv, jarname));
+        }
+        else
+        {
+            for (i = 0; i < count; i++) {
+                (*jenv)->SetObjectArrayElement(jenv, args[0].l, i,
+                                       conv_jarname_to_url(jenv, rb_ary_entry(jarname, i)));
+            }
+        }
+        rjb_check_exception(jenv, 0);
+        args[1].l = get_class_loader(jenv);
+        url_loader = (*jenv)->NewObjectA(jenv, j_url_loader, url_loader_new, args);
+        rjb_check_exception(jenv, 0);
+        (*jenv)->NewGlobalRef(jenv, url_loader);
+        (*jenv)->DeleteLocalRef(jenv, args[0].l);
     }
     else
     {
-        for (i = 0; i < count; i++) {
-            (*jenv)->SetObjectArrayElement(jenv, args[0].l, i,
-                                       conv_jarname_to_url(jenv, rb_ary_entry(jarname, i)));
+        jvalue v;
+        if (count)
+        {
+            for (i = 0; i < count; i++)
+            {
+                v.l = conv_jarname_to_url(jenv, rb_ary_entry(jarname, i));
+                (*jenv)->CallObjectMethod(jenv, url_loader, url_add_url, v);
+                rjb_check_exception(jenv, 0);
+                (*jenv)->DeleteLocalRef(jenv, v.l);
+            }
+        }
+        else
+        {
+            v.l = conv_jarname_to_url(jenv, jarname);
+            (*jenv)->CallObjectMethod(jenv, url_loader, url_add_url, v);
+            rjb_check_exception(jenv, 0);
+            (*jenv)->DeleteLocalRef(jenv, v.l);
         }
     }
-    rjb_check_exception(jenv, 0);
-    args[1].l = get_class_loader(jenv);
-    url_loader = (*jenv)->NewObjectA(jenv, j_url_loader, url_loader_new, args);
-    rjb_check_exception(jenv, 0);
-    (*jenv)->NewGlobalRef(jenv, url_loader);
-    (*jenv)->DeleteLocalRef(jenv, args[0].l);
     return Qtrue;
 }
 
