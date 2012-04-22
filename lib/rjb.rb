@@ -77,6 +77,8 @@ module Rjb
   end
   class Rjb_JavaProxy
     include JMethod
+    def initialize_proxy
+    end
     def public_methods(inh = true)
       jmethods(super(inh), getClass) do |m|
         instance_method?(m) && public_method?(m)

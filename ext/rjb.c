@@ -12,10 +12,10 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * $Id: rjb.c 183 2012-04-22 03:37:31Z arton $
+ * $Id: rjb.c 187 2012-04-22 12:35:49Z arton $
  */
 
-#define RJB_VERSION "1.3.9"
+#define RJB_VERSION "1.4.0"
 
 #include "ruby.h"
 #include "extconf.h"
@@ -86,6 +86,7 @@ static VALUE rjbb;
 static VALUE rjba;
 
 static ID user_initialize;
+static ID initialize_proxy;
 static ID cvar_classpath;
 static ID anonymousblock;
 static ID id_call;
@@ -2100,7 +2101,7 @@ static VALUE rjb_i_prepare_proxy(VALUE self)
 
 static VALUE register_instance(JNIEnv* jenv, VALUE klass, struct jv_data* org, jobject obj)
 {
-    VALUE v;
+    volatile VALUE v;
     VALUE iproc;
     struct jvi_data* ptr = ALLOC(struct jvi_data);
     memset(ptr, 0, sizeof(struct jvi_data));
@@ -2115,6 +2116,7 @@ static VALUE register_instance(JNIEnv* jenv, VALUE klass, struct jv_data* org, j
         rb_ivar_set(v, user_initialize, iproc);
         rb_funcall(v, rb_intern("_prepare_proxy"), 0, 0);
     }
+    rb_funcall(v, initialize_proxy, 0, 0);
     return v;
 }
 
@@ -3186,6 +3188,7 @@ void Init_rjbcore()
     proxies = rb_ary_new();
     rb_global_variable(&proxies);
     user_initialize = rb_intern(USER_INITIALIZE);
+    initialize_proxy = rb_intern("initialize_proxy");
 
     rjb = rb_define_module("Rjb");
     rb_define_module_function(rjb, "load", rjb_s_load, -1);

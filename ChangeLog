@@ -1,5 +1,17 @@
 Sun Apr 22 arton
  *ext/rjb.c
+	add Rjb_JavaProxy#initialize_proxy method for preparing proxy instance.
+	RJB_VERSION -> 1.4.0
+ *lib/rjb
+	add rjb own directory
+ *lib/rjbextension.rb
+	move contents into rjb/extension.rb
+ *lib/rjb/extension.rb
+	extension library to handle package name easily.
+ *lib/rjb/list.rb
+	implements each method for Iterable and Iterator.
+Sun Apr 22 arton
+ *ext/rjb.c
 	use URLClassLoader#addJar for Rjb::add_jar method.
 	It accepts unhierarchic load order.
  *test/jartest2.jar
