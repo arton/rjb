@@ -1,6 +1,6 @@
 #!/usr/local/env ruby -Ku
 # encoding: utf-8
-# $Id: test.rb 176 2011-11-09 14:27:28Z arton $
+# $Id: test.rb 189 2012-07-15 19:56:10Z arton $
 
 begin
   require 'rjb'
@@ -809,6 +809,17 @@ class TestRjb < Test::Unit::TestCase
         assert($!.to_s =~ /NumberFormatException/)
       end
    end
+  end
+  
+  class CbTest
+    def method(l, s, i, d, str)
+      "test_ok:#{l}-#{s}-#{i}-#{d}-#{str}"
+    end
+  end
+  def test_longcallback()
+    cb = bind(CbTest.new, 'jp.co.infoseek.hp.arton.rjb.CallbackTest$Callback')
+    test = import('jp.co.infoseek.hp.arton.rjb.CallbackTest')
+    assert_equal 'test_ok:1234-1234-1234-1234.5-1234', test.callCallback(cb)
   end
   
 end
