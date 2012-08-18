@@ -1,6 +1,6 @@
 #!/usr/local/env ruby -Ku
 # encoding: utf-8
-# $Id: test.rb 189 2012-07-15 19:56:10Z arton $
+# $Id: test.rb 191 2012-08-18 15:04:18Z arton $
 
 begin
   require 'rjb'
@@ -256,7 +256,7 @@ class TestRjb < Test::Unit::TestCase
     it = bind(it, 'java.util.Iterator')
     test = import('jp.co.infoseek.hp.arton.rjb.Test')
     a = test.new
-    assert("43210", a.concat(it))
+    assert_equal("43210", a.concat(it))
   end
 
   def test_unbind()
@@ -820,6 +820,32 @@ class TestRjb < Test::Unit::TestCase
     cb = bind(CbTest.new, 'jp.co.infoseek.hp.arton.rjb.CallbackTest$Callback')
     test = import('jp.co.infoseek.hp.arton.rjb.CallbackTest')
     assert_equal 'test_ok:1234-1234-1234-1234.5-1234', test.callCallback(cb)
+  end
+  
+  class TestIterEx < TestIter
+    def initialize()
+      super
+      @strattr = 'strattr'
+      @numattr = 32
+    end
+    attr_accessor :strattr, :numattr
+    def multargs(a, b)
+      a + b
+    end
+  end
+  def test_method_otherthan_bound()
+    it = TestIterEx.new
+    it = bind(it, 'java.util.Iterator')
+    test = import('jp.co.infoseek.hp.arton.rjb.Test')
+    a = test.new
+    assert_equal("43210", a.concat(it))
+    assert(it.respond_to?(:numattr))
+    assert(it.respond_to?(:multargs))    
+    assert_equal(32, it.numattr)
+    assert_equal('strattr', it.strattr)
+    it.numattr += 1
+    assert_equal(33, it.numattr)
+    assert_equal(5, it.multargs(3, 2))
   end
   
 end

@@ -97,4 +97,13 @@ module Rjb
       end
     end
   end
+  class Rjb_JavaBridge
+    def method_missing(name, *args)
+      @wrapped.__send__(name, *args)
+    end
+    def respond_to?(name, inc_private = false)
+      @wrapped.respond_to?(name, inc_private)
+    end
+    attr_reader :wrapped
+  end
 end

@@ -1,3 +1,11 @@
+Sun Aug 19 arton
+ *ext/rjb.c
+	export bound object's original ruby object as @wrapped
+	RJB_VERSION -> 1.4.1
+ *lib/rjb.rb
+	define Rjb_JavaBridge class for support @wrapped delegation
+ *test/test.rb
+	add @wrapped object invoking test
 Sun Apr 22 arton
  *ext/rjb.c
 	add Rjb_JavaProxy#initialize_proxy method for preparing proxy instance.

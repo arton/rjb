@@ -12,10 +12,10 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * $Id: rjb.c 187 2012-04-22 12:35:49Z arton $
+ * $Id: rjb.c 191 2012-08-18 15:04:18Z arton $
  */
 
-#define RJB_VERSION "1.4.0"
+#define RJB_VERSION "1.4.1"
 
 #include "ruby.h"
 #include "extconf.h"
@@ -2390,6 +2390,7 @@ static VALUE rjb_s_bind(VALUE self, VALUE rbobj, VALUE itfname)
 	ptr->wrapped = rbobj;
 	result = Data_Wrap_Struct(rjbb, rj_bridge_mark, rj_bridge_free, ptr);
 	rb_ary_push(proxies, result);
+        rb_ivar_set(result, rb_intern("@wrapped"), rbobj);
     }
     return result;
 }
