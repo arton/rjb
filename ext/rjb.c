@@ -1,6 +1,6 @@
 /*
  * Rjb - Ruby <-> Java Bridge
- * Copyright(c) 2004,2005,2006,2007,2008,2009,2010,2011 arton
+ * Copyright(c) 2004,2005,2006,2007,2008,2009,2010,2011,2012 arton
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -12,10 +12,10 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * $Id: rjb.c 191 2012-08-18 15:04:18Z arton $
+ * $Id: rjb.c 194 2012-10-06 06:01:31Z arton $
  */
 
-#define RJB_VERSION "1.4.1"
+#define RJB_VERSION "1.4.2"
 
 #include "ruby.h"
 #include "extconf.h"
@@ -889,8 +889,8 @@ static jarray r2barray(JNIEnv* jenv, VALUE v, const char* cls)
     jarray ary = NULL;
     if (TYPE(v) == T_STRING)
     {
-	ary = (*jenv)->NewByteArray(jenv, RSTRING_LEN(v));
-	(*jenv)->SetByteArrayRegion(jenv, ary, 0, RSTRING_LEN(v),
+        ary = (*jenv)->NewByteArray(jenv, (jint)RSTRING_LEN(v));
+	(*jenv)->SetByteArrayRegion(jenv, ary, 0, (jint)RSTRING_LEN(v),
 				    (const jbyte*)RSTRING_PTR(v));
     }
     else if (TYPE(v) == T_ARRAY)
@@ -898,7 +898,7 @@ static jarray r2barray(JNIEnv* jenv, VALUE v, const char* cls)
 	int i;
 	jbyte* pb;
 	check_fixnumarray(v);
-	ary = (*jenv)->NewByteArray(jenv, RARRAY_LEN(v));
+	ary = (*jenv)->NewByteArray(jenv, (jint)RARRAY_LEN(v));
 	pb = (*jenv)->GetByteArrayElements(jenv, ary, NULL);
 	for (i = 0; i < RARRAY_LEN(v); i++)
 	{
@@ -921,7 +921,7 @@ static jarray r2carray(JNIEnv* jenv, VALUE v, const char* cls)
 	int i;
 	jchar* pb;
 	check_fixnumarray(v);
-	ary = (*jenv)->NewCharArray(jenv, RARRAY_LEN(v));
+	ary = (*jenv)->NewCharArray(jenv, (jint)RARRAY_LEN(v));
 	pb = (*jenv)->GetCharArrayElements(jenv, ary, NULL);
 	for (i = 0; i < RARRAY_LEN(v); i++)
 	{
@@ -940,7 +940,7 @@ static jarray r2darray(JNIEnv* jenv, VALUE v, const char* cls)
     {
 	int i;
 	jdouble* pb;
-	ary = (*jenv)->NewDoubleArray(jenv, RARRAY_LEN(v));
+	ary = (*jenv)->NewDoubleArray(jenv, (jint)RARRAY_LEN(v));
 	pb = (*jenv)->GetDoubleArrayElements(jenv, ary, NULL);
 	for (i = 0; i < RARRAY_LEN(v); i++)
 	{
@@ -959,7 +959,7 @@ static jarray r2farray(JNIEnv* jenv, VALUE v, const char* cls)
     {
 	int i;
 	jfloat* pb;
-	ary = (*jenv)->NewFloatArray(jenv, RARRAY_LEN(v));
+	ary = (*jenv)->NewFloatArray(jenv, (jint)RARRAY_LEN(v));
 	pb = (*jenv)->GetFloatArrayElements(jenv, ary, NULL);
 	for (i = 0; i < RARRAY_LEN(v); i++)
 	{
@@ -979,7 +979,7 @@ static jarray r2iarray(JNIEnv* jenv, VALUE v, const char* cls)
 	int i;
 	jint* pb;
 	check_fixnumarray(v);
-	ary = (*jenv)->NewIntArray(jenv, RARRAY_LEN(v));
+	ary = (*jenv)->NewIntArray(jenv, (jint)RARRAY_LEN(v));
 	pb = (*jenv)->GetIntArrayElements(jenv, ary, NULL);
 	for (i = 0; i < RARRAY_LEN(v); i++)
 	{
@@ -998,7 +998,7 @@ static jarray r2larray(JNIEnv* jenv, VALUE v, const char* cls)
     {
 	int i;
 	jlong* pb;
-	ary = (*jenv)->NewLongArray(jenv, RARRAY_LEN(v));
+	ary = (*jenv)->NewLongArray(jenv, (jint)RARRAY_LEN(v));
 	pb = (*jenv)->GetLongArrayElements(jenv, ary, NULL);
 	for (i = 0; i < RARRAY_LEN(v); i++)
 	{
@@ -1022,7 +1022,7 @@ static jarray r2sarray(JNIEnv* jenv, VALUE v, const char* cls)
 	int i;
 	jshort* pb;
 	check_fixnumarray(v);
-	ary = (*jenv)->NewShortArray(jenv, RARRAY_LEN(v));
+	ary = (*jenv)->NewShortArray(jenv, (jint)RARRAY_LEN(v));
 	pb = (*jenv)->GetShortArrayElements(jenv, ary, NULL);
 	for (i = 0; i < RARRAY_LEN(v); i++)
 	{
@@ -1041,7 +1041,7 @@ static jarray r2boolarray(JNIEnv* jenv, VALUE v, const char* cls)
     {
 	int i;
 	jboolean* pb;
-	ary = (*jenv)->NewBooleanArray(jenv, RARRAY_LEN(v));
+	ary = (*jenv)->NewBooleanArray(jenv, (jint)RARRAY_LEN(v));
 	pb = (*jenv)->GetBooleanArrayElements(jenv, ary, NULL);
 	for (i = 0; i < RARRAY_LEN(v); i++)
 	{
@@ -1066,7 +1066,7 @@ static jarray r2objarray(JNIEnv* jenv, VALUE v, const char* cls)
     if (TYPE(v) == T_ARRAY)
     {
 	int i;
-	ary = (*jenv)->NewObjectArray(jenv, RARRAY_LEN(v), j_object, NULL);
+	ary = (*jenv)->NewObjectArray(jenv, (jint)RARRAY_LEN(v), j_object, NULL);
 	rjb_check_exception(jenv, 0);
 	for (i = 0; i < RARRAY_LEN(v); i++)
 	{
@@ -1153,7 +1153,7 @@ static void rv2jarray(JNIEnv* jenv, VALUE val, jvalue* jv, const char* psig, int
     }
     else
     {
-        size_t i;
+        jint i;
         jarray ja = NULL;
 	if (NIL_P(val))
 	{
@@ -1164,19 +1164,19 @@ static void rv2jarray(JNIEnv* jenv, VALUE val, jvalue* jv, const char* psig, int
             if (TYPE(val) != T_ARRAY) {
                 rb_raise(rb_eRuntimeError, "array's rank unmatch");
             }
-            ja = (*jenv)->NewObjectArray(jenv, RARRAY_LEN(val), j_object, NULL);
+            ja = (*jenv)->NewObjectArray(jenv, (jint)RARRAY_LEN(val), j_object, NULL);
             rjb_check_exception(jenv, 0);
-            for (i = 0; i < RARRAY_LEN(val); i++)
+            for (i = 0; i < (jint)RARRAY_LEN(val); i++)
             {
                 jvalue jv;
                 rv2jarray(jenv, RARRAY_PTR(val)[i], &jv, psig + 1, 0);
-                (*jenv)->SetObjectArrayElement(jenv, ja, i, jv.l);
+                (*jenv)->SetObjectArrayElement(jenv, ja, (jint)i, jv.l);
             }
         }
         else
         {
             R2JARRAY r2a = r2objarray;
-            for (i = 0; i < COUNTOF(jcvt); i++)
+            for (i = 0; i < (jint)COUNTOF(jcvt); i++)
             {
                 if (*(psig + 1) == jcvt[i].jntype[0])
                 {
@@ -1205,7 +1205,7 @@ static R2J get_r2j(JNIEnv* jenv, jobject o, int* siglen,  char* sigp)
         if (siglen)
         {
             len = strlen(cname);
-	    *siglen += len;
+	    *siglen += (int)len;
 	    strcpy(sigp, cname);
         }
 	result = rv2jarray;
@@ -1218,7 +1218,7 @@ static R2J get_r2j(JNIEnv* jenv, jobject o, int* siglen,  char* sigp)
 	    {
                 if (siglen)
                 {
-		    *siglen += strlen(jcvt[i].jntype);
+                    *siglen += (int)strlen(jcvt[i].jntype);
 		    strcpy(sigp, jcvt[i].jntype);
                 }
 	        result = jcvt[i].r2j;
@@ -2568,7 +2568,7 @@ static VALUE rjb_s_add_jar(VALUE self, VALUE jarname)
     }
     if (!url_loader)
     {
-        args[0].l = (*jenv)->NewObjectArray(jenv, (count == 0) ? 1 : count, j_url, NULL);
+        args[0].l = (*jenv)->NewObjectArray(jenv, (jsize)((count == 0) ? 1 : count), j_url, NULL);
         rjb_check_exception(jenv, 0);    
         if (!count)
         {
@@ -2578,7 +2578,7 @@ static VALUE rjb_s_add_jar(VALUE self, VALUE jarname)
         else
         {
             for (i = 0; i < count; i++) {
-                (*jenv)->SetObjectArrayElement(jenv, args[0].l, i,
+                (*jenv)->SetObjectArrayElement(jenv, args[0].l, (jint)i,
                                        conv_jarname_to_url(jenv, rb_ary_entry(jarname, i)));
             }
         }

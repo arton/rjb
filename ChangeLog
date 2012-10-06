@@ -1,3 +1,12 @@
+Sat Oct 6 arton
+ *ext/rjb.c
+	RJB_VERSION -> 1.4.2
+ *test/osx_jvmcheck.rb
+	display vendor and version of JRE for OSX load test
+ *test/osx_loadtest.rb
+	add Oracle JVM support test for OSX
+ *lib/rjb.rb
+	add Oracle JVM support for OSX
 Sun Aug 19 arton
  *ext/rjb.c
 	export bound object's original ruby object as @wrapped

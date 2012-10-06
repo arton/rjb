@@ -1,10 +1,23 @@
 =begin
-  Copyright(c) 2006-2010 arton
+  Copyright(c) 2006-2010,2012 arton
 =end
 
 require 'rbconfig'
 
 module RjbConf
+  if /darwin/ =~ RUBY_PLATFORM
+    if ENV['JVM_LIB'].nil? || ENV['JVM_LIB'] == ''
+      if ENV['JAVA_HOME'].nil? || ENV['JAVA_HOME'] == ''
+        jvms = Dir.glob("#{`/usr/libexec/java_home`.strip}/**/libjvm.dylib")
+      else
+        jvms = Dir.glob("#{ENV['JAVA_HOME']}/**/libjvm.dylib")
+      end
+      if jvms.size > 0
+        ENV['JVM_LIB'] = jvms[0]
+      end
+    end
+  end
+
   dir = File.join(File.dirname(File.dirname(__FILE__)), 'data')
   if File.exist?(dir)
     datadir = dir
