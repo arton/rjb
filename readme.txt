@@ -3,7 +3,7 @@ Rjb is Ruby-Java bridge using Java Native Interface.
 How to install
 
 you need to install Java2 sdk, and setup JAVA_HOME enviromental varible except for OS X.
-I assume that OS X's JAVA_HOME is fixed as '/System/Library/Frameworks/JavaVM.framework'.
+I assume that OS X's JAVA_HOME is reported by calling /usr/libexec/java_home.
 
 then,
 
