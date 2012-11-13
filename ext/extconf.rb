@@ -55,7 +55,7 @@ end
 
 
 def create_rjb_makefile
-  if have_header("jni.h") && (have_header("dl.h") || have_header("ruby/dl.h")) #for ruby_1_9
+  if have_header("jni.h")
     have_func("locale_charset", "iconv.h")
     have_func("nl_langinfo", "langinfo.h")
     have_func("setlocale", "locale.h")
