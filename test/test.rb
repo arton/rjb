@@ -1,6 +1,6 @@
 #!/usr/local/env ruby -Ku
 # encoding: utf-8
-# $Id: test.rb 191 2012-08-18 15:04:18Z arton $
+# $Id: test.rb 199 2012-12-17 13:31:18Z arton $
 
 begin
   require 'rjb'
@@ -847,6 +847,18 @@ class TestRjb < Test::Unit::TestCase
     assert_equal(33, it.numattr)
     assert_equal(5, it.multargs(3, 2))
   end
-  
+  def test_noarg_invoke()
+    str = @jString.new('abc')
+    assert_equal('abc', str._invoke('toString', ''))
+    assert_equal('abc', str._invoke('toString', nil))    
+    assert_equal('abc', str._invoke('toString'))    
+  end
+  def test_noarg_sinvoke()
+    sys = import('java.lang.System')
+    cons = sys.console
+    assert_equal(cons._classname, sys._invoke('console', '')._classname)
+    assert_equal(cons._classname, sys._invoke('console', nil)._classname)
+    assert_equal(cons._classname, sys._invoke('console')._classname)    
+  end
 end
 

@@ -12,10 +12,10 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * $Id: rjb.c 198 2012-11-13 15:55:45Z arton $
+ * $Id: rjb.c 199 2012-12-17 13:31:18Z arton $
  */
 
-#define RJB_VERSION "1.4.3"
+#define RJB_VERSION "1.4.4"
 
 #include "ruby.h"
 #include "extconf.h"
@@ -2869,7 +2869,7 @@ static VALUE invoke(JNIEnv* jenv, struct cls_method* pm, struct jvi_data* ptr,
     {
         if (argc == pm->basic.arg_count)
         {
-            if (sig) 
+            if (sig && pm->basic.method_signature) 
             {
                 if (!strcmp(sig, pm->basic.method_signature))
                 {
@@ -3016,18 +3016,34 @@ static VALUE invoke_by_instance(ID rmid, int argc, VALUE* argv,
     return ret;
 }
 
+static VALUE get_signature(int* argc, VALUE* argv, VALUE* rmid)
+{
+    VALUE vsig;
+    rb_scan_args(*argc, argv, "1*", rmid, &vsig);
+    if (*argc == 1)
+    {
+        ++*argc;
+        vsig = Qnil;
+    }
+    else
+    {
+        vsig = *(argv + 1);
+    }
+    return vsig;
+}
+
 static VALUE rjb_i_invoke(int argc, VALUE* argv, VALUE self)
 {
-    VALUE vsig, rmid, rest;
+    VALUE vsig, rmid;
     char* sig;
     struct jvi_data* ptr;
 
-    rb_scan_args(argc, argv, "2*", &rmid, &vsig, &rest);
+    vsig = get_signature(&argc, argv, &rmid);
     rmid = rb_to_id(rmid);
-    sig = StringValueCStr(vsig);
+    sig = NIL_P(vsig) ? NULL :  StringValueCStr(vsig);
     Data_Get_Struct(self, struct jvi_data, ptr);
 
-    return invoke_by_instance(rmid, argc -2, argv + 2, ptr, sig);
+    return invoke_by_instance(rmid, argc - 2, argv + 2, ptr, sig);
 }
 
 static VALUE rjb_i_missing(int argc, VALUE* argv, VALUE self)
@@ -3105,13 +3121,13 @@ static VALUE invoke_by_class(ID rmid, int argc, VALUE* argv,
 
 static VALUE rjb_invoke(int argc, VALUE* argv, VALUE self)
 {
-    VALUE vsig, rmid, rest;
+    VALUE vsig, rmid;
     char* sig;
     struct jv_data* ptr;
-    
-    rb_scan_args(argc, argv, "2*", &rmid, &vsig, &rest);
+
+    vsig = get_signature(&argc, argv, &rmid);
     rmid = rb_to_id(rmid);
-    sig = StringValueCStr(vsig);
+    sig = NIL_P(vsig) ? NULL : StringValueCStr(vsig);
     Data_Get_Struct(self, struct jv_data, ptr);
 
     return invoke_by_class(rmid, argc - 2, argv + 2, ptr, sig);

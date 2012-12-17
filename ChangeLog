@@ -1,3 +1,9 @@
+Tue Dec 17 arton
+ *test/test.rb
+	add test_norarg_invoke
+ *ext/rjb.c
+	_invoke accepts noarg method call (reported by xiao li, thanks)
+	RJB_VERSION -> 1.4.4 for new gem
 Wed Nov 14 arton
  *ext/rjb.c
 	RJB_VERSION -> 1.4.3 for new gem
