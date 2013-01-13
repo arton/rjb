@@ -3,6 +3,7 @@ Sun Jan 13 2013 arton
 	add bignum argument test
  *ext/rjb.c
 	accept bignum argument for 'J' 
+	this bug(or at least mis spec.) was pointed by janroesner. Thanks janroesner !
 Tue Dec 17 arton
  *test/test.rb
 	add test_norarg_invoke
