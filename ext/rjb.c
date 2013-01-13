@@ -15,7 +15,7 @@
  * $Id: rjb.c 199 2012-12-17 13:31:18Z arton $
  */
 
-#define RJB_VERSION "1.4.4"
+#define RJB_VERSION "1.4.5"
 
 #include "ruby.h"
 #include "extconf.h"
@@ -2145,6 +2145,8 @@ static int check_rtype(JNIEnv* jenv, VALUE* pv, char* p)
     {
     case T_FIXNUM:
         return strchr("BCDFIJS", *p) != NULL;
+    case T_BIGNUM:
+        return strchr("BCDFIJS", *p) != NULL;        
     case T_FLOAT:
 	return strchr("DF", *p) != NULL;
     case T_STRING:

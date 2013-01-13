@@ -860,5 +860,14 @@ class TestRjb < Test::Unit::TestCase
     assert_equal(cons._classname, sys._invoke('console', nil)._classname)
     assert_equal(cons._classname, sys._invoke('console')._classname)    
   end
+  def test_longarg
+    assert_equal(597899502607411822, @jLong.reverse(0x7654321076543210))
+    begin
+      @jLong.reverse(0x76543210765432101)
+      fail 'no exception for gibnum it doesn\'t convert Java long'
+    rescue RangeError
+      assert true
+    end
+  end
 end
 

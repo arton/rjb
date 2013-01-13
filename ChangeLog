@@ -1,3 +1,8 @@
+Sun Jan 13 2013 arton
+ *test/test.rb
+	add bignum argument test
+ *ext/rjb.c
+	accept bignum argument for 'J' 
 Tue Dec 17 arton
  *test/test.rb
 	add test_norarg_invoke
