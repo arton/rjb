@@ -1,3 +1,8 @@
+Sat Jan 26 2013 arton
+ *ext/rjb.c
+	RJB_VERSION -> 1.4.6 for new gem
+ *RBridge.class
+	Java Major Version -> 46
 Sun Jan 13 2013 arton
  *test/test.rb
 	add bignum argument test
