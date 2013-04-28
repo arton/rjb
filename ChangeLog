@@ -1,3 +1,8 @@
+Sun Apr 48 2013 arton
+ *ext/rjb.o
+	remove binary
+ *ext/rjb.obj
+	remove binary
 Sat Jan 26 2013 arton
  *ext/rjb.c
 	RJB_VERSION -> 1.4.6 for new gem
