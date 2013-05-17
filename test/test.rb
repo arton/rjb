@@ -869,5 +869,14 @@ class TestRjb < Test::Unit::TestCase
       assert true
     end
   end
+  def test_bytearg
+    b = @jByte.new(32)
+    assert_equal(32, b.int_value)
+    assert b.compareTo(@jByte.new(32))
+    assert b.compareTo(@jByte.value_of(32))
+    b = @jByte.new_with_sig('B', 32)
+    assert_equal(32, b.int_value)
+    assert b.compareTo(@jByte._invoke(:valueOf, 'B', 32))
+  end
 end
 
