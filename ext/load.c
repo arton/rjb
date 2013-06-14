@@ -107,16 +107,16 @@ static int open_jvm(char* libpath)
     int sstat;
     VALUE* argv;
 
-    rb_require("dl");
+    rb_require("fiddle");
 #if !defined(RUBINIUS)
-    if (!rb_const_defined_at(rb_cObject, rb_intern("DL")))
+    if (!rb_const_defined_at(rb_cObject, rb_intern("Fiddle")))
     {
 	rb_raise(rb_eRuntimeError, "Constants DL is not defined.");
 	return 0;
     }
 #endif
     argv = ALLOCA_N(VALUE, 4);
-    *argv = rb_const_get(rb_cObject, rb_intern("DL"));
+    *argv = rb_const_get(rb_cObject, rb_intern("Fiddle"));
     *(argv + 1) = rb_intern("dlopen");
     *(argv + 2) = 1;
     *(argv + 3) = rb_str_new2(libpath);
