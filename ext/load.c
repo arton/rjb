@@ -102,21 +102,47 @@ static VALUE jvmdll = Qnil;
 static VALUE getdefaultjavavminitargsfunc;
 static VALUE createjavavmfunc;
 
+static const char* DLLibs[] = { "fiddle", "dl" };
+static const char* DLNames[] = { "Fiddle", "DL" };
+
+static VALUE safe_require(VALUE args)
+{
+    return rb_require(StringValueCStr(args));
+}
+
 static int open_jvm(char* libpath)
 {
     int sstat;
     VALUE* argv;
+    size_t i;
+    int state;
 
-    rb_require("dl");
-#if !defined(RUBINIUS)
-    if (!rb_const_defined_at(rb_cObject, rb_intern("DL")))
-    {
-	rb_raise(rb_eRuntimeError, "Constants DL is not defined.");
-	return 0;
-    }
+#if defined(RUBINIUS)
+    i = 1;
+#else
+    i = 0;
 #endif
+    for (; i < COUNTOF(DLLibs); i++) 
+    {
+        state = 0;
+        rb_protect(safe_require, rb_str_new2(DLLibs[i]), &state);
+#if !defined(RUBINIUS)
+        if (state || !rb_const_defined_at(rb_cObject, rb_intern(DLNames[i])))
+        {
+            if (i > 0)
+            {
+                rb_raise(rb_eRuntimeError, "Constants DL and Fiddle is not defined.");
+                return 0;
+            }
+        }
+        else
+        {
+            break;
+        }
+#endif
+    }
     argv = ALLOCA_N(VALUE, 4);
-    *argv = rb_const_get(rb_cObject, rb_intern("DL"));
+    *argv = rb_const_get(rb_cObject, rb_intern(DLNames[i]));
     *(argv + 1) = rb_intern("dlopen");
     *(argv + 2) = 1;
     *(argv + 3) = rb_str_new2(libpath);
@@ -302,7 +328,7 @@ int rjb_create_jvm(JNIEnv** pjenv, JavaVMInitArgs* vm_args, char* userpath, VALU
     CREATEJAVAVM createjavavm;
     JavaVMOption* options;
     size_t optlen;
-    int i;
+    size_t i;
     VALUE optval;
 
     if (!RTEST(jvmdll))

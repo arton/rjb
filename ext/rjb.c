@@ -15,7 +15,7 @@
  * $Id: rjb.c 199 2012-12-17 13:31:18Z arton $
  */
 
-#define RJB_VERSION "1.4.6"
+#define RJB_VERSION "1.4.7"
 
 #include "ruby.h"
 #include "extconf.h"
@@ -1144,7 +1144,7 @@ static void rv2jarray(JNIEnv* jenv, VALUE val, jvalue* jv, const char* psig, int
             }
             else
             {
-                VALUE src = rb_str_new(p, len);
+                VALUE src = rb_str_new((char*)p, len);
                 rb_str_set_len(val, 0);
                 rb_str_append(val, src);
             }
@@ -2084,7 +2084,7 @@ static VALUE import_class(JNIEnv* jenv, jclass jcls, VALUE clsname)
 
 static VALUE rjb_a_initialize(VALUE self, VALUE proc)
 {
-    rb_ivar_set(self, anonymousblock, proc);
+    return rb_ivar_set(self, anonymousblock, proc);
 }
 
 static VALUE rjb_a_missing(int argc, VALUE* argv, VALUE self)
@@ -2484,7 +2484,9 @@ static jobject conv_jarname_to_url(JNIEnv* jenv, VALUE jarname)
 {
     jvalue arg;
     jobject url;
+#if defined(DOSISH)
     size_t len;
+#endif
     char* jarp;
     char* urlp;
 
@@ -3139,11 +3141,6 @@ static VALUE find_const(VALUE pv)
 {
     VALUE* p = (VALUE*)pv;
     return rb_const_get(*p, (ID)*(p + 1));
-}
-
-static VALUE call_blcock(int argc, VALUE* argv)
-{
-    return rb_yield_values2(argc, argv);
 }
 
 static VALUE rjb_missing(int argc, VALUE* argv, VALUE self)
