@@ -136,20 +136,24 @@ static int open_jvm(char* libpath)
             }
         }
         else
-        {
-            break;
-        }
 #endif
-    }
-    argv = ALLOCA_N(VALUE, 4);
-    *argv = rb_const_get(rb_cObject, rb_intern(DLNames[i]));
-    *(argv + 1) = rb_intern("dlopen");
-    *(argv + 2) = 1;
-    *(argv + 3) = rb_str_new2(libpath);
-    jvmdll = rb_protect(rjb_safe_funcall, (VALUE)argv, &sstat);
-    if (sstat)
-    {
-        return 0;
+        {
+            sstat = 0;
+            argv = ALLOCA_N(VALUE, 4);
+            *argv = rb_const_get(rb_cObject, rb_intern(DLNames[i]));
+            *(argv + 1) = rb_intern("dlopen");
+            *(argv + 2) = 1;
+            *(argv + 3) = rb_str_new2(libpath);
+            jvmdll = rb_protect(rjb_safe_funcall, (VALUE)argv, &sstat);
+            if (!sstat)
+            {
+                break;
+            }
+            else if (i > 0)
+            {
+                return 0;
+            }
+        }
     }
     /* get function pointers of JNI */
 #if RJB_RUBY_VERSION_CODE < 190

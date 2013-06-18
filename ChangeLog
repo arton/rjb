@@ -1,4 +1,7 @@
 Tue Jun 18 2013 arton
+ *ext/load.c
+	check fiddler has dlopen (after ruby 2.0).
+Tue Jun 18 2013 arton
  *ext/rjb.c
 	RJB_VERSION -> 1.4.7
  *ext/load.c
