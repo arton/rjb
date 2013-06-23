@@ -878,5 +878,13 @@ class TestRjb < Test::Unit::TestCase
     assert_equal(32, b.int_value)
     assert b.compareTo(@jByte._invoke(:valueOf, 'B', 32))
   end
+  def test_typedarray
+    test = import('jp.co.infoseek.hp.arton.rjb.Test').new
+    uri = import('java.net.URI')
+    ret = test.java_typed_array(['a', 'b', 'c'], [1, 2, 3], [uri.new('http://www.artonx.org')])
+    assert_equal '[Ljava.lang.String;', ret[0]
+    assert_equal '[Ljava.lang.Integer;', ret[1]
+    assert_equal '[Ljava.net.URI;', ret[2]    
+  end
 end
 

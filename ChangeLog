@@ -1,3 +1,11 @@
+Sun Jun 23 2013 arton
+ *ext/rjb.c
+	RJB_VERSION -> 1.4.8
+	create typed array exactly
+ *test/test.rb
+	add typed array test
+ *test/Test.java
+	add typed array test
 Tue Jun 18 2013 arton
  *ext/load.c
 	check fiddle has dlopen (after ruby 2.0).

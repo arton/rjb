@@ -15,7 +15,7 @@
  * $Id: rjb.c 199 2012-12-17 13:31:18Z arton $
  */
 
-#define RJB_VERSION "1.4.7"
+#define RJB_VERSION "1.4.8"
 
 #include "ruby.h"
 #include "extconf.h"
@@ -1066,7 +1066,14 @@ static jarray r2objarray(JNIEnv* jenv, VALUE v, const char* cls)
     if (TYPE(v) == T_ARRAY)
     {
 	int i;
-	ary = (*jenv)->NewObjectArray(jenv, (jint)RARRAY_LEN(v), j_object, NULL);
+        jclass jcls = NULL;
+        char* p = strchr(cls, ';');
+        if (p)
+        {
+            volatile VALUE clsname = rb_str_new(cls + 1, p - cls - 1); // skip first 'L'
+            jcls = rjb_find_class(jenv, clsname);
+        }
+        ary = (*jenv)->NewObjectArray(jenv, (jint)RARRAY_LEN(v), (jcls) ? jcls : j_object, NULL);
 	rjb_check_exception(jenv, 0);
 	for (i = 0; i < RARRAY_LEN(v); i++)
 	{

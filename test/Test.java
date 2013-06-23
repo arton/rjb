@@ -2,6 +2,7 @@
 // $Id: Test.java 168 2011-07-15 18:57:04Z arton $
 //
 package jp.co.infoseek.hp.arton.rjb;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Comparator;
@@ -117,6 +118,12 @@ public class Test {
 
     public String getUmlaut() {
 	return "\u01D6" + "\u00FC\u0304" + "\u0075\u0308\u0304" + "\ud869\udeb2" + "\u304b\u309a";
+    }
+
+    public String[] getJavaTypedArray(String[] o, Integer[] n, URI[] u) {
+        return new String[] { o.getClass().getName(),
+                              n.getClass().getName(),
+                              u.getClass().getName() };
     }
 
     public String helloData = "Hello World !!";
