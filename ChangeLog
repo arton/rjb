@@ -1,3 +1,8 @@
+Fri Jan 3 2014 arton
+ *ext/rjb.c
+	RJB_VERSION -> 1.4.9
+ *ext/rjbexception.c
+	make J#cause to the instance method for resolving Ruby 2.1 confliction.
 Sun Jun 23 2013 arton
  *ext/rjb.c
 	RJB_VERSION -> 1.4.8
