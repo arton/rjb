@@ -1,3 +1,9 @@
+Fri Jan 4 2014 arton
+ *test/Test.java
+ *test/rjbtest.jar
+	add inner exception test
+ *test/test.java
+	add inner exception test
 Fri Jan 3 2014 arton
  *ext/rjb.c
 	RJB_VERSION -> 1.4.9

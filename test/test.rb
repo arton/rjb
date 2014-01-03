@@ -810,6 +810,19 @@ class TestRjb < Test::Unit::TestCase
       end
    end
   end
+
+
+  def test_inner_exception
+    test = import('jp.co.infoseek.hp.arton.rjb.Test').new
+    begin
+      test.cause_exception
+      flunk("no exception")
+    rescue IllegalStateException => e
+      ia = e.cause
+      assert_equal('bad argument', ia.message)
+      assert_equal('java.lang.IllegalArgumentException', ia._classname)
+    end
+  end
   
   class CbTest
     def method(l, s, i, d, str)

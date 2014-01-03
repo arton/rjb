@@ -126,6 +126,14 @@ public class Test {
                               u.getClass().getName() };
     }
 
+    public void causeException() {
+	try {
+	    throw new IllegalArgumentException("bad argument");
+	} catch (Exception e) {
+	    throw new IllegalStateException("outer exception", e);
+	}
+    }
+
     public String helloData = "Hello World !!";
 
     public static void main(String[] args) {
