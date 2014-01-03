@@ -1,5 +1,11 @@
 require 'rubygems'
-require 'rake/gempackagetask'
+begin
+  require 'rake/gempackagetask'
+  $package_task = Rake::GemPackageTask
+rescue
+  require 'rubygems/package_task'
+  $package_task = Gem::PackageTask
+end
 require 'fileutils'
 
 def read_version
@@ -33,6 +39,7 @@ spec = Gem::Specification.new do |s|
   s.requirements << 'none'
   s.require_path = 'lib'
   s.requirements << 'JDK 5.0'
+  s.license = 'LGPL'
   files = FileList['ext/*.java', 'ext/*.c', 'ext/*.h', 'ext/depend',
                    'data/rjb/**/*.class', 'lib/*.rb', 'samples/**/*.rb', 
                    'test/*.rb', 'test/**/*.class', 'test/*.jar', 'COPYING', 'ChangeLog', 'readme.*']
@@ -51,7 +58,7 @@ RJB is a bridge program that connect between Ruby and Java with Java Native Inte
 EOD
 end
 
-Rake::GemPackageTask.new(spec) do |pkg|
+$package_task.new(spec) do |pkg|
   pkg.gem_spec = spec
   pkg.need_zip = false
   pkg.need_tar = false
