@@ -1,3 +1,6 @@
+Wed Jan 15 2014 arton
+ *rjb.rake
+	add lib/rjb/*.rb into gem
 Fri Jan 4 2014 arton
  *test/Test.java
  *test/rjbtest.jar
