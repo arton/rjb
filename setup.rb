@@ -2,6 +2,7 @@
 # setup.rb
 #
 # Copyright (c) 2000-2004 Minero Aoki
+# Copyright (c) 2014 arton
 #
 # This program is free software.
 # You can distribute/modify this program under the terms of
@@ -256,7 +257,7 @@ class ConfigTable_class
 
 end
 
-c = ::Config::CONFIG
+c = ::RbConfig::CONFIG
 
 rubypath = c['bindir'] + '/' + c['ruby_install_name']
 
@@ -1246,7 +1247,7 @@ class Installer
 
   def ruby_extentions(dir)
     Dir.open(dir) {|d|
-      ents = d.select {|fname| /\.#{::Config::CONFIG['DLEXT']}\z/ =~ fname }
+      ents = d.select {|fname| /\.#{::RbConfig::CONFIG['DLEXT']}\z/ =~ fname }
       if ents.empty?
         setup_rb_error "no ruby extention exists: 'ruby #{$0} setup' first"
       end
