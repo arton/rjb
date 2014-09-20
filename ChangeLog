@@ -5,6 +5,8 @@ Sat Sep 20 2014 arton
 	select preferable constructor
  *ext/riconv.c
 	restruct encoding function
+ *test/test.rb
+	add constructor selection test (Ljava.lang.String; vs [B)
 Wed Jan 15 2014 arton
  *rjb.rake
 	add lib/rjb/*.rb into gem

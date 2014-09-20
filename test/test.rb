@@ -147,25 +147,25 @@ class TestRjb < Test::Unit::TestCase
     if Object::const_defined?(:Encoding)
       test = import('jp.co.infoseek.hp.arton.rjb.Test').new
       euc_kj = "\xb4\xc1\xbb\xfa\xa5\xc6\xa5\xad\xa5\xb9\xa5\xc8".force_encoding Encoding::EUC_JP
-      s = @jString.new(euc_kj)
+      s = @jString.new_with_sig('Ljava.lang.String;', euc_kj)
       assert_equal(s.toString().encoding, Encoding::UTF_8)
       assert(test.isSameString(s))
       assert(test.isSameString(euc_kj))
       assert_equal(s.toString().encode(Encoding::EUC_JP), euc_kj)
       sjis_kj = "\x8a\xbf\x8e\x9a\x83\x65\x83\x4c\x83\x58\x83\x67".force_encoding Encoding::SHIFT_JIS
-      s = @jString.new(sjis_kj)
+      s = @jString.new_with_sig('Ljava.lang.String;', sjis_kj)
       assert_equal(s.toString().encoding, Encoding::UTF_8)
       assert(test.isSameString(s))
       assert(test.isSameString(sjis_kj))
       assert_equal(s.toString().encode(Encoding::SHIFT_JIS), sjis_kj)
       utf8_kj = "\xE6\xBC\xA2\xE5\xAD\x97\xE3\x83\x86\xE3\x82\xAD\xE3\x82\xB9\xE3\x83\x88".force_encoding Encoding::UTF_8
-      s = @jString.new(utf8_kj)
+      s = @jString.new_with_sig('Ljava.lang.String;', utf8_kj)
       assert_equal(s.toString().encoding, Encoding::UTF_8)
       assert(test.isSameString(s))
       assert(test.isSameString(utf8_kj))
       assert_equal(s.toString().encode(Encoding::UTF_8), utf8_kj)
       iso2022jp_kj = "\x1b\x24\x42\x34\x41\x3b\x7a\x25\x46\x25\x2d\x25\x39\x25\x48\x1b\x28\x42".force_encoding Encoding::ISO_2022_JP
-      s = @jString.new(iso2022jp_kj)
+      s = @jString.new_with_sig('Ljava.lang.String;', iso2022jp_kj)
       assert_equal(s.toString().encoding, Encoding::UTF_8)
       assert(test.isSameString(s))
       assert(test.isSameString(iso2022jp_kj))
@@ -898,6 +898,26 @@ class TestRjb < Test::Unit::TestCase
     assert_equal '[Ljava.lang.String;', ret[0]
     assert_equal '[Ljava.lang.Integer;', ret[1]
     assert_equal '[Ljava.net.URI;', ret[2]    
+  end
+  def test_auto_constructor_selection
+    skip 'no encoding' unless Object::const_defined?(:Encoding)
+    sys = import('java.lang.System')
+    encoding = sys.property('file.encoding')
+    s = @jString.new("\x8a\xbf\x8e\x9a\x83\x65\x83\x4c\x83\x58\x83\x67".force_encoding Encoding::SHIFT_JIS)
+    e = @jString.new("\xb4\xc1\xbb\xfa\xa5\xc6\xa5\xad\xa5\xb9\xa5\xc8".force_encoding Encoding::EUC_JP)
+    u = @jString.new("\xE6\xBC\xA2\xE5\xAD\x97\xE3\x83\x86\xE3\x82\xAD\xE3\x82\xB9\xE3\x83\x88".force_encoding Encoding::UTF_8)
+    if encoding == 'MS932'
+      s1 = @jString.new("\x8a\xbf\x8e\x9a\x83\x65\x83\x4c\x83\x58\x83\x67".bytes)
+    elsif encoding.upcase == 'EUC-JP'
+      s1 = @jString.new("\xb4\xc1\xbb\xfa\xa5\xc6\xa5\xad\xa5\xb9\xa5\xc8".bytes)
+    elsif encoding.upcase == 'UTF-8'
+      s1 = @jString.new("\xE6\xBC\xA2\xE5\xAD\x97\xE3\x83\x86\xE3\x82\xAD\xE3\x82\xB9\xE3\x83\x88".bytes)
+    else
+      skip 'no checkable encoding'
+    end
+    assert_equal s1.toString, s.toString
+    assert_equal s1.toString, e.toString
+    assert_equal s1.toString, u.toString
   end
 end
 

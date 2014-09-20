@@ -2892,11 +2892,13 @@ static void setter(JNIEnv* jenv, struct cls_field* pf,  struct jvi_data* ptr, VA
 static VALUE invoke(JNIEnv* jenv, struct cls_method* pm, struct jvi_data* ptr,
 		    int argc, VALUE* argv, const char* sig)
 {
-    int i, found;
+    int i, found, cweight;
     jvalue jv;
     jvalue* args;
     char* psig;
     struct cls_method* orgpm = pm;
+    struct cls_method* prefer_pm = NULL;
+    int weight = 0;
 
     if (rb_block_given_p())
     {
@@ -2907,8 +2909,9 @@ static VALUE invoke(JNIEnv* jenv, struct cls_method* pm, struct jvi_data* ptr,
         argv = pargs;
     }
 
-    for (found = 0; pm; pm = pm->next)
+    for (; pm; pm = pm->next)
     {
+        found = 0;
         if (argc == pm->basic.arg_count)
         {
             if (sig && pm->basic.method_signature) 
@@ -2916,27 +2919,38 @@ static VALUE invoke(JNIEnv* jenv, struct cls_method* pm, struct jvi_data* ptr,
                 if (!strcmp(sig, pm->basic.method_signature))
                 {
 	            found = 1;
+                    prefer_pm = pm;
                     break;
 		}
 	    }
             else
             {
-	        psig = pm->basic.method_signature;
                 found = 1;
+                cweight = 0;
+	        psig = pm->basic.method_signature;
                 for (i = 0; i < argc; i++)
                 {
-		    if (!check_rtype(jenv, argv + i, psig))
+                    int w = check_rtype(jenv, argv + i, psig);
+		    if (!w)
                     {
                         found = 0;
                         break;
                     }
+                    cweight += w;
 		    psig = next_sig(psig);
                 }
-                if (found) break;
 	    }
 	}
+        if (found)
+        {
+            if (cweight > weight || weight == 0)
+            {
+                prefer_pm = pm;
+                weight = cweight;
+            }
+        }
     }
-    if (!found)
+    if (!prefer_pm)
     {
 	const char* tname = rb_id2name(orgpm->name);
 	if (sig) 
@@ -2949,71 +2963,71 @@ static VALUE invoke(JNIEnv* jenv, struct cls_method* pm, struct jvi_data* ptr,
 	}
     }
     args = (argc) ? ALLOCA_N(jvalue, argc) : NULL;
-    psig = pm->basic.method_signature;
+    psig = prefer_pm->basic.method_signature;
     for (i = 0; i < argc; i++)
     {
-	R2J pr2j = *(pm->basic.arg_convert + i);
+	R2J pr2j = *(prefer_pm->basic.arg_convert + i);
 	pr2j(jenv, argv[i], args + i, psig, 0);
 	psig = next_sig(psig);
     }
-    switch (pm->basic.result_signature)
+    switch (prefer_pm->basic.result_signature)
     {
     case 'D':
       {
-        INVOKEAD voked = *(INVOKEAD*)(((char*)*jenv) + pm->method);
-	jv.d = voked(jenv, ptr->obj, pm->basic.id, args);
+        INVOKEAD voked = *(INVOKEAD*)(((char*)*jenv) + prefer_pm->method);
+	jv.d = voked(jenv, ptr->obj, prefer_pm->basic.id, args);
       }
       break;
     case 'Z':
     case 'B':
       {
-        INVOKEAZ vokez = *(INVOKEAZ*)(((char*)*jenv) + pm->method);
-	jv.z = vokez(jenv, ptr->obj, pm->basic.id, args);
+        INVOKEAZ vokez = *(INVOKEAZ*)(((char*)*jenv) + prefer_pm->method);
+	jv.z = vokez(jenv, ptr->obj, prefer_pm->basic.id, args);
       }
       break;
     case 'F':
       {
-        INVOKEAF vokef = *(INVOKEAF*)(((char*)*jenv) + pm->method);
-	jv.f = vokef(jenv, ptr->obj, pm->basic.id, args);
+        INVOKEAF vokef = *(INVOKEAF*)(((char*)*jenv) + prefer_pm->method);
+	jv.f = vokef(jenv, ptr->obj, prefer_pm->basic.id, args);
       }
       break;
     case 'C':
     case 'S':
       {
-        INVOKEAS vokes = *(INVOKEAS*)(((char*)*jenv) + pm->method);
-	jv.s = vokes(jenv, ptr->obj, pm->basic.id, args);
+        INVOKEAS vokes = *(INVOKEAS*)(((char*)*jenv) + prefer_pm->method);
+	jv.s = vokes(jenv, ptr->obj, prefer_pm->basic.id, args);
       }
       break;
 #if HAVE_LONG_LONG
     case 'J':
       {
-        INVOKEAL vokel = *(INVOKEAL*)(((char*)*jenv) + pm->method);
-	jv.j = vokel(jenv, ptr->obj, pm->basic.id, args);
+        INVOKEAL vokel = *(INVOKEAL*)(((char*)*jenv) + prefer_pm->method);
+	jv.j = vokel(jenv, ptr->obj, prefer_pm->basic.id, args);
       }
       break;
 #endif
     default:
       {
-        INVOKEA voke = *(INVOKEA*)(((char*)*jenv) + pm->method);
-        jv.l = voke(jenv, ptr->obj, pm->basic.id, args);
+        INVOKEA voke = *(INVOKEA*)(((char*)*jenv) + prefer_pm->method);
+        jv.l = voke(jenv, ptr->obj, prefer_pm->basic.id, args);
       }
       break;
     }
     rjb_check_exception(jenv, 1);
-    psig = pm->basic.method_signature;
+    psig = prefer_pm->basic.method_signature;
     for (i = 0; i < argc; i++)
     {
-	R2J pr2j = *(pm->basic.arg_convert + i);
+	R2J pr2j = *(prefer_pm->basic.arg_convert + i);
 	pr2j(jenv, argv[i], args + i, psig, 1);
 	psig = next_sig(psig);
     }
-    if (pm->basic.result_arraydepth)
+    if (prefer_pm->basic.result_arraydepth)
     {
-        return ja2r(pm->result_convert, jenv, jv, pm->basic.result_arraydepth);
+        return ja2r(prefer_pm->result_convert, jenv, jv, prefer_pm->basic.result_arraydepth);
     }
     else
     {
-        return pm->result_convert(jenv, jv);
+        return prefer_pm->result_convert(jenv, jv);
     }
 }
 
