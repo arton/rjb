@@ -2,6 +2,9 @@ Sat Sep 20 2014 arton
  *ext/rjb.c
 	RJB_VERSION -> 1.5.0
 	fix ctor_sigs with non argment ctor (represented by '')
+	select preferable constructor
+ *ext/riconv.c
+	restruct encoding function
 Wed Jan 15 2014 arton
  *rjb.rake
 	add lib/rjb/*.rb into gem

@@ -169,6 +169,16 @@ static void check_kcode()
 }
 #endif
 
+#if defined(DEBUG)
+static void debug_out(VALUE v)
+{
+    char* p = StringValuePtr(v);
+    printf("-- %d, %d, %s\n", rb_num2long(rb_funcall(v, rb_intern("size"), 0)),
+           strlen(p), p);
+    fflush(stdout);
+}
+#endif
+
 VALUE exticonv_local_to_utf8(VALUE local_string)
 {
 #if RJB_RUBY_VERSION_CODE < 190
@@ -182,16 +192,18 @@ VALUE exticonv_local_to_utf8(VALUE local_string)
         return local_string;
     }
 #else
-    VALUE rb_cEncoding, encoding, sjis, eucjp, iso2022jp;
+    VALUE rb_cEncoding, encoding, utf8;
     rb_cEncoding = rb_const_get(rb_cObject, rb_intern("Encoding"));
-    sjis = rb_const_get(rb_cEncoding, rb_intern("SHIFT_JIS"));
-    eucjp = rb_const_get(rb_cEncoding, rb_intern("EUC_JP"));
-    iso2022jp = rb_const_get(rb_cEncoding, rb_intern("ISO_2022_JP"));
     encoding = rb_funcall(local_string, rb_intern("encoding"), 0);
-
-    if (encoding == sjis || encoding == eucjp || encoding == iso2022jp)
+    utf8 = rb_const_get(rb_cEncoding, rb_intern("UTF_8"));
+    if (encoding != utf8)
     {
-        return rb_funcall(local_string, rb_intern("encode"), 1, rb_str_new2("utf-8"));
+        VALUE ret = rb_funcall(local_string, rb_intern("encode"), 2, utf8, encoding);
+#if defined(DEBUG)
+        debug_out(local_string);
+        debug_out(ret);
+#endif        
+        return ret;
     }
     else
     {
@@ -213,6 +225,6 @@ VALUE exticonv_utf8_to_local(VALUE utf8_string)
         return utf8_string;
     }
 #else
-    return rb_funcall(utf8_string, rb_intern("force_encoding"), 1, rb_str_new2("utf-8"));
+    return rb_funcall(utf8_string, rb_intern("force_encoding"), 1, rb_const_get(rb_cEncoding, rb_intern("UTF_8")));
 #endif
 }
