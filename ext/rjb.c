@@ -15,7 +15,7 @@
  * $Id: rjb.c 199 2012-12-17 13:31:18Z arton $
  */
 
-#define RJB_VERSION "1.4.9"
+#define RJB_VERSION "1.5.0"
 
 #include "ruby.h"
 #include "extconf.h"
@@ -846,7 +846,7 @@ static void rv2jobject(JNIEnv* jenv, VALUE val, jvalue* jv, const char* psig, in
 #endif                
             case T_OBJECT:
             default:
-#if DEBUG
+#if defined(DEBUG)
                 fprintf(stderr, "rtype:%d, sig=%s\n", TYPE(val), psig);
                 fflush(stderr);
 #endif
@@ -2364,7 +2364,8 @@ static VALUE rjb_get_ctor_signatures(VALUE self)
     {
         for (pc = ptr->constructors; *pc; pc++)
         {
-            rb_ary_push(ret, rb_str_new2((*pc)->method_signature));
+            const char* sig = (*pc)->method_signature;
+            rb_ary_push(ret, rb_str_new2(sig ? sig : ""));
         }
     }
     return ret;
