@@ -2131,6 +2131,9 @@ static VALUE register_instance(JNIEnv* jenv, VALUE klass, struct jv_data* org, j
  * temporary signature check
  * return !0 if found
  */
+#define SATISFIED 1
+#define SOSO 2
+#define PREFERABLE 3
 static int check_rtype(JNIEnv* jenv, VALUE* pv, char* p)
 {
     char* pcls = NULL;
@@ -2146,7 +2149,7 @@ static int check_rtype(JNIEnv* jenv, VALUE* pv, char* p)
     }
     if (pcls && !strcmp("java.lang.Object", pcls))
     {
-        return 1;
+        return SATISFIED;
     }
     switch (TYPE(*pv))
     {
@@ -2157,7 +2160,15 @@ static int check_rtype(JNIEnv* jenv, VALUE* pv, char* p)
     case T_FLOAT:
 	return strchr("DF", *p) != NULL;
     case T_STRING:
-        return pcls && !strcmp("java.lang.String", pcls) || *p == '[' && *(p + 1) == 'B';
+        if (pcls && !strcmp("java.lang.String", pcls))
+        {
+            return PREFERABLE;
+        }
+        else if (*p == '[' && *(p + 1) == 'B')
+        {
+            return SATISFIED;
+        }
+        return 0;
     case T_TRUE:
     case T_FALSE:
         return *p == 'Z';
@@ -2170,15 +2181,15 @@ static int check_rtype(JNIEnv* jenv, VALUE* pv, char* p)
 	    jclass cls;
             struct jvi_data* ptr;
 	    int result = 0;
-            if (!strcmp("java.lang.String", pcls)) return 1;
+            if (!strcmp("java.lang.String", pcls)) return SATISFIED;
 	    Data_Get_Struct(*pv, struct jvi_data, ptr);
             RJB_FIND_CLASS(cls, java2jniname(pcls));
 	    if (cls)
-        	    {
+            {
 	        result = (cls && (*jenv)->IsInstanceOf(jenv, ptr->obj, cls));
 	        (*jenv)->DeleteLocalRef(jenv, cls);
 	    }
-	    return result;
+	    return (result) ? PREFERABLE : 0;
 	} else if (pcls) {
             VALUE blockobj = rb_class_new_instance(1, pv, rjba);
             *pv = rjb_s_bind(rjbb, blockobj, rb_str_new2(pcls));
@@ -2189,7 +2200,7 @@ static int check_rtype(JNIEnv* jenv, VALUE* pv, char* p)
     default:
         if (pcls || *p == '[')
         {
-            return 1;
+            return SATISFIED;
         }
 	return 0;
     }
@@ -2235,7 +2246,10 @@ static VALUE rjb_newinstance(int argc, VALUE* argv, VALUE self)
     VALUE ret = Qnil;
     struct jv_data* ptr;
     struct cls_constructor** pc;
+    struct cls_constructor** found_pc = NULL;
     int found = 0;
+    int weight = 0;
+    int cweight;
     JNIEnv* jenv = rjb_prelude();
     
     Data_Get_Struct(self, struct jv_data, ptr);
@@ -2246,28 +2260,39 @@ static VALUE rjb_newinstance(int argc, VALUE* argv, VALUE self)
 	char* psig;
 	for (pc = ptr->constructors; *pc; pc++)
 	{
+            found = 0;
 	    if ((*pc)->arg_count == argc)
 	    {
-	        found = 1;
+                found = 1;
+                cweight = 0;
 		psig = (*pc)->method_signature;
 		for (i = 0; i < argc; i++)
 		{
-		    if (!check_rtype(jenv, argv + i, psig))
+                    int w = check_rtype(jenv, argv + i, psig);
+		    if (!w)
                     {
 		        found = 0;
 			break;
 		    }
+                    cweight += w;
 		    psig = next_sig(psig);
 		}
-		if (found)
-		{
-		    ret = createinstance(jenv, argc, argv, self, *pc);
-		    break;
-		}
 	    }
+            if (found)
+            {
+                if (cweight > weight || weight == 0)
+                {
+                    found_pc = pc;
+                    weight = cweight;
+                }
+            }
 	}
+        if (found_pc)
+        {
+            ret = createinstance(jenv, argc, argv, self, *found_pc);
+        }
     }
-    if (!found) {
+    if (!found_pc) {
 	rb_raise(rb_eRuntimeError, "Constructor not found");
     }
     return ret;
