@@ -2131,6 +2131,7 @@ static VALUE register_instance(JNIEnv* jenv, VALUE klass, struct jv_data* org, j
  * temporary signature check
  * return !0 if found
  */
+#define NOTFOUND 0
 #define SATISFIED 1
 #define SOSO 2
 #define PREFERABLE 3
@@ -2154,13 +2155,17 @@ static int check_rtype(JNIEnv* jenv, VALUE* pv, char* p)
     switch (TYPE(*pv))
     {
     case T_FIXNUM:
-        return strchr("BCDFIJS", *p) != NULL;
+        if (strchr("IJ", *p)) return SOSO;
+        return strchr("BCDFS", *p) != NULL;
     case T_BIGNUM:
         return strchr("BCDFIJS", *p) != NULL;        
     case T_FLOAT:
-	return strchr("DF", *p) != NULL;
+        if (*p == 'D') return SOSO;
+        if (*p == 'F') return SATISFIED;
+        return NOTFOUND;
     case T_STRING:
-        if (pcls && !strcmp("java.lang.String", pcls))
+        if (pcls && (!strcmp("java.lang.String", pcls)
+                     || !strcmp("java.lang.CharSequence", pcls)))
         {
             return PREFERABLE;
         }
@@ -2168,7 +2173,7 @@ static int check_rtype(JNIEnv* jenv, VALUE* pv, char* p)
         {
             return SATISFIED;
         }
-        return 0;
+        return NOTFOUND;
     case T_TRUE:
     case T_FALSE:
         return *p == 'Z';
@@ -2189,7 +2194,7 @@ static int check_rtype(JNIEnv* jenv, VALUE* pv, char* p)
 	        result = (cls && (*jenv)->IsInstanceOf(jenv, ptr->obj, cls));
 	        (*jenv)->DeleteLocalRef(jenv, cls);
 	    }
-	    return (result) ? PREFERABLE : 0;
+	    return (result) ? PREFERABLE : NOTFOUND;
 	} else if (pcls) {
             VALUE blockobj = rb_class_new_instance(1, pv, rjba);
             *pv = rjb_s_bind(rjbb, blockobj, rb_str_new2(pcls));
@@ -2202,7 +2207,7 @@ static int check_rtype(JNIEnv* jenv, VALUE* pv, char* p)
         {
             return SATISFIED;
         }
-	return 0;
+	return NOTFOUND;
     }
 }
 
