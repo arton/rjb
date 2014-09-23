@@ -15,7 +15,7 @@
  * $Id: rjb.c 199 2012-12-17 13:31:18Z arton $
  */
 
-#define RJB_VERSION "1.5.0"
+#define RJB_VERSION "1.5.1"
 
 #include "ruby.h"
 #include "extconf.h"
@@ -2131,7 +2131,7 @@ static VALUE register_instance(JNIEnv* jenv, VALUE klass, struct jv_data* org, j
  * temporary signature check
  * return !0 if found
  */
-#define NOTFOUND 0
+#define UNMATCHED 0
 #define SATISFIED 1
 #define SOSO 2
 #define PREFERABLE 3
@@ -2162,7 +2162,7 @@ static int check_rtype(JNIEnv* jenv, VALUE* pv, char* p)
     case T_FLOAT:
         if (*p == 'D') return SOSO;
         if (*p == 'F') return SATISFIED;
-        return NOTFOUND;
+        return UNMATCHED;
     case T_STRING:
         if (pcls && (!strcmp("java.lang.String", pcls)
                      || !strcmp("java.lang.CharSequence", pcls)))
@@ -2173,12 +2173,12 @@ static int check_rtype(JNIEnv* jenv, VALUE* pv, char* p)
         {
             return SATISFIED;
         }
-        return NOTFOUND;
+        return UNMATCHED;
     case T_TRUE:
     case T_FALSE:
-        return *p == 'Z';
+        return (*p == 'Z') ? SOSO : UNMATCHED;
     case T_ARRAY:
-        return *p == '[';
+        return (*p == '[') ? SOSO : UNMATCHED;
     case T_DATA:
         if (IS_RJB_OBJECT(*pv) && pcls)
 	{
@@ -2194,7 +2194,7 @@ static int check_rtype(JNIEnv* jenv, VALUE* pv, char* p)
 	        result = (cls && (*jenv)->IsInstanceOf(jenv, ptr->obj, cls));
 	        (*jenv)->DeleteLocalRef(jenv, cls);
 	    }
-	    return (result) ? PREFERABLE : NOTFOUND;
+	    return (result) ? PREFERABLE : UNMATCHED;
 	} else if (pcls) {
             VALUE blockobj = rb_class_new_instance(1, pv, rjba);
             *pv = rjb_s_bind(rjbb, blockobj, rb_str_new2(pcls));
@@ -2207,7 +2207,7 @@ static int check_rtype(JNIEnv* jenv, VALUE* pv, char* p)
         {
             return SATISFIED;
         }
-	return NOTFOUND;
+	return UNMATCHED;
     }
 }
 
