@@ -33,7 +33,7 @@ spec = Gem::Specification.new do |s|
   s.required_ruby_version = '>= 1.8.2'
   s.summary = 'Ruby Java bridge'
   s.name = 'rjb'
-  s.homepage = 'http://rjb.rubyforge.org/'
+  s.homepage = 'http://www.artonx.org/collabo/backyard/?RubyJavaBridge'
   s.rubyforge_project = 'rjb'
   s.version = read_version
   s.requirements << 'none'
