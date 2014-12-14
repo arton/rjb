@@ -5,6 +5,9 @@ Sun Dec 14 2014 arton
 	Change variable name for avoiding conflicion (Runinius)
  *ext/rjb.
 	RJB_VERSION -> 1.5.2
+	Support Rubinius (Rubinius's block is T_OBJECT instead of T_DATA -> affected to anonclass)
+ *test/test.rb
+	skip fixnum range test if Rubinius
 Tue Sep 23 2014 arton
  *ext/rjb.c
 	RJB_VERSION -> 1.5.1

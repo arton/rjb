@@ -1,6 +1,6 @@
 /*
  * Rjb - Ruby <-> Java Bridge
- * Copyright(c) 2004,2005,2006,2007,2008,2009,2010,2011,2012 arton
+ * Copyright(c) 2004,2005,2006,2007,2008,2009,2010,2011,2012,2014 arton
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * $Id: rjb.c 199 2012-12-17 13:31:18Z arton $
  */
 
 #define RJB_VERSION "1.5.2"
@@ -847,8 +846,12 @@ static void rv2jobject(JNIEnv* jenv, VALUE val, jvalue* jv, const char* psig, in
             case T_OBJECT:
             default:
 #if defined(DEBUG)
+              {
+                VALUE v = rb_funcall(val, rb_intern("inspect"), 0);
                 fprintf(stderr, "rtype:%d, sig=%s\n", TYPE(val), psig);
+                fprintf(stderr, "obj:%s\n", StringValueCStr(v));
                 fflush(stderr);
+              }
 #endif
                 rb_raise(rb_eRuntimeError, "can't convert to java type");
                 break;
@@ -2180,6 +2183,7 @@ static int check_rtype(JNIEnv* jenv, VALUE* pv, char* p)
     case T_ARRAY:
         return (*p == '[') ? SOSO : UNMATCHED;
     case T_DATA:
+    case T_OBJECT:
         if (IS_RJB_OBJECT(*pv) && pcls)
 	{
 	    /* imported object */
@@ -2199,8 +2203,6 @@ static int check_rtype(JNIEnv* jenv, VALUE* pv, char* p)
             VALUE blockobj = rb_class_new_instance(1, pv, rjba);
             *pv = rjb_s_bind(rjbb, blockobj, rb_str_new2(pcls));
         }
-	/* fall down to the next case */
-    case T_OBJECT:
 	/* fall down to the next case */
     default:
         if (pcls || *p == '[')

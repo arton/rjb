@@ -802,13 +802,12 @@ class TestRjb < Test::Unit::TestCase
   end
 
   def test_reraise_exception()
-   unless /^1\.8/ =~ RUBY_VERSION
-      begin
-        cause_exception
-      rescue
-        assert($!.to_s =~ /NumberFormatException/)
-      end
-   end
+    skip('1.8 does not support reraise') if /^1\.8/ =~ RUBY_VERSION
+    begin
+      cause_exception
+    rescue
+      assert($!.inspect =~ /NumberFormatException/)
+    end
   end
 
 
@@ -874,10 +873,11 @@ class TestRjb < Test::Unit::TestCase
     assert_equal(cons._classname, sys._invoke('console')._classname)    
   end
   def test_longarg
+    skip('rbx can handle 64bits long') if RUBY_ENGINE == 'rbx'
     assert_equal(597899502607411822, @jLong.reverse(0x7654321076543210))
     begin
       @jLong.reverse(0x76543210765432101)
-      fail 'no exception for gibnum it doesn\'t convert Java long'
+      fail 'no exception for bigbnum it doesn\'t convert Java long'
     rescue RangeError
       assert true
     end
