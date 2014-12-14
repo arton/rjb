@@ -15,7 +15,7 @@
  * $Id: rjb.c 199 2012-12-17 13:31:18Z arton $
  */
 
-#define RJB_VERSION "1.5.1"
+#define RJB_VERSION "1.5.2"
 
 #include "ruby.h"
 #include "extconf.h"

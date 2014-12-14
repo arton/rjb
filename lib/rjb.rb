@@ -4,6 +4,35 @@
 
 require 'rbconfig'
 
+begin
+  require 'rubinius/ffi'
+  module DL
+    extend FFI::Library
+    class FakeDL
+      def initialize(lib)
+        @lib = lib
+      end
+      def [](fun)
+        f = @lib.find_function(fun)
+        if f
+          f.to_i
+        else
+          nil
+        end
+      end
+    end
+    def self.dlopen(lib)
+      a = ffi_lib(lib)
+      if Array === a && a.size >= 1
+        FakeDL.new(a[0])
+      else
+        nil
+      end
+    end
+  end
+rescue LoadError
+end
+
 module RjbConf
   if /darwin/ =~ RUBY_PLATFORM
     if ENV['JVM_LIB'].nil? || ENV['JVM_LIB'] == ''

@@ -192,10 +192,10 @@ VALUE exticonv_local_to_utf8(VALUE local_string)
         return local_string;
     }
 #else
-    VALUE rb_cEncoding, encoding, utf8;
-    rb_cEncoding = rb_const_get(rb_cObject, rb_intern("Encoding"));
+    VALUE cEncoding, encoding, utf8;
+    cEncoding = rb_const_get(rb_cObject, rb_intern("Encoding"));
     encoding = rb_funcall(local_string, rb_intern("encoding"), 0);
-    utf8 = rb_const_get(rb_cEncoding, rb_intern("UTF_8"));
+    utf8 = rb_const_get(cEncoding, rb_intern("UTF_8"));
     if (encoding != utf8)
     {
         VALUE ret = rb_funcall(local_string, rb_intern("encode"), 2, utf8, encoding);
