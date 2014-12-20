@@ -899,19 +899,23 @@ class TestRjb < Test::Unit::TestCase
     assert_equal '[Ljava.lang.Integer;', ret[1]
     assert_equal '[Ljava.net.URI;', ret[2]    
   end
+
+  SJIS_STR = "\x8a\xbf\x8e\x9a\x83\x65\x83\x4c\x83\x58\x83\x67"
+  EUCJP_STR = "\xb4\xc1\xbb\xfa\xa5\xc6\xa5\xad\xa5\xb9\xa5\xc8"
+  UTF8_STR = "\xE6\xBC\xA2\xE5\xAD\x97\xE3\x83\x86\xE3\x82\xAD\xE3\x82\xB9\xE3\x83\x88"
   def test_auto_constructor_selection
     skip 'no encoding' unless Object::const_defined?(:Encoding)
     sys = import('java.lang.System')
     encoding = sys.property('file.encoding')
-    s = @jString.new("\x8a\xbf\x8e\x9a\x83\x65\x83\x4c\x83\x58\x83\x67".force_encoding Encoding::SHIFT_JIS)
-    e = @jString.new("\xb4\xc1\xbb\xfa\xa5\xc6\xa5\xad\xa5\xb9\xa5\xc8".force_encoding Encoding::EUC_JP)
-    u = @jString.new("\xE6\xBC\xA2\xE5\xAD\x97\xE3\x83\x86\xE3\x82\xAD\xE3\x82\xB9\xE3\x83\x88".force_encoding Encoding::UTF_8)
+    s = @jString.new(SJIS_STR.force_encoding Encoding::SHIFT_JIS)
+    e = @jString.new(EUCJP_STR.force_encoding Encoding::EUC_JP)
+    u = @jString.new(UTF8_STR.force_encoding Encoding::UTF_8)
     if encoding == 'MS932'
-      s1 = @jString.new("\x8a\xbf\x8e\x9a\x83\x65\x83\x4c\x83\x58\x83\x67".bytes)
+      s1 = @jString.new(SJIS_STR.bytes)
     elsif encoding.upcase == 'EUC-JP'
-      s1 = @jString.new("\xb4\xc1\xbb\xfa\xa5\xc6\xa5\xad\xa5\xb9\xa5\xc8".bytes)
+      s1 = @jString.new(EUCJP_STR.bytes)
     elsif encoding.upcase == 'UTF-8'
-      s1 = @jString.new("\xE6\xBC\xA2\xE5\xAD\x97\xE3\x83\x86\xE3\x82\xAD\xE3\x82\xB9\xE3\x83\x88".bytes)
+      s1 = @jString.new(UTF8_STR.bytes)
     else
       skip 'no checkable encoding'
     end

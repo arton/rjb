@@ -14,7 +14,7 @@
  *
  */
 
-#define RJB_VERSION "1.5.2"
+#define RJB_VERSION "1.5.3"
 
 #include "ruby.h"
 #include "extconf.h"
@@ -2130,6 +2130,8 @@ static VALUE register_instance(JNIEnv* jenv, VALUE klass, struct jv_data* org, j
     return v;
 }
 
+#define IS_BYTE(b) (!((b) & 0xffffff00))
+#define IS_SHORT(b) (!((b) & 0xffff0000))
 /*
  * temporary signature check
  * return !0 if found
@@ -2140,6 +2142,7 @@ static VALUE register_instance(JNIEnv* jenv, VALUE klass, struct jv_data* org, j
 #define PREFERABLE 3
 static int check_rtype(JNIEnv* jenv, VALUE* pv, char* p)
 {
+    size_t i;
     char* pcls = NULL;
     if (*p == 'L')
     {
@@ -2181,7 +2184,33 @@ static int check_rtype(JNIEnv* jenv, VALUE* pv, char* p)
     case T_FALSE:
         return (*p == 'Z') ? SOSO : UNMATCHED;
     case T_ARRAY:
-        return (*p == '[') ? SOSO : UNMATCHED;
+        if (*p == '[')
+        {
+            int weight = (*(p + 1) == 'C') ? SOSO : PREFERABLE;
+            size_t len = RARRAY_LEN(*pv);
+            VALUE* ppv = RARRAY_PTR(*pv);
+            unsigned long ul;
+            if (!strchr("BCSI", *(p + 1))) return SOSO; // verify later
+            if (len > 32) len = 32;
+            for (i = 0; i < len; i++, ppv++)
+            {
+                if (!FIXNUM_P(*ppv))
+                {
+                    return UNMATCHED;
+                }
+                ul = (unsigned long)FIX2LONG(*ppv);
+                if (*(p + 1) == 'B')
+                {
+                    if (!IS_BYTE(ul)) return UNMATCHED;
+                }
+                else if (*(p + 1) == 'C' || *(p + 1) == 'S')
+                {
+                    if (!IS_SHORT(ul)) return UNMATCHED;
+                }
+            }
+            return weight;
+        }
+        return UNMATCHED;
     case T_DATA:
     case T_OBJECT:
         if (IS_RJB_OBJECT(*pv) && pcls)
@@ -2296,6 +2325,10 @@ static VALUE rjb_newinstance(int argc, VALUE* argv, VALUE self)
 	}
         if (found_pc)
         {
+#if defined(DEBUG)
+            fprintf(stderr, "ctr sig=%s\n", (*found_pc)->method_signature);
+            fflush(stderr);
+#endif
             ret = createinstance(jenv, argc, argv, self, *found_pc);
         }
     }
