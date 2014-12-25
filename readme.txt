@@ -1,5 +1,7 @@
 Rjb is Ruby-Java bridge using Java Native Interface.
 
+http://www.slideshare.net/artonx/j-ruby-kaigi-2010
+
 How to install
 
 you need to install Java2 sdk, and setup JAVA_HOME enviromental varible except for OS X.
