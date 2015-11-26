@@ -923,5 +923,15 @@ class TestRjb < Test::Unit::TestCase
     assert_equal s1.toString, e.toString
     assert_equal s1.toString, u.toString
   end
+  
+  def test_bothdirection_chararray
+    charArrayReader = import('java.io.CharArrayReader')
+    org = [48, 49, 50, 51, 52, 53]
+    reader = charArrayReader.new(org)
+    buffer = Array.new(32, 0)
+    len = reader.read(buffer, 0, buffer.size)
+    assert_equal org.size, len
+    assert_equal org, buffer[0...len]
+  end
 end
 

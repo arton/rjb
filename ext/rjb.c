@@ -14,7 +14,7 @@
  *
  */
 
-#define RJB_VERSION "1.5.3"
+#define RJB_VERSION "1.5.4"
 
 #include "ruby.h"
 #include "extconf.h"
@@ -1157,6 +1157,17 @@ static void rv2jarray(JNIEnv* jenv, VALUE val, jvalue* jv, const char* psig, int
                 VALUE src = rb_str_new((char*)p, len);
                 rb_str_set_len(val, 0);
                 rb_str_append(val, src);
+            }
+        }
+        else if (TYPE(val) == T_ARRAY && *(psig + 1) == 'C')
+        {
+            int i;
+            jsize len = (*jenv)->GetArrayLength(jenv, jv->l);
+            jchar* p = (*jenv)->GetCharArrayElements(jenv, jv->l, NULL);
+            rb_ary_clear(val);
+            for (i = 0; i < len; i++, p++)
+            {
+                rb_ary_push(val, INT2FIX(*p));
             }
         }
 	(*jenv)->DeleteLocalRef(jenv, jv->l);
