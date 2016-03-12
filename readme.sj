@@ -1,27 +1,27 @@
-����
-�E���炩���ߊ��ϐ���JAVA_HOME��ݒ肵�Ă����Ă��������B
-�E���̏ꍇ�AJAVA_HOME�́AJ2SDK�̃C���X�g�[���f�B���N�g���̕K�v������܂��B
-�E���炩���ߊ��ϐ�PATH��$JAVA_HOME/bin��ݒ肵�Ă����Ă��������B
-�EWindows�̏ꍇ�APATH�ɂ�%PATH%;%JAVA_HOME%bin��ݒ肷�邱�ƂɂȂ�܂��B
-�Eruby1.8�ȍ~�����s�ł���悤��PATH��ݒ肵�Ă����Ă��������B
+準備
+・あらかじめ環境変数にJAVA_HOMEを設定しておいてください。
+・この場合、JAVA_HOMEは、J2SDKのインストールディレクトリの必要があります。
+・あらかじめ環境変数PATHに$JAVA_HOME/binを設定しておいてください。
+・Windowsの場合、PATHには%PATH%;%JAVA_HOME%binを設定することになります。
+・ruby1.8以降が実行できるようにPATHを設定しておいてください。
 
-�C���X�g�[�����@
+インストール方法
 1. unzip rjb-*
 2. cd rjb-*
 3. ruby setup.rb config
 4. ruby setup.rb setup
 5. sudo ruby setup.rb install
-   Windows�ł́A�قƂ�ǂ̏ꍇ�ŏ���sudo�͕s�v�ł��B�u�قƂ�ǂ̏ꍇ�v�ɊY�����Ȃ��ꍇ�͉����K�v���͂킩���Ă���͂��ł��̂Ő����͏ȗ����܂��B
+   Windowsでは、ほとんどの場合最初のsudoは不要です。「ほとんどの場合」に該当しない場合は何が必要かはわかっているはずですので説明は省略します。
 
-���s��
-�E���炩���ߊ��ϐ���JAVA_HOME��ݒ肵�Ă����Ă��������B
-�E���̏ꍇ�AJAVA_HOME�́AJ2SDK�̃C���X�g�[���f�B���N�g���̕K�v������܂��B
-�ELinux�Ɋւ��Ă�LD_LIBRARY_PATH�ɁAjava2�̋��L�I�u�W�F�N�g�f�B���N�g����ݒ肵�Ă����K�v������܂��B
+実行時
+・あらかじめ環境変数にJAVA_HOMEを設定しておいてください。
+・この場合、JAVA_HOMEは、J2SDKのインストールディレクトリの必要があります。
+・Linuxに関してはLD_LIBRARY_PATHに、java2の共有オブジェクトディレクトリを設定しておく必要があります。
 
-�e�X�g������
+テストした環境
 Windows2000 SP4-ruby1.8.2-j2se1.5.0, Solaris9-ruby1.8.0-j2se1.4.2, Linux 2.4.26-ruby-1.8.1-j2se1.4.2
 
-�A����
+連絡先
 artonx@yahoo.co.jp
-http://arton.no-ip.info/collabo/backyard/?RjbQandA (�L�����ɂ�diary�փc�b�R�~�����Ă��������j
+https://www.artonx.org/collabo/backyard/?RjbQandA (記入時にはdiaryへツッコミを入れてください）
 
