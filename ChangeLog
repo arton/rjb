@@ -1,3 +1,6 @@
+Tue Jun 21 arton
+ *lib/rjb.rb
+	add JAVA_HOME/jre/bin to PATH env.vars for LoadLibrary can load further dlls
 Fri Nov 27 arton
  *ext/rjb.c
 	RJB_VERSION -> 1.5.4

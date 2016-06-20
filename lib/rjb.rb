@@ -45,6 +45,9 @@ module RjbConf
         ENV['JVM_LIB'] = jvms[0]
       end
     end
+  elsif /win32|win64/ =~ RUBY_PLATFORM
+    # add JRE bin directory for further DLLs
+    ENV['PATH'] = "#{ENV['JAVA_HOME']}\\jre\\bin;#{ENV['PATH']}"
   end
 
   dir = File.join(File.dirname(File.dirname(__FILE__)), 'data')
