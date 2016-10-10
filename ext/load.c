@@ -77,6 +77,8 @@
    #define JVM_TYPE "server"
  #elif defined(i586) || defined(__i386__)
   #define ARCH "i386"
+ #elif defined(__arm__)
+  #define ARCH "arm"
  #endif
  #ifndef ARCH
   #include <sys/systeminfo.h>
