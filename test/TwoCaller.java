@@ -1,3 +1,4 @@
+package jp.co.infoseek.hp.arton.rjb;
 public class TwoCaller {
     public String[] foo(Two t) {
         String[] ret = new String[2];

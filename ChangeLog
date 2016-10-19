@@ -1,3 +1,11 @@
+Thu Oct 20 arton
+ *test/test.rb
+	change noarg static method calling test for JDK1.5 env.
+ *test/Two.java, TwoCaller.java
+	add package name
+ *test/jp/co/infoseek/hp/arton/rjb/*.class
+	recompile by JDK1.5
+	
 Tue Jun 21 arton
  *lib/rjb.rb
 	add JAVA_HOME/jre/bin to PATH env.vars for LoadLibrary can load further dlls

@@ -4,8 +4,8 @@
 
 begin
   require 'rjb'
-rescue LoadError 
-  require 'rubygems' 
+rescue LoadError
+  require 'rubygems'
   require 'rjb'
 end
 require 'test/unit'
@@ -139,8 +139,8 @@ class TestRjb < Test::Unit::TestCase
     oa = a.toArray
     assert_equal(3, oa.size)
     assert_equal(1, oa[0].intValue)
-    assert_equal(2, oa[1].intValue)    
-    assert_equal(3, oa[2].intValue)    
+    assert_equal(2, oa[1].intValue)
+    assert_equal(3, oa[2].intValue)
   end
 
   def test_kjconv()
@@ -638,7 +638,7 @@ class TestRjb < Test::Unit::TestCase
 
   #rjb-bugs-15430 rebported by Bryan Duxbury
   def test_generics_map
-    
+
     ctest = import('jp.co.infoseek.hp.arton.rjb.Test')
     test = ctest.new
     map = test.sorted_map
@@ -650,7 +650,7 @@ class TestRjb < Test::Unit::TestCase
     map.put('abc', @jString.new('abc').bytes)
     map.put('012', @jString.new('012').bytes)
 
-    Rjb::primitive_conversion = true    
+    Rjb::primitive_conversion = true
     map2 = test.throughSortedMap(map)
     assert_equal '012', map2.get('012')
     assert_equal 'abc', map2.get('abc')
@@ -666,7 +666,7 @@ class TestRjb < Test::Unit::TestCase
       assert_equal "can't create Java VM", $!.message
     end
   end
-  
+
   module TestMixin
     def test_hello(s)
       'hello ' + s
@@ -686,11 +686,11 @@ class TestRjb < Test::Unit::TestCase
     end
     p = point.new(11, 12)
     assert_equal(11, p.x)
-    assert_equal(12, p.y)    
+    assert_equal(12, p.y)
     assert_equal('hello world', p.test_hello('world'))
     p = p.location
     assert_equal(11, p.x)
-    assert_equal(12, p.y)    
+    assert_equal(12, p.y)
     assert_equal('hello world', p.test_hello('world'))
   end
   def test_fetch_method_signature
@@ -699,11 +699,11 @@ class TestRjb < Test::Unit::TestCase
     assert_equal(expected, sig)
   end
   def test_fetch_method_without_signature
-    sig = 
+    sig =
     assert_equal([nil], @jString.sigs('toString'))
   end
   def test_fetch_static_method_signature
-    expected = ['Ljava.lang.String;[Ljava.lang.Object;', 
+    expected = ['Ljava.lang.String;[Ljava.lang.Object;',
                 'Ljava.util.Locale;Ljava.lang.String;[Ljava.lang.Object;']
     sig = @jString.static_sigs('format').sort
     assert_equal(expected, sig)
@@ -734,7 +734,7 @@ class TestRjb < Test::Unit::TestCase
       m =~ /^indexOf/
     end
     args = indexof.match(/\[([^\]]+)\]/)[1]
-    assert_equal('Ljava.lang.String;I, II, I, Ljava.lang.String;'.split(/,\s*/).sort, 
+    assert_equal('Ljava.lang.String;I, II, I, Ljava.lang.String;'.split(/,\s*/).sort,
                  args.split(/,\s*/).sort)
   end
   def test_java_class_methods
@@ -785,9 +785,9 @@ class TestRjb < Test::Unit::TestCase
     assert_equal -5, index
   end
   def test_impl
-    two = import('Two')
+    two = import('jp.co.infoseek.hp.arton.rjb.Two')
     t = two.impl { |m| m.to_s }
-    a = import('TwoCaller').new
+    a = import('jp.co.infoseek.hp.arton.rjb.TwoCaller').new
     ret = a.foo(t)
     assert_equal 'method1', ret[0]
     assert_equal 'method2', ret[1]
@@ -822,7 +822,7 @@ class TestRjb < Test::Unit::TestCase
       assert_equal('java.lang.IllegalArgumentException', ia._classname)
     end
   end
-  
+
   class CbTest
     def method(l, s, i, d, str)
       "test_ok:#{l}-#{s}-#{i}-#{d}-#{str}"
@@ -833,7 +833,7 @@ class TestRjb < Test::Unit::TestCase
     test = import('jp.co.infoseek.hp.arton.rjb.CallbackTest')
     assert_equal 'test_ok:1234-1234-1234-1234.5-1234', test.callCallback(cb)
   end
-  
+
   class TestIterEx < TestIter
     def initialize()
       super
@@ -852,7 +852,7 @@ class TestRjb < Test::Unit::TestCase
     a = test.new
     assert_equal("43210", a.concat(it))
     assert(it.respond_to?(:numattr))
-    assert(it.respond_to?(:multargs))    
+    assert(it.respond_to?(:multargs))
     assert_equal(32, it.numattr)
     assert_equal('strattr', it.strattr)
     it.numattr += 1
@@ -862,15 +862,15 @@ class TestRjb < Test::Unit::TestCase
   def test_noarg_invoke()
     str = @jString.new('abc')
     assert_equal('abc', str._invoke('toString', ''))
-    assert_equal('abc', str._invoke('toString', nil))    
-    assert_equal('abc', str._invoke('toString'))    
+    assert_equal('abc', str._invoke('toString', nil))
+    assert_equal('abc', str._invoke('toString'))
   end
   def test_noarg_sinvoke()
-    sys = import('java.lang.System')
-    cons = sys.console
-    assert_equal(cons._classname, sys._invoke('console', '')._classname)
-    assert_equal(cons._classname, sys._invoke('console', nil)._classname)
-    assert_equal(cons._classname, sys._invoke('console')._classname)    
+    loader= import('java.lang.ClassLoader')
+    sloader = loader.system_class_loader
+    assert_equal(sloader._classname, loader._invoke('getSystemClassLoader', '')._classname)
+    assert_equal(sloader._classname, loader._invoke('getSystemClassLoader', nil)._classname)
+    assert_equal(sloader._classname, loader._invoke('getSystemClassLoader')._classname)
   end
   def test_longarg
     skip('rbx can handle 64bits long') if RUBY_ENGINE == 'rbx'
@@ -897,7 +897,7 @@ class TestRjb < Test::Unit::TestCase
     ret = test.java_typed_array(['a', 'b', 'c'], [1, 2, 3], [uri.new('http://www.artonx.org')])
     assert_equal '[Ljava.lang.String;', ret[0]
     assert_equal '[Ljava.lang.Integer;', ret[1]
-    assert_equal '[Ljava.net.URI;', ret[2]    
+    assert_equal '[Ljava.net.URI;', ret[2]
   end
 
   SJIS_STR = "\x8a\xbf\x8e\x9a\x83\x65\x83\x4c\x83\x58\x83\x67"
@@ -923,7 +923,7 @@ class TestRjb < Test::Unit::TestCase
     assert_equal s1.toString, e.toString
     assert_equal s1.toString, u.toString
   end
-  
+
   def test_bothdirection_chararray
     charArrayReader = import('java.io.CharArrayReader')
     org = [48, 49, 50, 51, 52, 53]
