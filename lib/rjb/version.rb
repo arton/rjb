@@ -17,7 +17,11 @@ module Rjb
     end
   end
 
-  unless (VERSION = read_version)
-    raise 'Cannot find a valid version number in `rjb.c`!'
+  # The `Rjb` module defines `VERSION` in the C code.
+  # If Rjb is already required we have the constant.
+  unless defined?(::Rjb::VERSION)
+    unless (VERSION = read_version)
+      raise 'Cannot find a valid version number in `rjb.c`!'
+    end
   end
 end
