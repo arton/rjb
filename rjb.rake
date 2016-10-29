@@ -2,7 +2,7 @@ require 'rubygems'
 begin
   require 'rake/gempackagetask'
   $package_task = Rake::GemPackageTask
-rescue
+rescue LoadError
   require 'rubygems/package_task'
   $package_task = Gem::PackageTask
 end
@@ -33,7 +33,7 @@ spec = Gem::Specification.new do |s|
   s.required_ruby_version = '>= 1.8.2'
   s.summary = 'Ruby Java bridge'
   s.name = 'rjb'
-  s.homepage = 'http://www.artonx.org/collabo/backyard/?RubyJavaBridge'
+  s.homepage = 'https://www.artonx.org/collabo/backyard/?RubyJavaBridge'
   s.rubyforge_project = 'rjb'
   s.version = read_version
   s.requirements << 'none'
@@ -41,7 +41,7 @@ spec = Gem::Specification.new do |s|
   s.requirements << 'JDK 5.0'
   s.license = 'LGPL'
   files = FileList['ext/*.java', 'ext/*.c', 'ext/*.h', 'ext/depend',
-                   'data/rjb/**/*.class', 'lib/*.rb', 'lib/rjb/*.rb', 'samples/**/*.rb', 
+                   'data/rjb/**/*.class', 'lib/*.rb', 'lib/rjb/*.rb', 'samples/**/*.rb',
                    'test/*.rb', 'test/**/*.class', 'test/*.jar', 'COPYING', 'ChangeLog', 'readme.*']
   if /mswin|mingw/ =~ RUBY_PLATFORM
     FileUtils.cp 'ext/rjbcore.so', 'lib/rjbcore.so'
