@@ -13,6 +13,7 @@
 *.txt text
 *.sj text
 *.rake text
+/ChangeLog text
 /Rakefile text
 /ext/MANIFEST text
 /ext/depend text
