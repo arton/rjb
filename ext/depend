@@ -1,9 +1,15 @@
+JAVAH := $(shell command -v javah 2>/dev/null)
+
 riconv.o : riconv.c jp_co_infoseek_hp_arton_rjb_RBridge.h
 rjb.o : rjb.c jp_co_infoseek_hp_arton_rjb_RBridge.h riconv.h rjb.h
 rjbexception.o : rjbexception.c jp_co_infoseek_hp_arton_rjb_RBridge.h riconv.h rjb.h
 load.o : load.c jp_co_infoseek_hp_arton_rjb_RBridge.h
 jp_co_infoseek_hp_arton_rjb_RBridge.h : jniwrap.h ../data/rjb/jp/co/infoseek/hp/arton/rjb/RBridge.class
+ifdef JAVAH
 	javah -classpath ../data/rjb jp.co.infoseek.hp.arton.rjb.RBridge
+else
+	javac -h . -classpath ../data/rjb RBridge.java
+endif
 ../data/rjb/jp/co/infoseek/hp/arton/rjb/RBridge.class : RBridge.java
 	mkdir -p ../data/rjb/jp/co/infoseek/hp/arton/rjb
 	javac -d ../data/rjb RBridge.java
