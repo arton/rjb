@@ -601,7 +601,7 @@ static VALUE jv2rv_withprim(JNIEnv* jenv, jobject o)
                 jv.j = (*jenv)->CallLongMethod(jenv, o, jpcvt[i].to_prim_id);
                 break;
 	    default:
-		rb_raise(rb_eRuntimeError, "no convertor defined(%d)", i);
+		rb_raise(rb_eRuntimeError, "no converter defined(%d)", i);
 		break;
 	    }
             (*jenv)->DeleteLocalRef(jenv, o);
