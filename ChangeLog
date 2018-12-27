@@ -1,3 +1,8 @@
+Fri Dec 28 2018 arton
+ * ext/rjbexception.c
+	fix #60; stable java derived exception class for raise
+ * ext/rjb.c
+	RJB_VERSION -> 1.5.7
 Thu Dec 27 2018 sean-npu
  * ext/load.c
 	support aarch64

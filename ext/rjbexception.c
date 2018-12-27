@@ -26,21 +26,9 @@
 #include "riconv.h"
 #include "rjb.h"
 
-static VALUE missing_delegate(int argc, VALUE* argv, VALUE self)
-{
-    ID rmid = rb_to_id(argv[0]);
-    return rb_funcall(rb_ivar_get(self, rb_intern("@cause")), rmid, argc - 1, argv + 1);
-}
-
 static VALUE get_cause(VALUE self)
 {
-  return rb_funcall(rb_ivar_get(self, rb_intern("@cause")), rb_intern("cause"), 0);
-}
-
-static VALUE exception_to_s(VALUE self)
-{
-    return rb_funcall(rb_ivar_get(self, rb_intern("@cause")),
-                      rb_intern("toString"), 0);
+    return rb_funcall(rb_ivar_get(self, rb_intern("@cause")), rb_intern("cause"), 0);
 }
 
 /*
@@ -70,18 +58,16 @@ VALUE rjb_get_exception_class(JNIEnv* jenv, jstring str)
     rexp = rb_hash_aref(rjb_loaded_classes, cname);
     if (rexp == Qnil)
     {
-	rexp = rb_define_class(pcls, rb_eStandardError);
-	rb_define_method(rexp, "cause", get_cause, 0);
-        rb_define_method(rexp, "method_missing", missing_delegate, -1);
-        rb_define_method(rexp, "to_str", exception_to_s, 0);
+        rexp = rb_define_class(pcls, rb_eStandardError);
+        rb_define_method(rexp, "cause", get_cause, 0);
 #if defined(HAVE_RB_HASH_ASET) || defined(RUBINIUS)
 	rb_hash_aset(rjb_loaded_classes, cname, rexp);
 #else
-#ifdef RHASH_TBL
-    st_insert(RHASH_TBL(rjb_loaded_classes), cname, rexp);
-#else
-    st_insert(RHASH(rjb_loaded_classes)->tbl, cname, rexp);
-#endif
+  #ifdef RHASH_TBL
+        st_insert(RHASH_TBL(rjb_loaded_classes), cname, rexp);
+  #else
+        st_insert(RHASH(rjb_loaded_classes)->tbl, cname, rexp);
+  #endif
 #endif
 	
     }
@@ -140,7 +126,7 @@ void rjb_check_exception(JNIEnv* jenv, int t)
 	(*jenv)->ExceptionClear(jenv);
         if(1)
 	{
- 	    char* msg = "unknown exception";
+            char* msg = (char*)"unknown exception";
 	    jclass cls = (*jenv)->GetObjectClass(jenv, exp);
  	    jstring str = (*jenv)->CallObjectMethod(jenv, exp, rjb_throwable_getMessage);
 	    if (str)
