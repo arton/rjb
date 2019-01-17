@@ -933,5 +933,19 @@ class TestRjb < Test::Unit::TestCase
     assert_equal org.size, len
     assert_equal org, buffer[0...len]
   end
+
+  def test_re_raise
+    begin
+      @jInteger.parseInt('blabla')
+      flunk('no exception')
+    rescue NumberFormatException => e
+      begin
+        raise
+      rescue => e
+        assert_equal(NumberFormatException, e.class)
+        # OK
+      end
+    end
+  end
 end
 

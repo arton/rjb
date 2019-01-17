@@ -26,6 +26,12 @@
 #include "riconv.h"
 #include "rjb.h"
 
+static VALUE missing_delegate(int argc, VALUE* argv, VALUE self)
+{
+    ID rmid = rb_to_id(argv[0]);
+    return rb_funcall(rb_ivar_get(self, rb_intern("@cause")), rmid, argc - 1, argv + 1);
+}
+
 static VALUE get_cause(VALUE self)
 {
     return rb_funcall(rb_ivar_get(self, rb_intern("@cause")), rb_intern("cause"), 0);
@@ -60,6 +66,7 @@ VALUE rjb_get_exception_class(JNIEnv* jenv, jstring str)
     {
         rexp = rb_define_class(pcls, rb_eStandardError);
         rb_define_method(rexp, "cause", get_cause, 0);
+        rb_define_method(rexp, "method_missing", missing_delegate, -1);
 #if defined(HAVE_RB_HASH_ASET) || defined(RUBINIUS)
 	rb_hash_aset(rjb_loaded_classes, cname, rexp);
 #else
