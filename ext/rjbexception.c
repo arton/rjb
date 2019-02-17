@@ -37,6 +37,15 @@ static VALUE get_cause(VALUE self)
     return rb_funcall(rb_ivar_get(self, rb_intern("@cause")), rb_intern("cause"), 0);
 }
 
+static VALUE ex_respond_to(int argc, VALUE* argv, VALUE self)
+{
+    if (argc < 1 || argc > 2)
+    {
+        rb_raise(rb_eArgError, "respond_to? require 1 or 2 arguments");
+    }
+    return rb_to_id(argv[0]) == rb_intern("to_str") ? Qfalse : Qtrue;
+}
+
 /*
  * handle Java exception
  *  At this time, the Java exception is defined without the package name.
@@ -67,6 +76,7 @@ VALUE rjb_get_exception_class(JNIEnv* jenv, jstring str)
         rexp = rb_define_class(pcls, rb_eStandardError);
         rb_define_method(rexp, "cause", get_cause, 0);
         rb_define_method(rexp, "method_missing", missing_delegate, -1);
+        rb_define_method(rexp, "respond_to?", ex_respond_to, -1);
 #if defined(HAVE_RB_HASH_ASET) || defined(RUBINIUS)
 	rb_hash_aset(rjb_loaded_classes, cname, rexp);
 #else
