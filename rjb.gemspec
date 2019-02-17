@@ -20,7 +20,7 @@ RJB_GEMSPEC = Gem::Specification.new do |s|
   # @todo Do we need to support these old versions?
   s.required_ruby_version = '>= 1.8.2'
   # @todo Do we really need all the source code?
-  s.files = FileList['ext/*.java', 'ext/*.c', 'ext/*.h', 'ext/depend',
+  s.files = FileList['ext/*.java', 'ext/*.c', 'ext/*.h', 'ext/depend.erb',
                      'data/rjb/**/*.class', 'lib/*.rb', 'lib/rjb/*.rb',
                      'samples/**/*.rb', 'test/*.rb', 'test/**/*.class',
                      'test/*.jar', 'COPYING', 'ChangeLog', 'readme.*',

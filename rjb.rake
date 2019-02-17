@@ -40,7 +40,7 @@ spec = Gem::Specification.new do |s|
   s.require_path = 'lib'
   s.requirements << 'JDK 5.0'
   s.license = 'LGPL'
-  files = FileList['ext/*.java', 'ext/*.c', 'ext/*.h', 'ext/depend',
+  files = FileList['ext/*.java', 'ext/*.c', 'ext/*.h', 'ext/depend.erb',
                    'data/rjb/**/*.class', 'lib/*.rb', 'lib/rjb/*.rb', 'samples/**/*.rb',
                    'test/*.rb', 'test/**/*.class', 'test/*.jar', 'COPYING', 'ChangeLog', 'readme.*']
   if /mswin|mingw/ =~ RUBY_PLATFORM
