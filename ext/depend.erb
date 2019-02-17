@@ -3,7 +3,7 @@ rjb.o : rjb.c jp_co_infoseek_hp_arton_rjb_RBridge.h riconv.h rjb.h
 rjbexception.o : rjbexception.c jp_co_infoseek_hp_arton_rjb_RBridge.h riconv.h rjb.h
 load.o : load.c jp_co_infoseek_hp_arton_rjb_RBridge.h
 jp_co_infoseek_hp_arton_rjb_RBridge.h : jniwrap.h ../data/rjb/jp/co/infoseek/hp/arton/rjb/RBridge.class
-	javah -classpath ../data/rjb jp.co.infoseek.hp.arton.rjb.RBridge
+	<%= javah %>
 ../data/rjb/jp/co/infoseek/hp/arton/rjb/RBridge.class : RBridge.java
 	mkdir -p ../data/rjb/jp/co/infoseek/hp/arton/rjb
 	javac -d ../data/rjb RBridge.java

@@ -4,6 +4,7 @@
 # $Date: $
 #----------------------------------
 require 'mkmf'
+require 'erb'
 
 class Path
 
@@ -73,5 +74,14 @@ when /mswin32/
   $CFLAGS += ' /W3'
 when /cygwin/, /mingw/
   $defs << '-DNONAMELESSUNION'
+end
+
+if find_executable('javah')
+  javah = 'javah -classpath ../data/rjb jp.co.infoseek.hp.arton.rjb.RBridge'
+else
+  javah = 'javac -h . -classpath ../data/rjb RBridge.java'
+end
+File.open('depend', 'w') do |fout|
+  fout.write ERB.new(IO::read('depend.erb')).result
 end
 create_rjb_makefile

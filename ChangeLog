@@ -1,3 +1,12 @@
+Sun Feb 17 2019 lamby / arton
+ * ext/rjb.c
+	RJB_VERSION -> 1.5.9
+ * ext/depend.erb
+	it set javah line by ERB
+ * ext/extconf.rb
+	change javah to javac -h if it does not exist
+ * ext/depend
+	replaced by depend.erb
 Thu Jan 17 2019 arton
  * ext/rjbexception.c
 	restore method_missing for the exception class
