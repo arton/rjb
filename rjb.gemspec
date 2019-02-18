@@ -33,17 +33,17 @@ RJB_GEMSPEC = Gem::Specification.new do |s|
   when /mswin/
     s.platform = Gem::Platform::CURRENT
     FileUtils.cp 'ext/rjbcore.so', 'lib/rjbcore.so'
-    files << 'lib/rjbcore.so'
+    s.files << 'lib/rjbcore.so'
     # @todo We need a meaningful explanation for the end user.
     s.requirements << 'VC6 version of Ruby'
   when /mingw/
     s.platform = Gem::Platform::CURRENT
     FileUtils.cp 'ext/rjbcore.so', 'lib/rjbcore.so'
-    files << 'lib/rjbcore.so'
+    s.files << 'lib/rjbcore.so'
   when /darwin/
     s.platform = Gem::Platform::CURRENT
     FileUtils.cp 'ext/rjbcore.bundle', 'lib/rjbcore.bundle'
-    files << 'lib/rjbcore.bundle'
+    s.files << 'lib/rjbcore.bundle'
   else
     s.platform = Gem::Platform::RUBY
     s.extensions << 'ext/extconf.rb'
