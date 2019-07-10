@@ -1,3 +1,8 @@
+Thu Jul 11 2019 arton
+ * ext/rjb.c
+	RJB_VERSION -> 1.6.0
+ * ext/riconv.c
+	encode/decode between utf-8 and cesu-8 if char was greater than \uffff
 Sun Feb 17 2019 lamby / arton
  * ext/rjb.c
 	RJB_VERSION -> 1.5.9
