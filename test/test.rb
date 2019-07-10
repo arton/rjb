@@ -216,17 +216,28 @@ class TestRjb < Test::Unit::TestCase
   end
 
   def test_combination_charcters
-    teststr = "\xc7\x96\xc3\xbc\xcc\x84\x75\xcc\x88\xcc\x84\xed\xa1\xa9\xed\xba\xb2\xe3\x81\x8b\xe3\x82\x9a"
+    teststr = "\xc7\x96\xc3\xbc\xcc\x84\x75\xcc\x88\xcc\x84𪚲\xe3\x81\x8b\xe3\x82\x9a"
     test = import('jp.co.infoseek.hp.arton.rjb.Test').new
     s = test.getUmlaut()
     if Object::const_defined?(:Encoding) #>=1.9
-      teststr = teststr.force_encoding(Encoding::UTF_8)
-      assert_equal(s, teststr)
+=begin
+      n = [teststr.bytes.length, s.bytes.length].max
+      puts "org:#{teststr.bytes.length}, ret:#{s.bytes.length}"
+      0.upto(n - 1) do |i|
+        b0 = teststr.getbyte(i)
+        b0 = 0 unless b0
+        b1 = s.getbyte(i)
+        b1 = 0 unless b1
+        puts sprintf("%02X - %02X\n", b0, b1)
+      end
+=end
+      assert_equal(teststr.bytes.length, s.bytes.length)
+      assert_equal(teststr, s)
     else
       default_kcode = $KCODE
       begin
 	$KCODE = "utf8"
-	assert_equal(s, teststr)
+	assert_equal(teststr, s)
       ensure
 	$KCODE = default_kcode
       end
@@ -946,6 +957,11 @@ class TestRjb < Test::Unit::TestCase
         # OK
       end
     end
+  end
+
+  def test_java_utf8
+    y = @jString.new('𠮷野家')
+    assert_equal '𠮷野家', y.toString
   end
 end
 

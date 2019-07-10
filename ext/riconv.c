@@ -167,6 +167,126 @@ static void check_kcode()
         objIconvR2J = objIconvJ2R = Qnil;
     }
 }
+#else
+VALUE cEncoding = Qnil;
+VALUE encoding_utf8 = Qnil;
+static void init_encoding_vars()
+{
+    cEncoding = rb_const_get(rb_cObject, rb_intern("Encoding"));
+    encoding_utf8 = rb_const_get(cEncoding, rb_intern("UTF_8"));
+}
+static int contains_surrogate_pair(const unsigned char* p)
+{
+    while (*p)
+    {
+        switch (*p & 0xf0)
+        {
+        case 0xf0:
+            return 1;
+        case 0xe0:
+            p += 3;
+            break;
+        default:
+            p += (*p & 0x80) ? 2 : 1;
+        }
+    }
+    return 0;
+}
+static int contains_auxchar(const unsigned char* p)
+{
+    while (*p)
+    {
+      if (*p == 0xed)
+        {
+#if defined(DEBUG)
+          printf("find %02x %02x %02x %02x %02x %02x\n", *p, *(p + 1), *(p + 2), *(p + 3), *(p + 4), *(p + 5));
+#endif
+          return 1;
+        }
+        switch (*p & 0xe0)
+        {
+        case 0xe0:
+            p++;
+        case 0xc0:
+            p++;
+        default:
+            p++;
+        }
+    }
+    return 0;
+}
+
+static VALUE encode_to_cesu8(const unsigned char* p)
+{
+    size_t len = strlen(p);
+    char* newstr = ALLOCA_N(char, len + (len + 1) / 2);
+    char* dest = newstr;
+    int sval, i;
+    while (*p)
+    {
+        switch (*p & 0xf0)
+        {
+        case 0xf0:
+            sval = *p++ & 7;
+            for (i = 0; i < 3; i++)
+            {
+                sval <<= 6;
+                sval |= (*p++ & 0x3f);
+            }
+            *dest++ = '\xed';
+            *dest++ = 0xa0 | (((sval >> 16) - 1) & 0x0f);
+            *dest++ = 0x80 | ((sval >> 10) & 0x3f);
+            *dest++ = '\xed';
+            *dest++ = 0xb0 | ((sval >> 6) & 0x0f);
+            *dest++ = 0x80 | (sval & 0x3f);
+            break;
+        case 0xe0:
+            *dest++ = *p++;
+        case 0xc0:
+        case 0xc1:          
+            *dest++ = *p++;
+        default:
+            *dest++ = *p++;
+        }
+    }
+    return rb_str_new(newstr, dest - newstr);
+}
+static VALUE encode_to_utf8(const unsigned char* p)
+{
+    size_t len = strlen(p);
+    char* newstr = ALLOCA_N(char, len);
+    char* dest = newstr;
+    int sval, i;
+    while (*p)
+    {
+        if (*p == 0xed)
+        {
+            char v = *(p + 1);
+            char w = *(p + 2);
+            char y = *(p + 4);
+            char z = *(p + 5);
+            p += 6;
+            sval = 0x10000 + ((v & 0x0f) << 16) + ((w & 0x3f) << 10) + ((y & 0x0f) << 6) + (z & 0x3f);
+            sval = (((v + 1) & 0x0f) << 16) + ((w & 0x3f) << 10) + ((y & 0x0f) << 6) + (z & 0x3f);
+           *dest++ = 0xf0 | ((sval >> 18));
+           *dest++ = 0x80 | ((sval >> 12) & 0x3f);
+           *dest++ = 0x80 | ((sval >> 6) & 0x3f);
+           *dest++ = 0x80 | (sval & 0x3f);
+           continue;
+        }
+        switch (*p & 0xe0)
+        {
+        case 0xe0:
+            *dest++ = *p++;          
+        case 0xc0:
+        case 0xc1:          
+            *dest++ = *p++;                    
+        default:
+            *dest++ = *p++;                   
+        }
+    }
+    return rb_str_new(newstr, dest - newstr);
+}
 #endif
 
 #if defined(DEBUG)
@@ -177,6 +297,8 @@ static void debug_out(VALUE v)
            strlen(p), p);
     fflush(stdout);
 }
+#else
+#define debug_out(n)
 #endif
 
 VALUE exticonv_local_to_utf8(VALUE local_string)
@@ -192,23 +314,24 @@ VALUE exticonv_local_to_utf8(VALUE local_string)
         return local_string;
     }
 #else
-    VALUE cEncoding, encoding, utf8;
-    cEncoding = rb_const_get(rb_cObject, rb_intern("Encoding"));
-    encoding = rb_funcall(local_string, rb_intern("encoding"), 0);
-    utf8 = rb_const_get(cEncoding, rb_intern("UTF_8"));
-    if (encoding != utf8)
+    VALUE encoding;
+    if (NIL_P(cEncoding))
     {
-        VALUE ret = rb_funcall(local_string, rb_intern("encode"), 2, utf8, encoding);
-#if defined(DEBUG)
+      init_encoding_vars();
+    }
+    encoding = rb_funcall(local_string, rb_intern("encoding"), 0);
+    if (encoding != encoding_utf8)
+    {
+        VALUE ret = rb_funcall(local_string, rb_intern("encode"), 2, encoding_utf8, encoding);
         debug_out(local_string);
         debug_out(ret);
-#endif        
-        return ret;
+        local_string = ret;
     }
-    else
+    if (contains_surrogate_pair(StringValuePtr(local_string)))
     {
-	return local_string;
+        local_string = encode_to_cesu8(StringValuePtr(local_string));
     }
+    return local_string;
 #endif
 }
 
@@ -225,6 +348,14 @@ VALUE exticonv_utf8_to_local(VALUE utf8_string)
         return utf8_string;
     }
 #else
-    return rb_funcall(utf8_string, rb_intern("force_encoding"), 1, rb_const_get(rb_cEncoding, rb_intern("UTF_8")));
+    if (NIL_P(cEncoding))
+    {
+        init_encoding_vars();
+    }
+    if (contains_auxchar(StringValuePtr(utf8_string)))
+    {
+        utf8_string = encode_to_utf8(StringValuePtr(utf8_string));
+    }
+    return rb_funcall(utf8_string, rb_intern("force_encoding"), 1, encoding_utf8);
 #endif
 }
