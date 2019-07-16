@@ -14,7 +14,7 @@
  *
  */
 
-#define RJB_VERSION "1.6.0"
+#define RJB_VERSION "1.6.1"
 
 #include "ruby.h"
 #include "extconf.h"
@@ -102,7 +102,7 @@ static VALUE primitive_conversion = Qfalse;
 /*
  * Object cache, never destroyed
  */
-/* method */ 
+/* method */
 static jmethodID method_getModifiers;
 static jmethodID method_getName;
 static jmethodID getParameterTypes;
@@ -229,7 +229,7 @@ static VALUE jstring2val(JNIEnv* jenv, jstring s)
     const char* p;
     VALUE v;
 
-    if (s == NULL) 
+    if (s == NULL)
     {
         return Qnil;
     }
@@ -317,7 +317,7 @@ static VALUE jv2rv_r(JNIEnv* jenv, jvalue val)
     Data_Get_Struct(v, struct jv_data, ptr);
     v = register_instance(jenv, v, (struct jv_data*)ptr, val.l);
     (*jenv)->DeleteLocalRef(jenv, klass);
-    (*jenv)->DeleteLocalRef(jenv, val.l);    
+    (*jenv)->DeleteLocalRef(jenv, val.l);
     return v;
 }
 
@@ -357,7 +357,7 @@ static VALUE jfloat2rv(JNIEnv* jenv, jvalue val)
 
 static VALUE jint2rv(JNIEnv* jenv, jvalue val)
 {
-    return INT2NUM(val.i);    
+    return INT2NUM(val.i);
 }
 
 static VALUE jlong2rv(JNIEnv* jenv, jvalue val)
@@ -393,13 +393,13 @@ static VALUE ja2r(J2R conv, JNIEnv* jenv, jvalue val, int depth)
     VALUE v;
     int i;
     if (!val.l) return Qnil;
-    if (depth == 1) 
+    if (depth == 1)
     {
         return conv(jenv, val);
     }
     len = (*jenv)->GetArrayLength(jenv, val.l);
     v = rb_ary_new2(len);
-    for (i = 0; i < len; i++) 
+    for (i = 0; i < len; i++)
     {
 	jvalue wrap;
 	wrap.l = (*jenv)->GetObjectArrayElement(jenv, val.l, i);
@@ -454,7 +454,7 @@ static VALUE la2rv(JNIEnv* jenv, void* p)
     return LL2NUM(*(jlong*)p);
 #else
     return LONG2NUM(*(jlong*)p);
-#endif	
+#endif
 }
 
 static VALUE sa2rv(JNIEnv* jenv, void* p)
@@ -498,7 +498,7 @@ static VALUE jbytearray2rv(JNIEnv* jenv, jvalue val)
 static VALUE jchararray2rv(JNIEnv* jenv, jvalue val)
 {
     jchar* p = (*jenv)->GetCharArrayElements(jenv, val.l, NULL);
-    return call_conv(jenv, val, sizeof(jchar), p, ca2rv, 
+    return call_conv(jenv, val, sizeof(jchar), p, ca2rv,
 			offsetof(struct JNINativeInterface_, ReleaseCharArrayElements));
 }
 static VALUE jdoublearray2rv(JNIEnv* jenv, jvalue val)
@@ -557,14 +557,14 @@ static VALUE jbooleanarray2rv(JNIEnv* jenv, jvalue val)
  */
 static jprimitive_table jpcvt[] = {
     { "java/lang/Integer", "intValue", "()I", "(I)V", NULL, 0, 0, jint2rv, },
-    { "java/lang/Long", "longValue", "()J", "(J)V", NULL, 0, 0, jlong2rv, },    
+    { "java/lang/Long", "longValue", "()J", "(J)V", NULL, 0, 0, jlong2rv, },
     { "java/lang/Double", "doubleValue", "()D", "(D)V", NULL, 0, 0, jdouble2rv, },
     { "java/lang/Boolean", "booleanValue", "()Z", "(Z)Ljava/lang/Boolean;",
       NULL, 0, 0, jboolean2rv, },
     { "java/lang/Character", "charValue", "()C", NULL, NULL, 0, 0, jchar2rv, },
     { "java/lang/Short", "intValue", "()I", NULL, NULL, 0, 0, jint2rv, },
     { "java/lang/Byte", "intValue", "()I", NULL, NULL, 0, 0, jint2rv, },
-    { "java/lang/Float", "doubleValue", "()D", NULL, NULL, 0, 0, jdouble2rv, },        
+    { "java/lang/Float", "doubleValue", "()D", NULL, NULL, 0, 0, jdouble2rv, },
 };
 
 /*
@@ -669,7 +669,7 @@ static void rv2jfloat(JNIEnv* jenv, VALUE val, jvalue* jv, const char* psig, int
 static void rv2jint(JNIEnv* jenv, VALUE val, jvalue* jv, const char* psig, int release)
 {
     if (!release)
-	jv->i = NUM2INT(val);    
+	jv->i = NUM2INT(val);
 }
 static void rv2jlong(JNIEnv* jenv, VALUE val, jvalue* jv, const char* psig, int release)
 {
@@ -693,7 +693,7 @@ static void rv2jshort(JNIEnv* jenv, VALUE val, jvalue* jv, const char* psig, int
     if (release) return;
     if (TYPE(val) == T_FIXNUM)
     {
-        int n = FIX2INT(val);    
+        int n = FIX2INT(val);
         if (abs(n) < 0x7fff)
         {
             jv->s = (short)n;
@@ -814,7 +814,7 @@ static void rv2jobject(JNIEnv* jenv, VALUE val, jvalue* jv, const char* psig, in
 		    Data_Get_Struct(val, struct rj_bridge, ptr);
 		    jv->l = ptr->proxy;
 		}
-		else if (CLASS_INHERITED(rjbc, rb_obj_class(val))) 
+		else if (CLASS_INHERITED(rjbc, rb_obj_class(val)))
 		{
 		    struct jv_data* ptr;
 		    Data_Get_Struct(val, struct jv_data, ptr);
@@ -836,13 +836,13 @@ static void rv2jobject(JNIEnv* jenv, VALUE val, jvalue* jv, const char* psig, in
 	    case T_ARRAY:
 		jv->l = r2objarray(jenv, val, "Ljava/lang/Object;");
 		break;
-#if HAVE_LONG_LONG                
+#if HAVE_LONG_LONG
             case T_BIGNUM:
                 arg.j = rb_big2ll(val);
                 jv->l = (*jenv)->NewObject(jenv, jpcvt[PRM_LONG].klass,
 				       jpcvt[PRM_LONG].ctr_id, arg);
                 break;
-#endif                
+#endif
             case T_OBJECT:
             default:
 #if defined(DEBUG)
@@ -860,7 +860,7 @@ static void rv2jobject(JNIEnv* jenv, VALUE val, jvalue* jv, const char* psig, in
     }
     else
     {
-        switch (TYPE(val)) 
+        switch (TYPE(val))
 	{
         case T_STRING:
         case T_FLOAT:
@@ -1287,7 +1287,7 @@ static J2R get_j2r(JNIEnv* jenv, jobject cls, char* psig, char* pdepth, char* pp
     const char* cname;
     const char* jname = NULL;
     jstring nm = (*jenv)->CallObjectMethod(jenv, cls, rjb_class_getName);
-    rjb_check_exception(jenv, 0);	    
+    rjb_check_exception(jenv, 0);
     cname = (*jenv)->GetStringUTFChars(jenv, nm, NULL);
 
     if (*cname == '[')
@@ -1391,7 +1391,7 @@ static void setup_methodbase(JNIEnv* jenv, struct cls_constructor* pm,
 static void register_methodinfo(struct cls_method* newpm, st_table* tbl)
 {
     struct cls_method* pm;
-    
+
     if (st_lookup(tbl, newpm->name, (st_data_t*)&pm))
     {
 	newpm->next = pm->next;
@@ -1434,7 +1434,7 @@ static int make_alias(const char* jname, char* rname)
 static void create_methodinfo(JNIEnv* jenv, st_table* tbl, jobject m, int static_method)
 {
     struct cls_method* result;
-    struct cls_method* pm;    
+    struct cls_method* pm;
     const char* jname;
     int alias;
     jstring nm;
@@ -1450,12 +1450,12 @@ static void create_methodinfo(JNIEnv* jenv, st_table* tbl, jobject m, int static
     rjb_check_exception(jenv, 0);
     setup_methodbase(jenv, &result->basic, parama, param_count);
     nm = (*jenv)->CallObjectMethod(jenv, m, method_getName);
-    rjb_check_exception(jenv, 0);	    
+    rjb_check_exception(jenv, 0);
     jname = (*jenv)->GetStringUTFChars(jenv, nm, NULL);
     rname = ALLOCA_N(char, strlen(jname) * 2 + 8);
     alias = make_alias(jname, rname);
     result->name = rb_intern(jname);
-    rjb_release_string(jenv, nm, jname);    
+    rjb_release_string(jenv, nm, jname);
     result->basic.id = (*jenv)->FromReflectedMethod(jenv, m);
     rjb_check_exception(jenv, 0);
     cls = (*jenv)->CallObjectMethod(jenv, m, getReturnType);
@@ -1470,7 +1470,7 @@ static void create_methodinfo(JNIEnv* jenv, st_table* tbl, jobject m, int static
         && (*rname == 'g' || *rname == 's') && *(rname + 1) == 'e' && *(rname + 2) == 't')
     {
         pm = clone_methodinfo(result);
-        if (*rname == 's') 
+        if (*rname == 's')
         {
             if (result->basic.arg_count == 1)
             {
@@ -1515,7 +1515,7 @@ static void create_fieldinfo(JNIEnv* jenv, st_table* tbl, jobject f, int readonl
     result = ALLOC(struct cls_field);
     memset(result, 0, sizeof(struct cls_field));
     nm = (*jenv)->CallObjectMethod(jenv, f, field_getName);
-    rjb_check_exception(jenv, 0);	    
+    rjb_check_exception(jenv, 0);
     jname = (*jenv)->GetStringUTFChars(jenv, nm, NULL);
     result->name = rb_intern(jname);
     rjb_release_string(jenv, nm, jname);
@@ -1537,7 +1537,7 @@ static void create_fieldinfo(JNIEnv* jenv, st_table* tbl, jobject f, int readonl
 static void setup_constructors(JNIEnv* jenv, struct cls_constructor*** pptr, jobjectArray methods)
 {
     int i;
-    struct cls_constructor* pc;    
+    struct cls_constructor* pc;
     jsize mcount = (*jenv)->GetArrayLength(jenv, methods);
     struct cls_constructor** tbl = ALLOC_N(struct cls_constructor*, mcount + 1);
     *pptr = tbl;
@@ -1557,21 +1557,21 @@ static void setup_constructors(JNIEnv* jenv, struct cls_constructor*** pptr, job
 	pc->id = (*jenv)->FromReflectedMethod(jenv, c);
 	(*jenv)->DeleteLocalRef(jenv, c);
     }
-    tbl[mcount] = NULL;    
+    tbl[mcount] = NULL;
 }
-			       
+
 static void setup_methods(JNIEnv* jenv, st_table** tbl, st_table** static_tbl,
 			  jobjectArray methods)
 {
     int i;
-    jint modifier;    
+    jint modifier;
     jsize mcount = (*jenv)->GetArrayLength(jenv, methods);
     *tbl = st_init_numtable_with_size(mcount);
     *static_tbl = st_init_numtable();
     for (i = 0; i < mcount; i++)
     {
 	jobject m = (*jenv)->GetObjectArrayElement(jenv, methods, i);
-	rjb_check_exception(jenv, 0);	
+	rjb_check_exception(jenv, 0);
 	modifier = (*jenv)->CallIntMethod(jenv, m, method_getModifiers);
 	if (!(modifier & ACC_STATIC))
 	{
@@ -1588,13 +1588,13 @@ static void setup_methods(JNIEnv* jenv, st_table** tbl, st_table** static_tbl,
 static void setup_fields(JNIEnv* jenv, st_table** tbl, jobjectArray flds)
 {
     int i;
-    jint modifier;    
+    jint modifier;
     jsize fcount = (*jenv)->GetArrayLength(jenv, flds);
     *tbl = st_init_numtable_with_size(fcount);
     for (i = 0; i < fcount; i++)
     {
 	jobject f = (*jenv)->GetObjectArrayElement(jenv, flds, i);
-	rjb_check_exception(jenv, 0);	
+	rjb_check_exception(jenv, 0);
 	modifier = (*jenv)->CallIntMethod(jenv, f, field_getModifiers);
 	create_fieldinfo(jenv, *tbl, f, modifier & ACC_FINAL, modifier & ACC_STATIC);
 	(*jenv)->DeleteLocalRef(jenv, f);
@@ -1640,7 +1640,7 @@ static void load_constants(JNIEnv* jenv, jclass klass, VALUE self, jobjectArray 
 	    rjb_check_exception(jenv, 0);
 	    jfid = (*jenv)->GetStaticFieldID(jenv, klass, cname, sigs);
 	    rjb_check_exception(jenv, 0);
-	    switch (sig) 
+	    switch (sig)
 	    {
 	    case 'D':
 		jv.d = (*jenv)->GetStaticDoubleField(jenv, klass, jfid);
@@ -1670,14 +1670,14 @@ static void load_constants(JNIEnv* jenv, jclass klass, VALUE self, jobjectArray 
 		jv.l = (*jenv)->GetStaticObjectField(jenv, klass, jfid);
 		break;
 	    }
-            pname = (char*)cname; 
+            pname = (char*)cname;
 	    if (!isupper(*cname))
 	    {
  	        pname = ALLOCA_N(char, strlen(cname) + 1);
 		strcpy(pname, cname);
 		*pname = toupper(*pname);
-		if (!isupper(*pname) 
-                    || rb_const_defined(rb_obj_class(self), rb_intern(pname))) 
+		if (!isupper(*pname)
+                    || rb_const_defined(rb_obj_class(self), rb_intern(pname)))
 		{
 	            pname = NULL;
 		}
@@ -1697,7 +1697,7 @@ static void setup_metadata(JNIEnv* jenv, VALUE self, struct jv_data* ptr, VALUE 
     jmethodID mid;
     jobjectArray methods;
     jobjectArray flds;
-    
+
     jclass klass = (*jenv)->GetObjectClass(jenv, ptr->idata.obj);
     ptr->idata.klass = (*jenv)->NewGlobalRef(jenv, klass);
     rjb_check_exception(jenv, 0);
@@ -1726,7 +1726,7 @@ static void setup_metadata(JNIEnv* jenv, VALUE self, struct jv_data* ptr, VALUE 
  * def load(class_path = '', vmargs = [])
  * class_path: passes for the class dir and jar name
  * vmargs: strng array of vmarg (such as -Xrs)
- * 
+ *
  * change in rjb 0.1.7, omit first argument for JNI version.
  *  because I misunderstood the number means (JVM but JNI).
  */
@@ -1769,7 +1769,7 @@ static VALUE rjb_s_load(int argc, VALUE* argv, VALUE self)
         rb_funcall(user_path, stradd, 1, rb_ary_entry(classpath, 0));
     }
     userpath = StringValueCStr(user_path);
-    
+
     if (!NIL_P(vm_argv))
     {
         Check_Type(vm_argv, T_ARRAY);
@@ -1792,31 +1792,31 @@ static VALUE rjb_s_load(int argc, VALUE* argv, VALUE self)
     RJB_LOAD_METHOD(getParameterTypes, jmethod, "getParameterTypes", "()[Ljava/lang/Class;");
     RJB_LOAD_METHOD(getReturnType, jmethod, "getReturnType", "()Ljava/lang/Class;");
     rjb_check_exception(jenv, 1);
-    
+
     RJB_FIND_CLASS(jfield, "java/lang/reflect/Field");
     RJB_LOAD_METHOD(field_getModifiers, jfield, "getModifiers", "()I");
     RJB_LOAD_METHOD(field_getName, jfield, "getName", "()Ljava/lang/String;");
     RJB_LOAD_METHOD(field_getType, jfield, "getType", "()Ljava/lang/Class;");
     rjb_check_exception(jenv, 1);
-    
+
     RJB_HOLD_CLASS(j_class, "java/lang/Class");
     RJB_LOAD_METHOD(rjb_class_getName, j_class, "getName", "()Ljava/lang/String;");
     rjb_check_exception(jenv, 1);
-    
+
     RJB_HOLD_CLASS(rjb_j_throwable, "java/lang/Throwable");
     RJB_LOAD_METHOD(rjb_throwable_getMessage, rjb_j_throwable, "getMessage", "()Ljava/lang/String;");
-    rjb_check_exception(jenv, 1);    
+    rjb_check_exception(jenv, 1);
 
     RJB_HOLD_CLASS(j_string, "java/lang/String");
     RJB_LOAD_METHOD(str_tostring, j_string, "toString", "()Ljava/lang/String;");
-    rjb_check_exception(jenv, 1);    
+    rjb_check_exception(jenv, 1);
 
     RJB_HOLD_CLASS(j_object, "java/lang/Object");
-    rjb_check_exception(jenv, 1);    
+    rjb_check_exception(jenv, 1);
 
     RJB_HOLD_CLASS(j_url, "java/net/URL");
     RJB_LOAD_METHOD(url_new, j_url, "<init>", "(Ljava/lang/String;)V");
-    rjb_check_exception(jenv, 1);    
+    rjb_check_exception(jenv, 1);
 
     for (i = PRM_INT; i < PRM_LAST; i++)
     {
@@ -1840,7 +1840,7 @@ static VALUE rjb_s_load(int argc, VALUE* argv, VALUE self)
     rb_define_method(rb_singleton_class(jklass), "forName", rjb_class_forname, -1);
     rb_define_alias(rb_singleton_class(jklass), "for_name", "forName");
     rb_gc_register_address(&jklass);
-    
+
     return Qnil;
 }
 
@@ -1874,7 +1874,7 @@ jobject get_systemloader(JNIEnv* jenv)
         RJB_HOLD_CLASS(j_classloader, "java/lang/ClassLoader");
         RJB_LOAD_STATIC_METHOD(get_system_classloader, j_classloader,
                            "getSystemClassLoader", "()Ljava/lang/ClassLoader;");
-        rjb_check_exception(jenv, 1);    
+        rjb_check_exception(jenv, 1);
     }
     return (*jenv)->CallStaticObjectMethod(jenv, j_classloader, get_system_classloader);
 }
@@ -1908,7 +1908,7 @@ static VALUE rjb_s_unload(int argc, VALUE* argv, VALUE self)
     st_foreach(RHASH(rjb_loaded_classes)->tbl, clear_classes, 0);
 #endif
 #endif
-    
+
     if (rjb_jvm)
     {
         JNIEnv* jenv = rjb_attach_current_thread();
@@ -1990,10 +1990,10 @@ static VALUE rjb_delete_ref(struct jvi_data* ptr)
  */
 static VALUE rj_bridge_free(struct rj_bridge* ptr)
 {
-    JNIEnv* jenv = rjb_attach_current_thread();    
+    JNIEnv* jenv = rjb_attach_current_thread();
     if (jenv)
     {
-        (*jenv)->DeleteLocalRef(jenv, ptr->proxy);    
+        (*jenv)->DeleteLocalRef(jenv, ptr->proxy);
         (*jenv)->DeleteLocalRef(jenv, ptr->bridge);
     }
     return Qnil;
@@ -2015,7 +2015,7 @@ static VALUE rjb_s_free(struct jv_data* ptr)
     /* class never delete
     JNIEnv* jenv = rjb_attach_current_thread();
     struct cls_constructor** c;
-    
+
     rjb_delete_ref(&ptr->idata);
     if (ptr->constructors)
     {
@@ -2030,7 +2030,7 @@ static VALUE rjb_s_free(struct jv_data* ptr)
 	st_foreach(ptr->idata.methods, (int(*)())free_method_item, 0);
 	st_free_table(ptr->idata.methods);
     }
-    (*jenv)->DeleteGlobalRef(jenv, ptr->idata.klass);	
+    (*jenv)->DeleteGlobalRef(jenv, ptr->idata.klass);
     st_delete(RHASH(rjb_loaded_classes)->tbl, clsname, NULL);
     */
     return Qnil;
@@ -2049,7 +2049,7 @@ static VALUE createinstance(JNIEnv* jenv, int argc, VALUE* argv,
     struct jv_data* jklass;
     struct jvi_data* org;
     jvalue* args = (argc) ? ALLOCA_N(jvalue, argc) : NULL;
-    
+
     Data_Get_Struct(self, struct jv_data, jklass);
     org = &jklass->idata;
 
@@ -2087,7 +2087,7 @@ static VALUE import_class(JNIEnv* jenv, jclass jcls, VALUE clsname)
     char* nm = ALLOCA_N(char, strlen(pclsname) + 1);
     strcpy(nm, pclsname);
     *nm = toupper(*nm);
-    for (pclsname = nm; *pclsname; pclsname++) 
+    for (pclsname = nm; *pclsname; pclsname++)
     {
         if (*pclsname == '.')
 	{
@@ -2116,7 +2116,7 @@ static VALUE rjb_a_missing(int argc, VALUE* argv, VALUE self)
 
 static VALUE rjb_i_prepare_proxy(VALUE self)
 {
-    return rb_funcall(self, rb_intern("instance_eval"), 1, 
+    return rb_funcall(self, rb_intern("instance_eval"), 1,
                       rb_str_new2("instance_eval(&" USER_INITIALIZE ")"));
 }
 
@@ -2175,7 +2175,7 @@ static int check_rtype(JNIEnv* jenv, VALUE* pv, char* p)
         if (strchr("IJ", *p)) return SOSO;
         return strchr("BCDFS", *p) != NULL;
     case T_BIGNUM:
-        return strchr("BCDFIJS", *p) != NULL;        
+        return strchr("BCDFIJS", *p) != NULL;
     case T_FLOAT:
         if (*p == 'D') return SOSO;
         if (*p == 'F') return SATISFIED;
@@ -2298,7 +2298,7 @@ static VALUE rjb_newinstance(int argc, VALUE* argv, VALUE self)
     int weight = 0;
     int cweight;
     JNIEnv* jenv = rjb_prelude();
-    
+
     Data_Get_Struct(self, struct jv_data, ptr);
 
     if (ptr->constructors)
@@ -2378,7 +2378,7 @@ jclass rjb_find_class(JNIEnv* jenv, VALUE name)
 {
     char* cname;
     char* jnicls;
-    
+
     Check_Type(name, T_STRING);
     cname = StringValueCStr(name);
     jnicls = ALLOCA_N(char, strlen(cname) + 1);
@@ -2455,8 +2455,8 @@ static VALUE rjb_s_bind(VALUE self, VALUE rbobj, VALUE itfname)
     VALUE result = Qnil;
     jclass itf;
     JNIEnv* jenv = rjb_prelude();
-    
-    itf = rjb_find_class(jenv, itfname); 
+
+    itf = rjb_find_class(jenv, itfname);
     rjb_check_exception(jenv, 1);
     if (itf)
     {
@@ -2582,7 +2582,7 @@ static jobject conv_jarname_to_url(JNIEnv* jenv, VALUE jarname)
 #if defined(DOSISH)
         if (strlen(jarp) > 1 && jarp[1] == ':')
         {
-            sprintf(urlp, "file:///%s", jarp);            
+            sprintf(urlp, "file:///%s", jarp);
         }
         else
 #endif
@@ -2604,7 +2604,7 @@ static jobject conv_jarname_to_url(JNIEnv* jenv, VALUE jarname)
     }
 #endif
     arg.l = (*jenv)->NewStringUTF(jenv, urlp);
-    rjb_check_exception(jenv, 0);        
+    rjb_check_exception(jenv, 0);
     url = (*jenv)->NewObject(jenv, j_url, url_new, arg);
     rjb_check_exception(jenv, 0);
     return url;
@@ -2657,7 +2657,7 @@ static VALUE rjb_s_add_jar(VALUE self, VALUE jarname)
     if (!url_loader)
     {
         args[0].l = (*jenv)->NewObjectArray(jenv, (jsize)((count == 0) ? 1 : count), j_url, NULL);
-        rjb_check_exception(jenv, 0);    
+        rjb_check_exception(jenv, 0);
         if (!count)
         {
             (*jenv)->SetObjectArrayElement(jenv, args[0].l, 0,
@@ -2732,7 +2732,7 @@ static VALUE rjb_i_class(VALUE self)
 static VALUE getter(JNIEnv* jenv, struct cls_field* pf,  struct jvi_data* ptr)
 {
     jvalue jv;
-    switch (pf->result_signature) 
+    switch (pf->result_signature)
     {
     case 'D':
         if (pf->static_field)
@@ -2839,7 +2839,7 @@ static void setter(JNIEnv* jenv, struct cls_field* pf,  struct jvi_data* ptr, VA
 {
     jvalue jv;
     pf->arg_convert(jenv, val, &jv, pf->field_signature, 0);
-    switch (*pf->field_signature) 
+    switch (*pf->field_signature)
     {
     case 'D':
         if (pf->static_field)
@@ -2960,7 +2960,7 @@ static VALUE invoke(JNIEnv* jenv, struct cls_method* pm, struct jvi_data* ptr,
         found = 0;
         if (argc == pm->basic.arg_count)
         {
-            if (sig && pm->basic.method_signature) 
+            if (sig && pm->basic.method_signature)
             {
                 if (!strcmp(sig, pm->basic.method_signature))
                 {
@@ -2999,7 +2999,7 @@ static VALUE invoke(JNIEnv* jenv, struct cls_method* pm, struct jvi_data* ptr,
     if (!prefer_pm)
     {
 	const char* tname = rb_id2name(orgpm->name);
-	if (sig) 
+	if (sig)
 	{
 	    rb_raise(rb_eRuntimeError, "Fail: unknown method name `%s(\'%s\')'", tname, sig);
 	}
@@ -3092,7 +3092,7 @@ static VALUE invoke_by_instance(ID rmid, int argc, VALUE* argv,
     {
         ret = getter(jenv, pf, ptr);
     }
-    else 
+    else
     {
         if (argc == 1 && *(tname + strlen(tname) - 1) == '=')
         {
@@ -3154,7 +3154,7 @@ static VALUE rjb_i_missing(int argc, VALUE* argv, VALUE self)
     ID rmid = rb_to_id(argv[0]);
 
     Data_Get_Struct(self, struct jvi_data, ptr);
-    
+
     return invoke_by_instance(rmid, argc -1, argv + 1, ptr, NULL);
 }
 
@@ -3217,7 +3217,7 @@ static VALUE invoke_by_class(ID rmid, int argc, VALUE* argv,
 	    rb_raise(rb_eRuntimeError, "Fail: unknown method name `%s'", tname);
 	}
     }
-    
+
     return ret;
 }
 
@@ -3259,7 +3259,7 @@ static VALUE rjb_missing(int argc, VALUE* argv, VALUE self)
 	    return r;
 	}
     }
-    
+
     Data_Get_Struct(self, struct jv_data, ptr);
     return invoke_by_class(rmid, argc - 1, argv + 1, ptr, NULL);
 }
@@ -3293,7 +3293,7 @@ void Init_rjbcore()
   #else
     rb_protect((VALUE(*)(VALUE))rb_require, (VALUE)"iconv", NULL);
   #endif
-#endif    
+#endif
     rjb_loaded_classes = rb_hash_new();
 #ifndef RUBINIUS
     OBJ_FREEZE(rjb_loaded_classes);
@@ -3323,7 +3323,7 @@ void Init_rjbcore()
     rb_define_class_variable(rjb, "@@classpath", rb_ary_new());
     cvar_classpath = rb_intern("@@classpath");
 
-    /* Java class object */    
+    /* Java class object */
     rjbc = CLASS_NEW(rb_cObject, "Rjb_JavaClass");
     rb_gc_register_address(&rjbc);
     rb_define_method(rjbc, "method_missing", rjb_missing, -1);
@@ -3334,7 +3334,7 @@ void Init_rjbcore()
     /* Java instance object */
     rjbi = CLASS_NEW(rb_cObject, "Rjb_JavaProxy");
     rb_gc_register_address(&rjbi);
-    rb_define_method(rjbi, "method_missing", rjb_i_missing, -1);    
+    rb_define_method(rjbi, "method_missing", rjb_i_missing, -1);
     rb_define_method(rjbi, "_invoke", rjb_i_invoke, -1);
     rb_define_method(rjbi, "_classname", rjb_i_class, 0);
     rb_define_method(rjbi, "_prepare_proxy", rjb_i_prepare_proxy, 0);

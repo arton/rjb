@@ -1,3 +1,14 @@
+Wed Jul 17 2019 arton
+ * ext/rjb.c
+	RJB_VERSION -> 1.6.1
+ * lib/rjb.rb
+	java_methods and methods return symbol
+	implements respond_to? for Java methods
+ * ext/rbjexception.c
+	delegate to JavaProxy for respond_to? (except for to_str and exception)
+ * test/test.rb
+	change java_methods test to adjust above change
+	add respond_to? test
 Thu Jul 11 2019 arton
  * ext/rjb.c
 	RJB_VERSION -> 1.6.0

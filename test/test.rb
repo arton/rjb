@@ -726,19 +726,19 @@ class TestRjb < Test::Unit::TestCase
   end
   def test_methods_extension
     m = @jString.new('').methods
-    assert m.include?('indexOf')
+    assert m.include?(:indexOf)
   end
   def test_class_methods_extension
     m = @jString.methods
-    assert m.include?('format')
+    assert m.include?(:format)
   end
   def test_pmethods_extension
     m = @jString.new('').public_methods
-    assert m.include?('indexOf')
+    assert m.include?(:indexOf)
   end
   def test_class_pmethods_extension
     m = @jString.public_methods
-    assert m.include?('format')
+    assert m.include?(:format)
   end
   def test_java_methods
     indexof = @jString.new('').java_methods.find do |m|
@@ -963,5 +963,17 @@ class TestRjb < Test::Unit::TestCase
     y = @jString.new('𠮷野家')
     assert_equal '𠮷野家', y.toString
   end
-end
 
+  def test_respond_to
+    str = @jString.new('blabla')
+    assert str.respond_to? :substring
+    assert_false str.respond_to? :unknown_method
+    begin
+      @jInteger.parseInt('blabla')
+    rescue => e
+      assert e.respond_to? :print_stack_trace
+      assert e.respond_to? :printStackTrace
+#      assert_false e.respond_to? :unknown_method
+    end
+  end
+end

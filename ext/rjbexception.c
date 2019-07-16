@@ -29,7 +29,7 @@
 static VALUE missing_delegate(int argc, VALUE* argv, VALUE self)
 {
     ID rmid = rb_to_id(argv[0]);
-    return rb_funcall(rb_ivar_get(self, rb_intern("@cause")), rmid, argc - 1, argv + 1);
+    return rb_funcallv(rb_ivar_get(self, rb_intern("@cause")), rmid, argc - 1, argv + 1);
 }
 
 static VALUE get_cause(VALUE self)
@@ -43,7 +43,18 @@ static VALUE ex_respond_to(int argc, VALUE* argv, VALUE self)
     {
         rb_raise(rb_eArgError, "respond_to? require 1 or 2 arguments");
     }
-    return rb_to_id(argv[0]) == rb_intern("to_str") ? Qfalse : Qtrue;
+    if (rb_to_id(argv[0]) == rb_intern("to_str"))
+    {
+        return  Qfalse;
+    }
+    else  if (rb_to_id(argv[0]) == rb_intern("exception"))
+    {
+        return Qtrue;
+    }
+    else
+    {
+        return rb_funcallv(rb_ivar_get(self, rb_intern("@cause")), rb_intern("respond_to?"), argc, argv);
+    }
 }
 
 /*
@@ -86,7 +97,7 @@ VALUE rjb_get_exception_class(JNIEnv* jenv, jstring str)
         st_insert(RHASH(rjb_loaded_classes)->tbl, cname, rexp);
   #endif
 #endif
-	
+
     }
     return rexp;
 }
@@ -98,7 +109,7 @@ VALUE rjb_s_throw(int argc, VALUE* argv, VALUE self)
 {
     VALUE klass;
     VALUE message;
-    JNIEnv* jenv = NULL; 
+    JNIEnv* jenv = NULL;
 
     rjb_load_vm_default();
 

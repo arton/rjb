@@ -86,7 +86,7 @@ module Rjb
       (org + klass.getMethods.select do |m|
          blk.call(m)
       end.map do |m|
-        m.name
+        m.name.to_sym
       end).uniq
     end
     def format_sigs(s)
@@ -97,6 +97,19 @@ module Rjb
       else
         "[#{s.map{|m|m.nil? ? 'void' : m}.join(', ')}]"
       end
+    end
+    def make_snake(nm)
+      nm.gsub(/(.)([A-Z])/) { "#{$1}_#{$2.downcase}" }
+    end
+    alias :rjb_org_respond_to? :respond_to?
+    def rjb_respond_to?(sym, klass, priv)
+      return true if (klass ? self : getClass).getMethods.select do |m|
+        (klass && !instance_method?(m) && (priv || public_method?(m))) ||
+          (!klass && instance_method?(m) && (priv || public_method?(m)))
+      end.map do |m|
+        [m.name.to_sym, make_snake(m.name).to_sym]
+      end.flatten.include?(sym.to_sym)
+      rjb_org_respond_to?(sym, priv)
     end
   end
 
@@ -119,6 +132,9 @@ module Rjb
         "#{m}(#{format_sigs(self.static_sigs(m))})"
       end
     end
+    def respond_to?(sym, priv = false)
+      rjb_respond_to?(sym, true, priv)
+    end
   end
   class Rjb_JavaProxy
     include JMethod
@@ -140,6 +156,9 @@ module Rjb
       end.map do |m|
         "#{m}(#{format_sigs(getClass.sigs(m))})"
       end
+    end
+    def respond_to?(sym, priv = false)
+      rjb_respond_to?(sym, false, priv)
     end
   end
   class Rjb_JavaBridge
