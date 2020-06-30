@@ -1,0 +1,21 @@
+apply plugin: 'java' defaultTasks 'jar' sourceCompatibility = 1.7 // show deprecations //tasks.withType(Compile) {  //  options.compilerArgs << "-Xlint:deprecation"  //}  sourceSets {   main {     output.classesDir = 'build/classes'     output.resourcesDir = output.classesDir     java {       srcDir 'src'       exclude '**/new/**','**/old/**'     }   } } dependencies {   compile fileTree('../jtk/build/libs') // for edu_mines_jtk.jar   compile fileTree('../jtk/libs') // jars provided with the Mines JTK   compile fileTree('../idh/bench/build/libs') // idh   compile fileTree('../ipf/build/libs') // ipf }# Security Policy
+
+## Supported Versions
+
+Use this section to tell people about which versions of your project are
+currently being supported with security updates.
+
+| Version | Supported          |
+| ------- | ------------------ |
+| 5.1.x   | :white_check_mark: |
+| 5.0.x   | :x:                |
+| 4.0.x   | :white_check_mark: |
+| < 4.0   | :x:                |
+
+## Reporting a Vulnerability
+
+Use this section to tell people how to report a vulnerability.
+
+Tell them where to go, how often they can expect to get an update on a
+reported vulnerability, what to expect if the vulnerability is accepted or
+declined, etc.
