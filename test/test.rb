@@ -973,7 +973,7 @@ class TestRjb < Test::Unit::TestCase
     rescue => e
       assert e.respond_to? :print_stack_trace
       assert e.respond_to? :printStackTrace
-#      assert_false e.respond_to? :unknown_method
+      assert_false e.respond_to? :unknown_method
     end
   end
 end
