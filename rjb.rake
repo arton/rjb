@@ -34,12 +34,11 @@ spec = Gem::Specification.new do |s|
   s.summary = 'Ruby Java bridge'
   s.name = 'rjb'
   s.homepage = 'https://www.artonx.org/collabo/backyard/?RubyJavaBridge'
-  s.rubyforge_project = 'rjb'
   s.version = read_version
   s.requirements << 'none'
   s.require_path = 'lib'
   s.requirements << 'JDK 5.0'
-  s.license = 'LGPL'
+  s.license = 'LGPL-2.1-or-later'
   files = FileList['ext/*.java', 'ext/*.c', 'ext/*.h', 'ext/depend.erb',
                    'data/rjb/**/*.class', 'lib/*.rb', 'lib/rjb/*.rb', 'samples/**/*.rb',
                    'test/*.rb', 'test/**/*.class', 'test/*.jar', 'COPYING', 'ChangeLog', 'readme.*']

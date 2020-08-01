@@ -16,7 +16,7 @@ RJB_GEMSPEC = Gem::Specification.new do |s|
   s.require_path = 'lib'
   # @todo We need a meaningful explanation for the end user.
   s.requirements << 'JDK 5.0'
-  s.license = 'LGPL-2.1'
+  s.license = 'LGPL-2.1-or-later'
   # @todo Do we need to support these old versions?
   s.required_ruby_version = '>= 1.8.2'
   # @todo Do we really need all the source code?
