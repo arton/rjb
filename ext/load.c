@@ -1,6 +1,6 @@
 /*
  * Rjb - Ruby <-> Java Bridge
- * Copyright(c) 2004,2005,2006,2009,2010,2011 arton
+ * Copyright(c) 2004,2005,2006,2009,2010,2011,2020 arton
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -38,9 +38,11 @@
 #if defined(_WIN32) || defined(__CYGWIN__)
  #if defined(__CYGWIN__)
   #define JVMDLL "%s/jre/bin/%s/jvm.dll"
+  #define OPENJDK_JVMDLL "%s/bin/%s/jvm.dll"
   #define DIRSEPARATOR '/'
  #else
   #define JVMDLL "%s\\jre\\bin\\%s\\jvm.dll"
+  #define OPENJDK_JVMDLL "%s\\bin\\%s\\jvm.dll"
   #define DIRSEPARATOR '\\'
   #if defined(_WIN64)
     #undef JVM_TYPE
@@ -61,6 +63,7 @@
   #define JVM_TYPE "j9vm"
 #elif defined(__hpux)
   #define JVMDLL "%s/jre/lib/%s/%s/libjvm.sl"
+  #define OPENJDK_JVMDLL "%s/lib/%s/libjvm.sl"
   #define ARCH "PA_RISC"
   #undef JVM_TYPE
   #define JVM_TYPE "server"
@@ -88,6 +91,7 @@
   #include <sys/systeminfo.h>
  #endif
  #define JVMDLL "%s/jre/lib/%s/%s/libjvm.so"
+ #define OPENJDK_JVMDLL "%s/lib/%s/libjvm.so"
  #define DIRSEPARATOR '/'
  #define CLASSPATH_SEP ':'
 #endif
@@ -123,12 +127,20 @@ static int open_jvm(char* libpath)
     size_t i;
     int state;
 
+    if (rb_funcall(rb_cFile, rb_intern("exist?"), 1, rb_str_new2(libpath)) == RUBY_Qfalse)
+    {
+        if (RTEST(ruby_verbose))
+        {
+            fprintf(stderr, "Rjb::load try to find but not exist %s\n", libpath);
+        }
+        return 0;
+    }
 #if defined(RUBINIUS)
     i = 1;
 #else
     i = 0;
 #endif
-    for (; i < COUNTOF(DLLibs); i++) 
+    for (; i < COUNTOF(DLLibs); i++)
     {
         state = 0;
         rb_protect(safe_require, rb_str_new2(DLLibs[i]), &state);
@@ -137,7 +149,7 @@ static int open_jvm(char* libpath)
         {
             if (i > 0)
             {
-                rb_raise(rb_eRuntimeError, "Constants DL and Fiddle is not defined.");
+                rb_raise(rb_eRuntimeError, "Constants DL or Fiddle is not defined.");
                 return 0;
             }
         }
@@ -163,8 +175,8 @@ static int open_jvm(char* libpath)
     }
     /* get function pointers of JNI */
 #if RJB_RUBY_VERSION_CODE < 190
-    getdefaultjavavminitargsfunc = rb_funcall(rb_funcall(rb_funcall(jvmdll, rb_intern("[]"), 2, rb_str_new2(GETDEFAULTJVMINITARGS), rb_str_new2("IP")), rb_intern("to_ptr"), 0), rb_intern("to_i"), 0); 
-    createjavavmfunc = rb_funcall(rb_funcall(rb_funcall(jvmdll, rb_intern("[]"), 2, rb_str_new2(CREATEJVM), rb_str_new2("IPPP")), rb_intern("to_ptr"), 0), rb_intern("to_i"), 0); 
+    getdefaultjavavminitargsfunc = rb_funcall(rb_funcall(rb_funcall(jvmdll, rb_intern("[]"), 2, rb_str_new2(GETDEFAULTJVMINITARGS), rb_str_new2("IP")), rb_intern("to_ptr"), 0), rb_intern("to_i"), 0);
+    createjavavmfunc = rb_funcall(rb_funcall(rb_funcall(jvmdll, rb_intern("[]"), 2, rb_str_new2(CREATEJVM), rb_str_new2("IPPP")), rb_intern("to_ptr"), 0), rb_intern("to_i"), 0);
 #else
     getdefaultjavavminitargsfunc = rb_funcall(jvmdll, rb_intern("[]"), 1, rb_str_new2(GETDEFAULTJVMINITARGS));
     createjavavmfunc = rb_funcall(jvmdll, rb_intern("[]"), 1, rb_str_new2(CREATEJVM));
@@ -184,6 +196,7 @@ static int file_exist(const char* dir, const char* file)
 
 /*
  * not completed, only valid under some circumstances.
+ * load priority: OpenJDK -> SunJDK
  */
 static int load_jvm(const char* jvmtype)
 {
@@ -236,26 +249,37 @@ static int load_jvm(const char* jvmtype)
         *(p + strlen(p) - 1) = '\0';
         jh = p;
     }
-#endif    
+#endif
     java_home = ALLOCA_N(char, strlen(jh) + 1);
     strcpy(java_home, jh);
     if (*(java_home + strlen(jh) - 1) == DIRSEPARATOR)
     {
 	*(java_home + strlen(jh) - 1) = '\0';
     }
+#if defined(__APPLE__) && defined(__MACH__)
+    libpath = ALLOCA_N(char, sizeof(JVMDLL) + strlen(java_home) + 1);
+    sprintf(libpath, JVMDLL, java_home);
+    return open_jvm(libpath);
+#else
 #if defined(_WIN32) || defined(__CYGWIN__)
     libpath = ALLOCA_N(char, sizeof(JVMDLL) + strlen(java_home)
 		       + strlen(jvmtype) + 1);
-    sprintf(libpath, JVMDLL, java_home, jvmtype);
-#elif defined(__APPLE__) && defined(__MACH__)
-    libpath = ALLOCA_N(char, sizeof(JVMDLL) + strlen(java_home) + 1);
-    sprintf(libpath, JVMDLL, java_home);
 #else /* not Windows / MAC OS-X */
     libpath = ALLOCA_N(char, sizeof(JVMDLL) + strlen(java_home)
-		       + strlen(ARCH) + strlen(jvmtype) + 1);
+                       + strlen(ARCH) + strlen(jvmtype) + 1);
+#endif
+    sprintf(libpath, OPENJDK_JVMDLL, java_home, jvmtype);
+    if (open_jvm(libpath))
+    {
+        return 1;
+    }
+#if defined(_WIN32) || defined(__CYGWIN__)
+    return 0;
+#else /* not Windows / MAC OS-X */
     sprintf(libpath, JVMDLL, java_home, ARCH, jvmtype);
 #endif
     return open_jvm(libpath);
+#endif /* __APPLE__ and __MACH */
 }
 
 static int load_bridge(JNIEnv* jenv)
@@ -269,7 +293,7 @@ static int load_bridge(JNIEnv* jenv)
     VALUE v = rb_const_get(rb_cObject, rb_intern("RjbConf"));
     v = rb_const_get(v, rb_intern("BRIDGE_FILE"));
 #else
-    VALUE v = rb_const_get_at(rb_const_get(rb_cObject, rb_intern("RjbConf")), 
+    VALUE v = rb_const_get_at(rb_const_get(rb_cObject, rb_intern("RjbConf")),
 			      rb_intern("BRIDGE_FILE"));
 #endif
     bridge = StringValuePtr(v);
@@ -352,7 +376,7 @@ int rjb_create_jvm(JNIEnv** pjenv, JavaVMInitArgs* vm_args, char* userpath, VALU
             *(p + strlen(p) - 1) = '\0';
             libjvm = p;
         }
-#endif    
+#endif
         if (libjvm == NULL || !open_jvm(libjvm))
         {
 #if defined(__APPLE__) && defined(__MACH__)
@@ -370,7 +394,7 @@ int rjb_create_jvm(JNIEnv** pjenv, JavaVMInitArgs* vm_args, char* userpath, VALU
             }
 #endif
         }
- 
+
 #if RJB_RUBY_VERSION_CODE < 190 && !defined(RUBINIUS)
         ruby_errinfo = Qnil;
 #else

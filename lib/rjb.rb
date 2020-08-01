@@ -1,5 +1,5 @@
 =begin
-  Copyright(c) 2006-2010,2012 arton
+  Copyright(c) 2006-2010,2012,2020 arton
 =end
 
 require 'rbconfig'
