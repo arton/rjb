@@ -76,10 +76,19 @@ when /cygwin/, /mingw/
   $defs << '-DNONAMELESSUNION'
 end
 
+JAVAH_COMMAND = 'javac -h . -classpath ../data/rjb RBridge.java'.freeze
+
 if find_executable('javah')
-  javah = 'javah -classpath ../data/rjb jp.co.infoseek.hp.arton.rjb.RBridge'
+  cversion = (`javac -version` =~ /\d+\.\d+\.\d+/ ) ? $& : nil
+  hversion = (`javah -version` =~ /\d+\.\d+\.\d+/ )  ? $& : nil
+  if cversion == hversion
+    javah = 'javah -classpath ../data/rjb jp.co.infoseek.hp.arton.rjb.RBridge'
+  else
+    $stderr.puts "warning: javac and javah version unmatch => javah: #{hversion}, javac: #{cversion}"
+    javah = JAVAH_COMMAND
+  end
 else
-  javah = 'javac -h . -classpath ../data/rjb RBridge.java'
+  javah = JAVAH_COMMAND
 end
 File.open('depend', 'w') do |fout|
   fout.write ERB.new(IO::read('depend.erb')).result

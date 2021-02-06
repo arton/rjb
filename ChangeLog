@@ -1,3 +1,8 @@
+Sun Feb 7 2021 arton
+ * ext/extconf.rb
+	check javac and javah version
+ * ext/rjb.c
+	RJB_VERSION -> 1.6.3
 Sat Aug 1 2020 arton
  * ext/rjb.c
 	RJB_VERSION -> 1.6.2
