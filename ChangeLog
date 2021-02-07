@@ -1,5 +1,10 @@
 Sun Feb 7 2021 arton
  * ext/extconf.rb
+	use javah if `javac -version` didn't return the version number (ex. 1.4.2)
+ * ext/rjb.c
+	RJB_VERSION -> 1.6.3
+Sun Feb 7 2021 arton
+ * ext/extconf.rb
 	check javac and javah version
  * ext/rjb.c
 	RJB_VERSION -> 1.6.3
