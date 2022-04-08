@@ -1,3 +1,9 @@
+Fri Apr 8 2022 arton
+ fix #85
+ * data/rjb/jp/co/infoseek/hp/arton/rjb/RBridge.class
+	Gem rebuild by original  binary (build by javac 1.4.2)
+ * ext/rjb.c
+	RJB_VERSION -> 1.6.5 (not changed any other codes but for Gem)
 Sun Feb 7 2021 arton
  * ext/extconf.rb
 	use javah if `javac -version` didn't return the version number (ex. 1.4.2)

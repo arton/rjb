@@ -14,7 +14,7 @@
  *
  */
 
-#define RJB_VERSION "1.6.4"
+#define RJB_VERSION "1.6.5"
 
 #include "ruby.h"
 #include "extconf.h"
