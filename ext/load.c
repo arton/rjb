@@ -82,7 +82,7 @@
   #define ARCH "i386"
  #elif defined(__arm__)
   #define ARCH "arm"
- #elif defined(__aarch64__)
+ #elif defined(__aarch64__) || defined(__arm64v8__)
    #define ARCH "aarch64"
    #undef JVM_TYPE
    #define JVM_TYPE "server"
