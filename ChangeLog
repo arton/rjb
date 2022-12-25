@@ -1,3 +1,9 @@
+Mon Dec 26 2022 chaadow
+ ruby 3.2 support
+ * ext/extconf.rb
+	call File.exist? instead of deprecated File.exists?
+ * ext/rjb.c
+	RJB_VERSION -> 1.6.6 (for Gem)
 Fri Apr 8 2022 arton
  fix #85
  * data/rjb/jp/co/infoseek/hp/arton/rjb/RBridge.class
