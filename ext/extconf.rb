@@ -40,7 +40,7 @@ unless javahome.nil?
   raise "JAVA_HOME is not directory." unless File.directory?(javahome)
   pt = Path.new
   inc = pt.include(javahome, 'include')
-  if !File.exists?(inc) && RUBY_PLATFORM =~ /darwin/
+  if !File.exist?(inc) && RUBY_PLATFORM =~ /darwin/
     inc = pt.include('/System/Library/Frameworks/JavaVM.framework', 'Headers')
   end
   Dir.open(inc).each do |d|
