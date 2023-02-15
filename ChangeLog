@@ -1,3 +1,9 @@
+Wed Feb 15 2023 geekontheway
+ Fix aarch64 checking exception
+ * ext/load.c
+	put defined directive on one line
+ * ext/rjb.c
+	RJB_VERSION -> 1.6.7 (for Gem)
 Mon Dec 26 2022 chaadow
  ruby 3.2 support
  * ext/extconf.rb
