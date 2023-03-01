@@ -50,7 +50,7 @@ On Unix based machines plese see `test/readme.unix`. You need to set
 
 If you'll plan to open the non-ascii character named file by Java
 class through Rjb, it may require to set LC_ALL environment variable
-in you sciprt.
+in your script.
 
 For example in Rails, set above line in `production.rb` as your environment:
 
@@ -58,7 +58,7 @@ For example in Rails, set above line in `production.rb` as your environment:
 ENV['LC_ALL'] = 'en_us.utf8' # or ja_JP.utf8 etc.
 ```
 
-cf: http://bugs.sun.com/view_bug.do?bug_id=4733494
+cf: https://bugs.java.com/bugdatabase/view_bug.do?bug_id=4733494
    (Thanks Paul for this information).
 
 # Contact
