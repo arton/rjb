@@ -1,3 +1,7 @@
+Wed Mar 1 2023 mahendrapk
+ Fix typo and broken URI
+ * README.md
+ * readme.txt
 Wed Feb 15 2023 geekontheway
  Fix aarch64 checking exception
  * ext/load.c
