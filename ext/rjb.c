@@ -64,6 +64,10 @@
 #define IS_RJB_OBJECT(v) (CLASS_INHERITED(rjbi, rb_obj_class(v)) || rb_obj_class(v) == rjb || CLASS_INHERITED(rjbb, rb_obj_class(v)))
 #define USER_INITIALIZE "@user_initialize"
 
+#if !defined(HAVE_RB_DEFINE_ALLOC_FUNC)
+static void rb_undef_alloc_func(v) {}
+#endif
+
 static void register_class(VALUE, VALUE);
 static VALUE import_class(JNIEnv* jenv, jclass, VALUE);
 static VALUE register_instance(JNIEnv* jenv, VALUE klass, struct jv_data*, jobject);
@@ -2095,6 +2099,7 @@ static VALUE import_class(JNIEnv* jenv, jclass jcls, VALUE clsname)
 	}
     }
     rexp = rb_define_class_under(rjb, nm, rjbc);
+    rb_undef_alloc_func(rexp);
     ptr = ALLOC(struct jv_data);
     memset(ptr, 0, sizeof(struct jv_data));
     v = Data_Wrap_Struct(rexp, NULL, rjb_s_free, ptr);
@@ -3333,6 +3338,7 @@ void Init_rjbcore()
 
     /* Java instance object */
     rjbi = CLASS_NEW(rb_cObject, "Rjb_JavaProxy");
+    rb_undef_alloc_func(rjbi);
     rb_gc_register_address(&rjbi);
     rb_define_method(rjbi, "method_missing", rjb_i_missing, -1);
     rb_define_method(rjbi, "_invoke", rjb_i_invoke, -1);
@@ -3342,6 +3348,7 @@ void Init_rjbcore()
 
     /* Ruby-Java Bridge object */
     rjbb = CLASS_NEW(rb_cObject, "Rjb_JavaBridge");
+    rb_undef_alloc_func(rjbb);
     rb_gc_register_address(&rjbb);
 
     /* anonymous interface object */
