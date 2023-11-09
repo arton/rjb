@@ -195,7 +195,7 @@ static int contains_auxchar(const unsigned char* p)
 {
     while (*p)
     {
-        if (*p == 0xed && *(p + 1) && *(p + 1))
+        if (*p == 0xed && *(p + 1) && *(p + 2))
         {
 #if defined(DEBUG)
             printf("find %02x %02x %02x %02x %02x %02x\n", *p, *(p + 1), *(p + 2), *(p + 3), *(p + 4), *(p + 5));
