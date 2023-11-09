@@ -960,8 +960,18 @@ class TestRjb < Test::Unit::TestCase
   end
 
   def test_java_utf8
-    y = @jString.new('𠮷野家')
+    y = @jString.new('𠮷野家')  # with surrogate pair
     assert_equal '𠮷野家', y.toString
+  end
+
+  def test_java_hangul_syllable
+    # 토 \uD1A => ED 86 A0 (utf-8)
+    test_string = "토"    # simple unicode char (not surrogate pair)
+    y = @jString.new_with_sig('Ljava.lang.String;', test_string)
+    assert_equal(test_string, y.toString)
+    test_string = "토토"    # simple unicode char (not surrogate pair)
+    y = @jString.new_with_sig('Ljava.lang.String;', test_string)
+    assert_equal(test_string, y.toString)
   end
 
   def test_respond_to
