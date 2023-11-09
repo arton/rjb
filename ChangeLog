@@ -1,3 +1,10 @@
+Thu Nov 9 2023 arton
+ * ext/rjb.c
+	RJB_VERSION -> 1.6.9
+ * ext/riconv.c
+	fix CESU-8 check
+ * test/est.rb
+	add test_jav_hangul_syllable for checking CESU-8 bug (char start with 0xed)
 Thu Sep 28 2023 chaddow
  #93 fake allocation framework to remove T_DATA warning
  * ext/rjb.c

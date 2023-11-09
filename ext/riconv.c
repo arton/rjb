@@ -14,7 +14,6 @@
  *
  * $Id: riconv.c 117 2010-06-04 12:16:25Z arton $
  */
-
 #include "ruby.h"
 #include "extconf.h"
 
@@ -196,12 +195,15 @@ static int contains_auxchar(const unsigned char* p)
 {
     while (*p)
     {
-      if (*p == 0xed)
+        if (*p == 0xed && *(p + 1) && *(p + 1))
         {
 #if defined(DEBUG)
-          printf("find %02x %02x %02x %02x %02x %02x\n", *p, *(p + 1), *(p + 2), *(p + 3), *(p + 4), *(p + 5));
+            printf("find %02x %02x %02x %02x %02x %02x\n", *p, *(p + 1), *(p + 2), *(p + 3), *(p + 4), *(p + 5));
 #endif
-          return 1;
+	    if ((*(p + 1) & 0xa0) == 0xa0 && (*(p + 2) & 0xb0) == 0xb0)
+	    {    
+                return 1;
+	    }
         }
         switch (*p & 0xe0)
         {
