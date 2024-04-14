@@ -1,5 +1,12 @@
 Sun Apr 14 2024 arton
  * ext/rjb.c
+	RJB_VERSION -> 1.7.1
+ * lib/rjb/extension.rb
+	skip $LOAD_PATH check if absolute path was given
+ * test/exttest.rb
+	add absolute path test
+Sun Apr 14 2024 arton
+ * ext/rjb.c
 	RJB_VERSION -> 1.7.0
 	java2jniname replaces second '.' to '$' for nested/inner classes
  * test/test.rb

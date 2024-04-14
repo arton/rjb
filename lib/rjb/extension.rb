@@ -51,7 +51,11 @@ module Kernel
 
     # This will maybe use the wrong jar file from a previous version of the GEM
     # puts "LOAD PATH #{$LOAD_PATH}" 
-    found_path = $LOAD_PATH.reverse.find{|p| File.exist?(File.join(p,path))}
+    if File.respond_to?(:absolute_path?) && File.absolute_path?(path)
+      found_path = File.exist?(path) ? '' : nil
+    else
+      found_path = $LOAD_PATH.reverse.find {|p| File.exist?(File.join(p, path))}
+    end
     raise unless found_path
 
     abs_path = File.join(found_path, path)
