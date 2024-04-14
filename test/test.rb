@@ -986,4 +986,15 @@ class TestRjb < Test::Unit::TestCase
       assert_false e.respond_to? :unknown_method
     end
   end
+
+  def test_load_nested_class_as_java_convention
+    tstate = import('java.lang.Thread.State')
+    assert_equal(tstate.BLOCKED.ordinal, 2)
+    assert_equal(tstate.BLOCKED.name, 'BLOCKED')
+  end
+
+  def test_load_inner_class_as_java_convention
+    tes = import('java.util.HashMap.EntrySet')
+    assert_equal(tes._classname, 'java.lang.Class')
+  end
 end

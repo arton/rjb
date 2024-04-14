@@ -14,7 +14,7 @@
  *
  */
 
-#define RJB_VERSION "1.6.9"
+#define RJB_VERSION "1.7.0"
 
 #include "ruby.h"
 #include "extconf.h"
@@ -185,11 +185,16 @@ void rjb_release_string(JNIEnv *jenv, jstring str, const char* chrs)
 static char* java2jniname(char* jnicls)
 {
     char* p;
+    int found_class_separator = isupper(*jnicls) ? 1 : 0;
     for (p = jnicls; *p; p++)
     {
 	if (*p == '.')
 	{
-	    *p = '/';
+	    if (isupper(*(p + 1)))
+	    {
+	        found_class_separator++;
+	    }
+	    *p = (found_class_separator <= 1) ? '/' : '$';
 	}
     }
     return jnicls;
