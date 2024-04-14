@@ -26,9 +26,18 @@ class ExtTestRjb < Test::Unit::TestCase
   def jp
     JavaPackage.new('jp')
   end
-  
-  def test_require_extension
+
+  def test_absolute_path_require
     assert !Rjb::loaded?
+    require File.absolute_path('./rjbtest.jar')
+    Rjb::load
+    assert Rjb::loaded?
+    base = jp.co.infoseek.hp.arton.rjb.Base.new
+    assert_equal('hello', base.instance_var)
+  end
+
+  def test_require_extension
+    org_load_path = $LOAD_PATH
     $LOAD_PATH << '.'
     require 'rjbtest.jar'
     Rjb::load
@@ -36,4 +45,5 @@ class ExtTestRjb < Test::Unit::TestCase
     base = jp.co.infoseek.hp.arton.rjb.Base.new
     assert_equal('hello', base.instance_var)
   end
+
 end
