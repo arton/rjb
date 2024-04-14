@@ -1,9 +1,15 @@
+Sun Apr 14 2024 arton
+ * ext/rjb.c
+	RJB_VERSION -> 1.7.0
+	java2jniname replaces second '.' to '$' for nested/inner classes
+ * test/test.rb
+	add test_load_nested/inner_class_as_java_naming_convention
 Thu Nov 9 2023 arton
  * ext/rjb.c
 	RJB_VERSION -> 1.6.9
  * ext/riconv.c
 	fix CESU-8 check
- * test/est.rb
+ * test/test.rb
 	add test_jav_hangul_syllable for checking CESU-8 bug (char start with 0xed)
 Thu Sep 28 2023 chaddow
  #93 fake allocation framework to remove T_DATA warning
