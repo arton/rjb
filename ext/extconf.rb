@@ -79,8 +79,8 @@ end
 JAVAH_COMMAND = 'javac -h . -classpath ../data/rjb RBridge.java'.freeze
 
 if find_executable('javah')
-  cversion = (`javac -version` =~ /\d+\.\d+\.\d+/ ) ? $& : nil
-  hversion = (`javah -version` =~ /\d+\.\d+\.\d+/ )  ? $& : nil
+  cversion = (`javac -version`.force_encoding(Encoding.locale_charmap).encode('utf-8') =~ /\d+\.\d+\.\d+/ ) ? $& : nil
+  hversion = (`javah -version`.force_encoding(Encoding.locale_charmap).encode('utf-8') =~ /\d+\.\d+\.\d+/ )  ? $& : nil
   if cversion == hversion || cversion.nil?
     javah = 'javah -classpath ../data/rjb jp.co.infoseek.hp.arton.rjb.RBridge'
   else
