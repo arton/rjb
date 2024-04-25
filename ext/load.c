@@ -95,7 +95,6 @@
  #define DIRSEPARATOR '/'
  #define CLASSPATH_SEP ':'
 #endif
-
 #if defined(__APPLE__) && defined(__MACH__)
  static char* CREATEJVM = "JNI_CreateJavaVM";
  static char* GETDEFAULTJVMINITARGS = "JNI_GetDefaultJavaVMInitArgs";
@@ -106,7 +105,6 @@
 
 typedef int (JNICALL *GETDEFAULTJAVAVMINITARGS)(void*);
 typedef int (JNICALL *CREATEJAVAVM)(JavaVM**, JNIEnv**, void*);
-
 
 static VALUE jvmdll = Qnil;
 static VALUE getdefaultjavavminitargsfunc;
@@ -274,7 +272,7 @@ static int load_jvm(const char* jvmtype)
         return 1;
     }
 #if defined(_WIN32) || defined(__CYGWIN__)
-    return 0;
+    sprintf(libpath, JVMDLL, java_home, jvmtype);
 #else /* not Windows / MAC OS-X */
     sprintf(libpath, JVMDLL, java_home, ARCH, jvmtype);
 #endif

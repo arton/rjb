@@ -58,7 +58,7 @@ module Kernel
     end
     raise unless found_path
 
-    abs_path = File.join(found_path, path)
+    abs_path = found_path.length == 0 ? path : File.join(found_path, path)
     # check that the file exists
     raise unless  File.exist?(abs_path)
 
