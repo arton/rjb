@@ -1,3 +1,12 @@
+Fri Apr 26 2024 arton
+ * ext/rjb.c
+	RJB_VERSION -> 1.7.2
+ * ext/extconf.rb	
+	change javah and javac console encoding according to the locale (reported by winezer0)
+ * ext/load.c
+	fix win32 and cygwin JVM path detection (reported by winezer0)
+ * setup.rb
+	remove duplicate line
 Sun Apr 14 2024 arton
  * ext/rjb.c
 	RJB_VERSION -> 1.7.1
