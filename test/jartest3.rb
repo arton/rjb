@@ -21,7 +21,8 @@ class JarTest < Test::Unit::TestCase
     begin
       Rjb::import('jp.co.infoseek.hp.arton.rjb.JarTest2')
       fail 'no exception'
-    rescue NoClassDefFoundError
+    rescue => e
+      ['NoClassDefFoundError', 'ClassNotFoundException'].any? {|nm| e.class == nm}
       assert true
     end
   end

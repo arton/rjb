@@ -145,13 +145,14 @@ static int open_jvm(char* libpath)
 #if !defined(RUBINIUS)
         if (state || !rb_const_defined_at(rb_cObject, rb_intern(DLNames[i])))
         {
-            if (i > 0)
-            {
-                rb_raise(rb_eRuntimeError, "Constants DL or Fiddle is not defined.");
-                return 0;
-            }
-        }
-        else
+	    rb_set_errinfo(Qnil);
+	    if (i > 0)
+	    {
+		rb_raise(rb_eRuntimeError, "Constants DL or Fiddle is not defined.");
+		return 0;
+	    }
+	}
+	else
 #endif
         {
             sstat = 0;
@@ -165,9 +166,13 @@ static int open_jvm(char* libpath)
             {
                 break;
             }
-            else if (i > 0)
-            {
-                return 0;
+            else
+	    {
+	        rb_set_errinfo(Qnil);
+		if (i > 0)
+		{
+		    return 0;
+		}
             }
         }
     }

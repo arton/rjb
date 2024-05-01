@@ -93,6 +93,8 @@ static ID initialize_proxy;
 static ID cvar_classpath;
 static ID anonymousblock;
 static ID id_call;
+static ID id_import;
+
 
 VALUE rjb_loaded_classes;
 static VALUE proxies;
@@ -280,7 +282,7 @@ static VALUE jv2rclass(JNIEnv* jenv, jclass jc)
     v = rb_hash_aref(rjb_loaded_classes, clsname);
     if (v == Qnil)
     {
-        v = import_class(jenv, jc, clsname);
+	v = rb_funcall(rjb, id_import, 1, clsname);
     }
     (*jenv)->DeleteLocalRef(jenv, jc);
     return v;
@@ -321,7 +323,7 @@ static VALUE jv2rv_r(JNIEnv* jenv, jvalue val)
     v = rb_hash_aref(rjb_loaded_classes, clsname);
     if (v == Qnil)
     {
-        v = import_class(jenv, klass, clsname);
+	v = rb_funcall(rjb, id_import, 1, clsname);
     }
     Data_Get_Struct(v, struct jv_data, ptr);
     v = register_instance(jenv, v, (struct jv_data*)ptr, val.l);
@@ -3268,6 +3270,7 @@ static VALUE rjb_missing(int argc, VALUE* argv, VALUE self)
         {
 	    return r;
 	}
+	rb_set_errinfo(Qnil);
     }
 
     Data_Get_Struct(self, struct jv_data, ptr);
@@ -3281,7 +3284,7 @@ static VALUE rjb_class_forname(int argc, VALUE* argv, VALUE self)
 {
     if (argc == 1)
     {
-        return rjb_s_import(self, *argv);
+	return rjb_s_import(self, *argv);
     }
     else
     {
@@ -3318,7 +3321,7 @@ void Init_rjbcore()
     rb_define_module_function(rjb, "load", rjb_s_load, -1);
     rb_define_module_function(rjb, "unload", rjb_s_unload, -1);
     rb_define_module_function(rjb, "loaded?", rjb_s_loaded, 0);
-    rb_define_module_function(rjb, "import", rjb_s_import, 1);
+    rb_define_module_function(rjb, "s_import", rjb_s_import, 1);
     rb_define_module_function(rjb, "bind", rjb_s_bind, 2);
     rb_define_module_function(rjb, "unbind", rjb_s_unbind, 1);
     rb_define_module_function(rjb, "classes", rjb_s_classes, 0);
@@ -3363,6 +3366,7 @@ void Init_rjbcore()
     rb_define_method(rjba, "method_missing", rjb_a_missing, -1);
     anonymousblock = rb_intern("@anon_block");
     id_call = rb_intern("call");
+    id_import = rb_intern("import");
 }
 
 VALUE rjb_safe_funcall(VALUE args)

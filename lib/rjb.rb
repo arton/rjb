@@ -66,6 +66,20 @@ end
 require 'rjbcore'
 
 module Rjb
+  def self.import(cls)
+    s_import(cls)
+  rescue NoSuchFieldError => e
+    puts "#{cls}: #{e.inspect}" if $VERBOSE
+    s_import(cls)
+  end
+
+  def import(cls)
+    s_import(cls)
+  rescue NoSuchFieldError => e
+    puts "#{cls}: #{e.inspect}" if $VERBOSE
+    s_import(cls)
+  end
+
   module MODIFIER
     def self.STATIC
       8
