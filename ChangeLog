@@ -1,7 +1,16 @@
+Wed May 1 2024 arton
+ * test/jartest3.rb
+	accept ClassNotFoundException for test
+ * ext/load.c
+	clear ruby error
+ * ext/rjb.c
+	change import => s_import for delegate. call Rjb::import instead of internal C fund.
+ * lib/rjb.rb
+	Rjb::import retry to import for NoSuchFieldException
 Fri Apr 26 2024 arton
  * ext/rjb.c
 	RJB_VERSION -> 1.7.2
- * ext/extconf.rb	
+ * ext/extconf.rb
 	change javah and javac console encoding according to the locale (reported by winezer0)
  * ext/load.c
 	fix win32 and cygwin JVM path detection (reported by winezer0)
