@@ -14,7 +14,7 @@
  *
  */
 
-#define RJB_VERSION "1.7.2"
+#define RJB_VERSION "1.7.3"
 
 #include "ruby.h"
 #include "extconf.h"
@@ -3093,14 +3093,14 @@ static VALUE invoke(JNIEnv* jenv, struct cls_method* pm, struct jvi_data* ptr,
  * Object invocation
  */
 static VALUE invoke_by_instance(ID rmid, int argc, VALUE* argv,
-				struct jvi_data* ptr, char* sig)
+				struct jvi_data* ptr, char* sig, int called_by_invoke)
 {
     VALUE ret = Qnil;
     JNIEnv* jenv = rjb_attach_current_thread();
     struct cls_field* pf;
     struct cls_method* pm;
     const char* tname = rb_id2name(rmid);
-    if (argc == 0 && st_lookup(ptr->fields, rmid, (st_data_t*)&pf))
+    if (!called_by_invoke && argc == 0 && st_lookup(ptr->fields, rmid, (st_data_t*)&pf))
     {
         ret = getter(jenv, pf, ptr);
     }
@@ -3157,7 +3157,7 @@ static VALUE rjb_i_invoke(int argc, VALUE* argv, VALUE self)
     sig = NIL_P(vsig) ? NULL :  StringValueCStr(vsig);
     Data_Get_Struct(self, struct jvi_data, ptr);
 
-    return invoke_by_instance(rmid, argc - 2, argv + 2, ptr, sig);
+    return invoke_by_instance(rmid, argc - 2, argv + 2, ptr, sig, 1);
 }
 
 static VALUE rjb_i_missing(int argc, VALUE* argv, VALUE self)
@@ -3167,7 +3167,7 @@ static VALUE rjb_i_missing(int argc, VALUE* argv, VALUE self)
 
     Data_Get_Struct(self, struct jvi_data, ptr);
 
-    return invoke_by_instance(rmid, argc -1, argv + 1, ptr, NULL);
+    return invoke_by_instance(rmid, argc -1, argv + 1, ptr, NULL, 0);
 }
 
 /*

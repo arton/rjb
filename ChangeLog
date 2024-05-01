@@ -1,3 +1,11 @@
+Wed May 1 2024 arton (reported and designed by uvlad7)
+ * test/Test105.java
+	add for test #105 (uvald7)
+ * test/test105.rb
+	add for test #105 (uvald7)
+ * ext/rjb.c
+	RJV_VERSION -> 1.7.3
+	invoke_by_instance takes six parameters. six is called by method_missing or _invoke
 Wed May 1 2024 arton
  * test/jartest3.rb
 	accept ClassNotFoundException for test
